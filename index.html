@@ -534,7 +534,22 @@
             }
             .pd-result-text { flex: 1 1 auto; min-width: 0; }
             .pd-result-main { color: #f1f5f9; font-size: 12px; font-weight: 700; line-height: 1.35; }
-            .pd-result-sub { margin-top: 2px; color: var(--muted); font-size: 10px; line-height: 1.35; }
+            .pd-result-sub { margin-top: 2px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+            .pd-fm-tag {
+                display: inline-flex;
+                align-items: center;
+                margin-left: 3px;
+                padding: 1px 6px;
+                border-radius: 5px;
+                border: 1px solid rgba(250, 204, 21, .52);
+                background: rgba(250, 204, 21, .16);
+                color: #fef08a;
+                font-family: var(--font-display);
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: .05em;
+                line-height: 1.25;
+            }
             .pd-verdict { flex: 0 0 auto; font-size: 18px; font-weight: 800; white-space: nowrap; }
             .pd-result[data-state="win"] {
                 border-color: #15803d;
@@ -1550,8 +1565,8 @@
                     for (let i = 0; i < TOTAL; i++) renderCell(i);
                     applyPatHighlight();
                     updateBoardCount();
-                    try { pdOnBoardChanged(); } catch (e) {}
                     try { scRender(); } catch (e) {}
+                    try { pdOnBoardChanged(); } catch (e) {}
                 }
             
                 function recountBoard() {
@@ -1861,8 +1876,8 @@
                             }
                         }
 
-                        if (data.formulas && typeof fmApplyRemote === 'function') {
-                            fmApplyRemote(data.formulas);
+                        if (data.formulasV2 && typeof fmApplyRemote === 'function') {
+                            fmApplyRemote(data.formulasV2);
                         }
                     } finally {
                         applyingRemote = false;
@@ -2541,6 +2556,9 @@
                 let pdHistoryDirty = true;
                 let pdBannerKey = '';
                 let pdResetArmedUntil = 0;
+                let scSignal = null;                    // gợi ý hiện tại từ bảng dò: { choice: 'B'|'S', fm: '...' }
+                let pdManualRoundEnd = 0;               // mốc endAt của kỳ mà người chơi chủ động bấm tay
+                let pdLastResolvedEndAt = 0;            // mốc endAt của kỳ vừa được chấm xong
             
                 function pdKind(digit) {
                     const text = String(digit === null || digit === undefined ? '' : digit);
@@ -2594,12 +2612,27 @@
                             pending: (Array.isArray(raw.pending) ? raw.pending : []).filter(function (p) {
                                 return p && (p.c === 'B' || p.c === 'S') && p.base && Number.isFinite(Number(p.endAt));
                             }).map(function (p) {
-                                return { c: p.c, base: String(p.base), issue: String(p.issue || ''), endAt: Number(p.endAt), at: num(p.at) };
+                                return {
+                                    c: p.c,
+                                    base: String(p.base),
+                                    issue: String(p.issue || ''),
+                                    endAt: Number(p.endAt),
+                                    at: num(p.at),
+                                    fm: String(p.fm || ''),
+                                    auto: !!p.auto
+                                };
                             }).slice(-5),
                             history: (Array.isArray(raw.history) ? raw.history : []).filter(function (h) {
                                 return h && (h.c === 'B' || h.c === 'S') && h.issue && pdKind(h.d);
                             }).map(function (h) {
-                                return { issue: String(h.issue), c: h.c, d: String(h.d), ok: !!h.ok, at: num(h.at) };
+                                return {
+                                    issue: String(h.issue),
+                                    c: h.c,
+                                    d: String(h.d),
+                                    ok: !!h.ok,
+                                    at: num(h.at),
+                                    fm: String(h.fm || '')
+                                };
                             }).slice(-PD_HISTORY_MAX),
                             win: Math.max(0, Math.floor(num(raw.win))),
                             lose: Math.max(0, Math.floor(num(raw.lose))),
@@ -2709,20 +2742,77 @@
                     const round = pdRound(now);
                     const newest = pdNewestIssue();
                     if (pdIsSynced(round, newest, pdOwed(round, newest)) && Math.floor(round.rem / 1000) > PD_LOCK_SEC) {
+                        pdManualRoundEnd = round.end;
+                        const matchedFm = (scSignal && scSignal.choice === choice) ? String(scSignal.fm || '') : '';
                         const i = pdPendingFor(round.end);
                         if (i >= 0 && pdState.pending[i].c === choice) {
                             pdState.pending.splice(i, 1);           // bấm lại nút đang chọn → bỏ chọn
                         } else if (i >= 0) {
                             pdState.pending[i].c = choice;
+                            pdState.pending[i].fm = matchedFm;
+                            pdState.pending[i].auto = false;
                             pdState.pending[i].at = now;
                         } else {
-                            pdState.pending.push({ c: choice, base: newest, issue: pdNextIssue(newest), endAt: round.end, at: now });
+                            pdState.pending.push({
+                                c: choice,
+                                base: newest,
+                                issue: pdNextIssue(newest),
+                                endAt: round.end,
+                                at: now,
+                                fm: matchedFm,
+                                auto: false
+                            });
                             if (pdState.pending.length > 5) pdState.pending = pdState.pending.slice(-5);
                         }
                         pdNoticeUntil = 0;
                         pdSave();
                     }
                     pdRender();
+                }
+
+                // Tự động bấm nút LỚN / NHỎ khi bảng dò có gợi ý đánh trong kỳ đang mở
+                function pdMaybeAutoPick(now, round, newest, canPick) {
+                    if (!canPick || !newest) return;
+                    if (pdLastResolvedEndAt && Math.abs(round.end - pdLastResolvedEndAt) < PD_ROUND_MS / 2) return;
+                    if (pdManualRoundEnd && Math.abs(round.end - pdManualRoundEnd) < PD_ROUND_MS / 2) return;
+                    const nextIss = pdNextIssue(newest);
+                    for (let h = pdState.history.length - 1; h >= 0 && h >= pdState.history.length - 5; h--) {
+                        if (nextIss && pdState.history[h].issue === nextIss) return;
+                    }
+
+                    const idx = pdPendingFor(round.end);
+                    const sig = (scSignal && (scSignal.choice === 'B' || scSignal.choice === 'S')) ? scSignal : null;
+
+                    if (sig) {
+                        if (idx < 0) {
+                            pdState.pending.push({
+                                c: sig.choice,
+                                base: newest,
+                                issue: nextIss,
+                                endAt: round.end,
+                                at: now,
+                                fm: String(sig.fm || ''),
+                                auto: true
+                            });
+                            if (pdState.pending.length > 5) pdState.pending = pdState.pending.slice(-5);
+                            pdNoticeUntil = 0;
+                            pdSave();
+                        } else if (pdState.pending[idx].auto) {
+                            const curP = pdState.pending[idx];
+                            const nextFm = String(sig.fm || '');
+                            if (curP.c !== sig.choice || curP.fm !== nextFm || curP.base !== newest) {
+                                curP.c = sig.choice;
+                                curP.fm = nextFm;
+                                curP.base = newest;
+                                curP.issue = nextIss;
+                                curP.at = now;
+                                pdSave();
+                            }
+                        }
+                    } else if (idx >= 0 && pdState.pending[idx].auto) {
+                        pdState.pending.splice(idx, 1);
+                        pdSave();
+                    }
                 }
             
                 // Chấm các dự đoán đang chờ. Kết quả của kỳ đã chọn = ô nằm NGAY SAU ô "base" trên bảng
@@ -2769,7 +2859,15 @@
                             continue;
                         }
                         const ok = kind === p.c;
-                        pdState.history.push({ issue: String(cell.sttFull || p.issue), c: p.c, d: String(cell.value), ok: ok, at: now });
+                        pdState.history.push({
+                            issue: String(cell.sttFull || p.issue),
+                            c: p.c,
+                            d: String(cell.value),
+                            ok: ok,
+                            at: now,
+                            fm: String(p.fm || '')
+                        });
+                        if (p.endAt > pdLastResolvedEndAt) pdLastResolvedEndAt = p.endAt;
                         if (ok) { pdState.win++; pdState.streak = pdState.streak > 0 ? pdState.streak + 1 : 1; }
                         else { pdState.lose++; pdState.streak = pdState.streak < 0 ? pdState.streak - 1 : -1; }
                         changed = true;
@@ -2815,8 +2913,9 @@
                         const chip = document.createElement('span');
                         chip.className = 'pd-chip ' + (h.ok ? 'ok' : 'no');
                         chip.textContent = h.ok ? '✓' : '✗';
-                        chip.title = 'Kỳ ' + pdShort(h.issue) + ' · chọn ' + pdKindName(h.c) + ' · ra ' + h.d
-                            + ' (' + pdKindName(pdKind(h.d)) + ') · ' + (h.ok ? 'ĐÚNG' : 'SAI');
+                        chip.title = 'Kỳ ' + pdShort(h.issue) + ' · đánh ' + pdKindName(h.c)
+                            + (h.fm ? ' (CT: ' + h.fm + ')' : '')
+                            + ' · ra ' + h.d + ' (' + pdKindName(pdKind(h.d)) + ') · ' + (h.ok ? 'ĐÚNG' : 'SAI');
                         chip.setAttribute('role', 'listitem');
                         chip.setAttribute('aria-label', chip.title);
                         fragment.appendChild(chip);
@@ -2843,6 +2942,18 @@
                     pdRender();
                 }
             
+                function pdSetResultSub(el, subText, fmText) {
+                    el.textContent = '';
+                    if (subText) el.appendChild(document.createTextNode(subText));
+                    if (fmText) {
+                        if (subText) el.appendChild(document.createTextNode(' · CT:'));
+                        const badge = document.createElement('span');
+                        badge.className = 'pd-fm-tag';
+                        badge.textContent = fmText;
+                        el.appendChild(badge);
+                    }
+                }
+
                 function pdRender() {
                     if (!pdReady) return;
                     const now = Date.now();
@@ -2855,6 +2966,10 @@
                     const sec = Math.max(0, Math.min(PD_ROUND_SEC - 1, Math.floor(round.rem / 1000)));
                     const locked = sec <= PD_LOCK_SEC;
                     const canPick = synced && !locked;
+
+                    // Khi có gợi ý đánh từ bảng dò thì tự động bấm chọn LỚN / NHỎ
+                    pdMaybeAutoPick(now, round, newest, canPick);
+
                     const curIdx = pdPendingFor(round.end);
                     const cur = curIdx >= 0 ? pdState.pending[curIdx] : null;
                     const pick = cur ? cur.c : '';
@@ -2883,9 +2998,14 @@
                     if (!newest) status = 'Chưa có dữ liệu kết quả.';
                     else if (pdNotice && now < pdNoticeUntil) status = pdNotice;
                     else if (cur) {
-                        status = locked
-                            ? 'Đã khoá · bạn chọn ' + pdKindName(pick) + ' cho kỳ ' + pdShort(cur.issue)
-                            : 'Bạn chọn ' + pdKindName(pick) + ' cho kỳ ' + pdShort(cur.issue) + ' · bấm lại để bỏ chọn';
+                        const fmNote = cur.fm ? (' · CT: ' + cur.fm) : '';
+                        if (locked) {
+                            status = 'Đã khoá · ' + (cur.auto ? 'tự động đánh ' : 'bạn chọn ') + pdKindName(pick) + fmNote + ' (kỳ ' + pdShort(cur.issue) + ')';
+                        } else if (cur.auto) {
+                            status = '⚡ Tự động đánh ' + pdKindName(pick) + fmNote + ' cho kỳ ' + pdShort(cur.issue) + ' · bấm lại nếu muốn đổi';
+                        } else {
+                            status = 'Bạn chọn ' + pdKindName(pick) + fmNote + ' cho kỳ ' + pdShort(cur.issue) + ' · bấm lại để bỏ chọn';
+                        }
                     } else if (!synced) {
                         if (round.into > 12000) status = 'Chưa nhận được kết quả mới — tạm khoá dự đoán.';
                         else if (prevSynced) status = 'Đang chờ kết quả kỳ ' + pdShort(pdNextIssue(newest)) + '…';
@@ -2894,7 +3014,7 @@
                     else status = 'Chọn LỚN hoặc NHỎ cho kỳ ' + curShort;
                     pdText(pdEl.Status, status);
             
-                    // --- Kết quả gần nhất: ĐÚNG / SAI ---
+                    // --- Kết quả gần nhất: ĐÚNG / SAI (kèm công thức đã đánh) ---
                     let awaiting = null;
                     for (let i = 0; i < pdState.pending.length; i++) {
                         const p = pdState.pending[i];
@@ -2903,9 +3023,13 @@
                     let banner;
                     if (awaiting) {
                         banner = {
-                            state: 'wait', key: 'wait|' + awaiting.issue + '|' + awaiting.c, ball: '?', kind: '',
-                            main: 'Kỳ ' + pdShort(awaiting.issue) + ' · bạn chọn ' + pdKindName(awaiting.c),
-                            sub: 'Đang chờ kết quả…', verdict: 'CHỜ'
+                            state: 'wait',
+                            key: 'wait|' + awaiting.issue + '|' + awaiting.c + '|' + (awaiting.fm || ''),
+                            ball: '?', kind: '',
+                            main: 'Kỳ ' + pdShort(awaiting.issue) + ' · ' + (awaiting.auto ? 'tự động đánh ' : 'bạn chọn ') + pdKindName(awaiting.c),
+                            sub: 'Đang chờ kết quả…',
+                            fm: awaiting.fm || '',
+                            verdict: 'CHỜ'
                         };
                     } else if (newest) {
                         const cell = cells[TOTAL - 1];
@@ -2916,14 +3040,15 @@
                         }
                         banner = {
                             state: rec ? (rec.ok ? 'win' : 'lose') : 'none',
-                            key: (rec ? (rec.ok ? 'win|' : 'lose|') : 'none|') + newest,
+                            key: (rec ? (rec.ok ? 'win|' : 'lose|') : 'none|') + newest + '|' + (rec && rec.fm ? rec.fm : ''),
                             ball: String(cell.value), kind: kind,
                             main: 'Kỳ ' + pdShort(newest) + ' ra ' + cell.value + ' · ' + pdKindName(kind),
-                            sub: rec ? 'Bạn chọn ' + pdKindName(rec.c) : 'Bạn không dự đoán kỳ này',
+                            sub: rec ? ((rec.fm ? 'Đánh ' : 'Bạn chọn ') + pdKindName(rec.c)) : 'Bạn không dự đoán kỳ này',
+                            fm: rec ? (rec.fm || '') : '',
                             verdict: rec ? (rec.ok ? '✓ ĐÚNG' : '✗ SAI') : ''
                         };
                     } else {
-                        banner = { state: 'idle', key: 'idle', ball: '?', kind: '', main: 'Chưa có kết quả', sub: '', verdict: '' };
+                        banner = { state: 'idle', key: 'idle', ball: '?', kind: '', main: 'Chưa có kết quả', sub: '', fm: '', verdict: '' };
                     }
                     if (banner.key !== pdBannerKey) {
                         const first = pdBannerKey === '';
@@ -2932,7 +3057,7 @@
                         pdAttr(pdEl.Ball, 'data-kind', banner.kind);
                         pdText(pdEl.Ball, banner.ball);
                         pdText(pdEl.ResultMain, banner.main);
-                        pdText(pdEl.ResultSub, banner.sub);
+                        pdSetResultSub(pdEl.ResultSub, banner.sub, banner.fm);
                         pdText(pdEl.Verdict, banner.verdict);
                         pdEl.Result.classList.remove('pd-flash');
                         if (!first && (banner.state === 'win' || banner.state === 'lose')) {
@@ -3017,9 +3142,25 @@
                 // =====================================================================
                 // BẢNG CÔNG THỨC (khoá mặc định, mở sửa sau khi nhập đúng mật khẩu)
                 // =====================================================================
-                const FM_DEFAULT = ['NN4-N', 'NN5-L', 'NN6-N', 'LL6-L', 'NBB-N', 'LBB-L'];
+                const FM_DEFAULT = [
+                    'NN4-N',
+                    'NN5-L',
+                    'NN6-N',
+                    'LL6-L',
+                    'NBB-N',
+                    'LBB-L',
+                    'N02-L',
+                    'L02-N',
+                    'NL7-N',
+                    'LL7-L',
+                    'N14-N',
+                    'N41-N',
+                    'NN9-L',
+                    '31-L',
+                    'LL5-N'
+                ];
                 const FM_PASSWORD = '123456';
-                const LS_FORMULAS = 'vn168_formulas_v1';
+                const LS_FORMULAS = 'vn168_formulas_v2';
 
                 const fmPanel = document.getElementById('fmPanel');
                 const fmLockTag = document.getElementById('fmLockTag');
@@ -3107,7 +3248,7 @@
                     if (!fbDB || applyingRemote) return;
                     const clean = fmItems.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
                     fbDB.collection(FB_COLLECTION).doc(FB_DOC).set({
-                        formulas: {
+                        formulasV2: {
                             items: clean,
                             updatedAt: fmUpdatedAt || Date.now()
                         }
@@ -3116,7 +3257,7 @@
 
                 function fmSave(syncImmediate) {
                     fmUpdatedAt = Date.now();
-                    try { scRender(); } catch (e) {}
+                    try { scRender(); if (pdReady) pdRender(); } catch (e) {}
                     fmCount.textContent = String(fmItems.filter(function (x) { return String(x || '').trim(); }).length);
                     const clean = fmItems.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
                     try {
@@ -3150,7 +3291,7 @@
                 function fmRender(focusIdx) {
                     const u = fmUnlocked;
                     fmCount.textContent = String(fmItems.filter(function (x) { return String(x || '').trim(); }).length);
-                    try { scRender(); } catch (e) {}
+                    try { scRender(); if (pdReady) pdRender(); } catch (e) {}
                     fmPanel.setAttribute('data-unlocked', u ? 'true' : 'false');
                     fmLockTag.setAttribute('data-unlocked', u ? 'true' : 'false');
                     fmLockTag.textContent = u ? '🔓 Đang mở sửa' : '🔒 Đã khoá';
@@ -3448,6 +3589,7 @@
                 }
 
                 function scRender() {
+                    scSignal = null;
                     if (!scBody || !cells || !cells.length) return;
                     const all = scAllDigits();
 
@@ -3612,6 +3754,28 @@
                     });
                     scBody.appendChild(frag);
 
+                    const hitsL = hits.filter(function (h) { return h.p.kind === 'L'; });
+                    const hitsN = hits.filter(function (h) { return h.p.kind === 'N'; });
+                    let pickSide = '';
+                    let pickList = [];
+                    if (hitsL.length > hitsN.length) {
+                        pickSide = 'B';
+                        pickList = hitsL;
+                    } else if (hitsN.length > hitsL.length) {
+                        pickSide = 'S';
+                        pickList = hitsN;
+                    } else if (hitsL.length > 0 && hitsN.length > 0) {
+                        const firstValid = hits.find(function (h) { return h.p.kind === 'L' || h.p.kind === 'N'; });
+                        pickSide = firstValid.p.kind === 'L' ? 'B' : 'S';
+                        pickList = firstValid.p.kind === 'L' ? hitsL : hitsN;
+                    }
+                    if (pickSide) {
+                        scSignal = {
+                            choice: pickSide,
+                            fm: pickList.map(function (h) { return h.p.full.toUpperCase(); }).join(', ')
+                        };
+                    }
+
                     const pill = function (text, kind, cls) {
                         const s = document.createElement('span');
                         s.className = 'sc-pill' + (cls ? ' ' + cls : '');
@@ -3697,7 +3861,7 @@
                             fmResetArmedUntil = 0;
                             fmSave(true);
                             fmRender();
-                            fmShowNotice('↺ Đã khôi phục 6 công thức mặc định.');
+                            fmShowNotice('↺ Đã khôi phục ' + FM_DEFAULT.length + ' công thức mặc định.');
                         } else {
                             fmResetArmedUntil = now + 3000;
                             fmBtnReset.textContent = 'Bấm lần nữa để khôi phục';
