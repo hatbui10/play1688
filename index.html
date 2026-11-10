@@ -1,24 +1,3 @@
-NN4-N
-NN5-L
-
-NN6-N
-
-LL6-L
-
-NBB-N
-LBB-L
-
-N02-L
-L02-N
-
-NL7-N
-
-LL7-L
-
-N14-N
-N41-N
-
-NN9-L
 <!DOCTYPE html>
 <html lang="vi">
 
@@ -26,6 +5,9 @@ NN9-L
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
         <title>Bảng 100 kỳ — Tô màu Lớn/Nhỏ</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@600;700;800;900&family=Kanit:wght@700;800;900&display=swap" media="print" onload="this.media='all'">
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
         <style>
@@ -39,6 +21,7 @@ NN9-L
                 --muted: #94a3b8;
                 --accent: #60a5fa;
                 --cell: 30px;
+                --font-display: 'Kanit', 'Be Vietnam Pro', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, 'Helvetica Neue', Arial, sans-serif;
             }
             * { box-sizing: border-box; }
             body {
@@ -49,15 +32,15 @@ NN9-L
                 display: flex;
                 background: var(--bg);
                 color: var(--text);
-                font-family: Arial, sans-serif;
+                font-family: 'Be Vietnam Pro', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
             }
             [hidden] { display: none !important; }
-            button, textarea { font: inherit; }
+            button, input, textarea { font: inherit; }
             button { -webkit-tap-highlight-color: transparent; }
             .board-panel {
                 width: max-content;
                 max-width: 100%;
-                margin: 30px auto;
+                margin: 18px auto 28px;
                 padding: 0;
                 border: 0;
                 background: transparent;
@@ -288,56 +271,221 @@ NN9-L
             .pd-buttons {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 8px;
+                gap: 10px;
                 margin-top: 12px;
             }
             .pd-btn {
                 position: relative;
                 min-width: 0;
-                min-height: 62px;
-                padding: 8px 6px;
+                min-height: 70px;
+                padding: 10px 8px 9px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                gap: 4px;
-                border: 2px solid transparent;
-                border-radius: 10px;
+                gap: 5px;
+                border: 1.5px solid rgba(255, 255, 255, .45);
+                border-radius: 14px;
                 cursor: pointer;
                 user-select: none;
                 touch-action: manipulation;
-                transition: transform .08s ease, opacity .15s ease, box-shadow .15s ease, filter .15s ease;
+                overflow: visible;
+                isolation: isolate;
+                transition: transform .12s cubic-bezier(.2,.8,.2,1), opacity .18s ease, box-shadow .2s ease, filter .2s ease;
             }
-            .pd-btn-name { font-size: 22px; font-weight: 800; line-height: 1; letter-spacing: .04em; }
-            .pd-btn-range { font-size: 11px; font-weight: 700; line-height: 1; }
-            .pd-big { background: linear-gradient(180deg,#fcd34d 0%,#f59e0b 100%); color: #451a03; }
-            .pd-small { background: linear-gradient(180deg,#2563eb 0%,#1d4ed8 100%); color: #fff; }
+            .pd-btn-fx {
+                position: absolute;
+                inset: 0;
+                border-radius: inherit;
+                overflow: hidden;
+                pointer-events: none;
+                z-index: 0;
+            }
+            /* Ánh kính vòm phía trên nút */
+            .pd-btn-fx::before {
+                content: '';
+                position: absolute;
+                inset: 0 0 48% 0;
+                border-radius: inherit;
+                background: linear-gradient(180deg, rgba(255,255,255,.48) 0%, rgba(255,255,255,.06) 100%);
+            }
+            /* Vệt sáng lung linh lướt chéo */
+            .pd-btn-fx::after {
+                content: '';
+                position: absolute;
+                top: -65%;
+                left: -85%;
+                width: 52%;
+                height: 230%;
+                transform: rotate(25deg);
+                background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.52) 50%, transparent 100%);
+                animation: pdShimmer 3.8s ease-in-out infinite;
+            }
+            .pd-small .pd-btn-fx::after { animation-delay: 1.9s; }
+            /* Hạt sao lấp lánh 4 cánh */
+            .pd-spark {
+                position: absolute;
+                display: block;
+                width: 9px;
+                height: 9px;
+                background: #fff;
+                clip-path: polygon(50% 0%, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0% 50%, 38% 38%);
+                opacity: .85;
+                animation: pdTwinkle 2.4s ease-in-out infinite;
+            }
+            .pd-spark.s1 { top: 8px; left: 11px; width: 10px; height: 10px; animation-delay: 0s; }
+            .pd-spark.s2 { top: 10px; right: 12px; width: 7px; height: 7px; animation-delay: .85s; }
+            .pd-spark.s3 { bottom: 9px; right: 16px; width: 8px; height: 8px; animation-delay: 1.6s; }
+            .pd-small .pd-spark.s1 { animation-delay: .4s; }
+            .pd-small .pd-spark.s2 { animation-delay: 1.25s; }
+            .pd-small .pd-spark.s3 { animation-delay: 2.0s; }
+            @keyframes pdShimmer {
+                0%, 22% { transform: translateX(0) rotate(25deg); opacity: 0; }
+                30% { opacity: 1; }
+                62% { transform: translateX(390%) rotate(25deg); opacity: 0; }
+                100% { transform: translateX(390%) rotate(25deg); opacity: 0; }
+            }
+            @keyframes pdTwinkle {
+                0%, 100% { transform: scale(.55) rotate(0deg); opacity: .28; }
+                50% { transform: scale(1.18) rotate(20deg); opacity: .98; }
+            }
+            .pd-btn-name {
+                position: relative;
+                z-index: 1;
+                font-family: var(--font-display);
+                font-size: 25px;
+                font-weight: 900;
+                line-height: 1.05;
+                letter-spacing: .1em;
+                text-transform: uppercase;
+            }
+            .pd-btn-range {
+                position: relative;
+                z-index: 1;
+                padding: 2px 11px;
+                border-radius: 999px;
+                font-family: var(--font-display);
+                font-size: 11px;
+                font-weight: 800;
+                line-height: 1.25;
+                letter-spacing: .12em;
+                font-variant-numeric: tabular-nums;
+            }
+            /* Màu nền nút LỚN (#A55704) và nút NHỎ (#1F06AC) */
+            .pd-big {
+                background: radial-gradient(125% 95% at 50% 0%, #d47a18 0%, #A55704 52%, #743b02 100%);
+                border-color: rgba(253, 224, 171, .75);
+                color: #fffdf7;
+                box-shadow:
+                    0 8px 20px -4px rgba(165, 87, 4, .62),
+                    0 0 16px rgba(165, 87, 4, .32),
+                    inset 0 2px 2px rgba(255, 243, 214, .75),
+                    inset 0 -3px 6px rgba(58, 22, 2, .62);
+            }
+            .pd-big .pd-btn-name {
+                color: #fffef7;
+                -webkit-text-stroke: .5px rgba(58, 22, 2, .58);
+                text-shadow:
+                    0 1px 0 #6b3402,
+                    0 2px 0 #451a03,
+                    0 3px 6px rgba(30, 10, 0, .72),
+                    0 0 12px rgba(255, 247, 220, .78),
+                    0 0 22px rgba(217, 131, 39, .52);
+            }
+            .pd-big .pd-btn-range {
+                background: rgba(48, 20, 2, .42);
+                border: 1px solid rgba(255, 237, 204, .44);
+                color: #ffedd5;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, .65);
+            }
+            .pd-small {
+                background: radial-gradient(125% 95% at 50% 0%, #8b8dff 0%, #3f43d8 38%, #1F06AC 72%, #13034e 100%);
+                border-color: rgba(199, 210, 254, .8);
+                color: #eef0ff;
+                box-shadow:
+                    0 8px 20px -4px rgba(31, 6, 172, .62),
+                    0 0 16px rgba(99, 102, 241, .34),
+                    inset 0 2px 2px rgba(224, 231, 255, .75),
+                    inset 0 -3px 6px rgba(10, 4, 48, .62);
+            }
+            .pd-small .pd-btn-name {
+                color: #e6e9ff;
+                -webkit-text-stroke: .5px rgba(10, 4, 48, .6);
+                text-shadow:
+                    0 1px 0 #2b2a9e,
+                    0 2px 0 #150847,
+                    0 3px 6px rgba(8, 3, 38, .7),
+                    0 0 10px rgba(199, 210, 254, .5),
+                    0 0 20px rgba(99, 102, 241, .45);
+            }
+            .pd-small .pd-btn-range {
+                background: rgba(10, 5, 45, .45);
+                border: 1px solid rgba(199, 210, 254, .5);
+                color: #dfe4ff;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, .65);
+            }
             .pd-btn:focus-visible, .pd-mini:focus-visible { outline: 2px solid #f8fafc; outline-offset: 2px; }
-            .pd-btn:not([aria-disabled="true"]):active { transform: translateY(1px) scale(.99); }
+            .pd-btn:not([aria-disabled="true"]):active { transform: translateY(2px) scale(.985); }
             @media (hover: hover) {
-                .pd-btn:not([aria-disabled="true"]):hover { filter: brightness(1.1); }
+                .pd-btn:not([aria-disabled="true"]):hover {
+                    transform: translateY(-1px);
+                    filter: brightness(1.08) saturate(1.06);
+                }
+                .pd-big:not([aria-disabled="true"]):hover {
+                    box-shadow:
+                        0 10px 26px -3px rgba(165, 87, 4, .75),
+                        0 0 22px rgba(217, 131, 39, .48),
+                        inset 0 2px 2px rgba(255, 248, 225, .9),
+                        inset 0 -3px 6px rgba(58, 22, 2, .62);
+                }
+                .pd-small:not([aria-disabled="true"]):hover {
+                    box-shadow:
+                        0 10px 26px -3px rgba(31, 6, 172, .78),
+                        0 0 22px rgba(129, 140, 248, .5),
+                        inset 0 2px 2px rgba(224, 231, 255, .9),
+                        inset 0 -3px 6px rgba(10, 4, 48, .62);
+                }
             }
             .pd-btn[aria-pressed="true"] {
-                border-color: #fff;
-                box-shadow: 0 0 0 3px rgba(255,255,255,.2), 0 6px 16px rgba(0,0,0,.5);
+                border-color: #ffffff;
+                transform: translateY(-1px);
+            }
+            .pd-big[aria-pressed="true"] {
+                box-shadow:
+                    0 0 0 3px rgba(253, 224, 171, .58),
+                    0 10px 26px rgba(165, 87, 4, .78),
+                    inset 0 2px 2px rgba(255, 248, 225, .9);
+            }
+            .pd-small[aria-pressed="true"] {
+                box-shadow:
+                    0 0 0 3px rgba(165, 180, 252, .6),
+                    0 10px 26px rgba(31, 6, 172, .8),
+                    inset 0 2px 2px rgba(224, 231, 255, .9);
             }
             .pd-btn[aria-pressed="true"]::after {
                 content: '✓ ĐÃ CHỌN';
                 position: absolute;
-                top: -8px;
+                z-index: 3;
+                top: -9px;
                 right: 8px;
-                padding: 2px 6px;
+                padding: 2px 7px;
                 border-radius: 999px;
-                background: #fff;
-                color: #111827;
+                background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+                color: #0f172a;
+                font-family: var(--font-display);
                 font-size: 9px;
                 font-weight: 800;
-                line-height: 1.3;
-                letter-spacing: .03em;
+                line-height: 1.35;
+                letter-spacing: .05em;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, .45);
             }
-            .pd-buttons.has-pick .pd-btn[aria-pressed="false"] { opacity: .42; }
+            .pd-buttons.has-pick .pd-btn[aria-pressed="false"] { opacity: .45; filter: saturate(.8); }
             .pd-btn[aria-disabled="true"] { cursor: not-allowed; }
-            .pd-btn[aria-disabled="true"][aria-pressed="false"] { opacity: .3; filter: grayscale(.45); }
+            .pd-btn[aria-disabled="true"][aria-pressed="false"] { opacity: .86; }
+            .predict-panel[data-phase="lock"] .pd-btn[aria-disabled="true"][aria-pressed="false"] {
+                opacity: .52;
+                filter: saturate(.75);
+            }
             .pd-status {
                 min-height: 16px;
                 margin-top: 8px;
@@ -360,20 +508,30 @@ NN9-L
             }
             .pd-ball {
                 flex: 0 0 auto;
-                width: 36px;
-                height: 36px;
+                width: 38px;
+                height: 38px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 border-radius: 50%;
                 background: #2f2f2f;
                 color: #94a3b8;
+                font-family: var(--font-display);
                 font-size: 19px;
-                font-weight: 800;
+                font-weight: 900;
                 font-variant-numeric: tabular-nums;
             }
-            .pd-ball[data-kind="B"] { background: linear-gradient(180deg,#fcd34d,#f59e0b); color: #451a03; }
-            .pd-ball[data-kind="S"] { background: linear-gradient(180deg,#2563eb,#1d4ed8); color: #fff; }
+            .pd-ball[data-kind="B"] {
+                background: radial-gradient(circle at 35% 25%, #fffbeb 0%, #fde047 30%, #f59e0b 72%, #b45309 100%);
+                color: #451a03;
+                box-shadow: 0 0 12px rgba(245, 158, 11, .45), inset 0 1px 2px rgba(255, 255, 255, .8);
+            }
+            .pd-ball[data-kind="S"] {
+                background: radial-gradient(circle at 35% 25%, #ffffff 0%, #c7d2fe 30%, #6d7cff 66%, #1F06AC 100%);
+                color: #150847;
+                text-shadow: 0 1px 0 rgba(255, 255, 255, .55);
+                box-shadow: 0 0 12px rgba(31, 6, 172, .5), inset 0 1px 2px rgba(255, 255, 255, .8);
+            }
             .pd-result-text { flex: 1 1 auto; min-width: 0; }
             .pd-result-main { color: #f1f5f9; font-size: 12px; font-weight: 700; line-height: 1.35; }
             .pd-result-sub { margin-top: 2px; color: var(--muted); font-size: 10px; line-height: 1.35; }
@@ -480,27 +638,534 @@ NN9-L
             .pd-mini:hover { filter: brightness(1.18); }
             .pd-mini:active { transform: translateY(1px); }
             .pd-mini.armed { border-color: #b91c1c; background: #7f1d1d; color: #fff; }
+            /* ===== Bảng công thức (khoá bằng mật khẩu) ===== */
+            .formula-panel {
+                width: 0;
+                min-width: 100%;
+                margin-top: 8px;
+                margin-bottom: 0;
+                padding: 10px;
+                border-radius: 10px;
+                background: linear-gradient(180deg, #1b2230 0%, #171a21 100%);
+                box-shadow: inset 0 0 0 1px #2d3748, 0 6px 18px rgba(0, 0, 0, .35);
+            }
+            .formula-panel[data-unlocked="true"] {
+                box-shadow: inset 0 0 0 1px rgba(56, 189, 248, .55), 0 6px 20px rgba(14, 165, 233, .16);
+            }
+            .fm-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            .fm-title-wrap {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 6px;
+                min-width: 0;
+            }
+            .fm-title {
+                font-family: var(--font-display);
+                color: #f8fafc;
+                font-size: 12px;
+                font-weight: 800;
+                letter-spacing: .06em;
+                text-transform: uppercase;
+            }
+            .fm-lock-tag {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 2px 7px;
+                border-radius: 999px;
+                border: 1px solid #475569;
+                background: #1e293b;
+                color: #cbd5e1;
+                font-size: 9.5px;
+                font-weight: 700;
+                line-height: 1.3;
+            }
+            .fm-lock-tag[data-unlocked="true"] {
+                border-color: rgba(34, 197, 94, .6);
+                background: rgba(21, 128, 61, .28);
+                color: #86efac;
+            }
+            .fm-btn {
+                flex-shrink: 0;
+                min-height: 28px;
+                padding: 4px 10px;
+                border-radius: 7px;
+                border: 1px solid #475569;
+                background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+                color: #f1f5f9;
+                cursor: pointer;
+                font-size: 10.5px;
+                font-weight: 700;
+                transition: filter .15s ease, transform .08s ease, box-shadow .15s ease;
+            }
+            .fm-btn:hover { filter: brightness(1.14); }
+            .fm-btn:active { transform: translateY(1px); }
+            .fm-btn.fm-pulse {
+                border-color: #fbbf24;
+                box-shadow: 0 0 0 3px rgba(251, 191, 36, .32);
+            }
+            .fm-btn-save {
+                border-color: #22c55e;
+                background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+                color: #ffffff;
+                box-shadow: 0 2px 8px rgba(22, 163, 74, .35);
+            }
+            .fm-table-wrap {
+                overflow: hidden;
+                border-radius: 8px;
+                border: 1px solid #2d3748;
+                background: #131720;
+            }
+            .fm-table {
+                width: 100%;
+                border-collapse: collapse;
+                table-layout: fixed;
+                font-size: 12px;
+            }
+            .fm-table th {
+                padding: 6px 6px;
+                background: #1e2533;
+                color: #94a3b8;
+                font-size: 9.5px;
+                font-weight: 800;
+                letter-spacing: .06em;
+                text-transform: uppercase;
+                border-bottom: 1px solid #2d3748;
+                text-align: left;
+            }
+            .fm-table td {
+                padding: 5px 6px;
+                border-bottom: 1px solid #222938;
+                vertical-align: middle;
+            }
+            .fm-table tbody tr:last-child td { border-bottom: 0; }
+            .fm-table tbody tr:nth-child(even) { background: rgba(255, 255, 255, .018); }
+            .fm-table tbody tr:hover { background: rgba(96, 165, 250, .06); }
+            .fm-col-idx { width: 34px; text-align: center !important; color: #64748b; font-weight: 700; font-variant-numeric: tabular-nums; }
+            .fm-col-code { width: auto; }
+            .fm-col-side { width: 88px; text-align: center !important; }
+            .fm-col-act { width: 34px; text-align: center !important; }
+            .fm-code-text {
+                display: inline-flex;
+                align-items: center;
+                gap: 1px;
+                font-family: var(--font-display);
+                font-size: 13.5px;
+                font-weight: 800;
+                letter-spacing: .06em;
+                color: #f1f5f9;
+            }
+            .fm-code-sep { color: #64748b; margin: 0 2px; font-weight: 700; }
+            .fm-code-tgt[data-kind="L"] { color: #fde047; }
+            .fm-code-tgt[data-kind="N"] { color: #a5b4fc; }
+            .fm-badge {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 3px;
+                min-width: 66px;
+                padding: 3px 8px;
+                border-radius: 999px;
+                border: 1px solid #334155;
+                background: #1e293b;
+                color: #cbd5e1;
+                font-family: var(--font-display);
+                font-size: 10.5px;
+                font-weight: 800;
+                line-height: 1.2;
+                letter-spacing: .05em;
+            }
+            .fm-badge[data-kind="L"] {
+                border-color: rgba(251, 191, 36, .65);
+                background: linear-gradient(180deg, rgba(251, 191, 36, .28) 0%, rgba(217, 119, 6, .22) 100%);
+                color: #fef08a;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, .55);
+            }
+            .fm-badge[data-kind="N"] {
+                border-color: rgba(129, 140, 248, .7);
+                background: linear-gradient(180deg, rgba(31, 6, 172, .55) 0%, rgba(31, 6, 172, .28) 100%);
+                color: #dfe4ff;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
+            }
+            .fm-badge-btn { cursor: pointer; }
+            .fm-badge-btn:hover { filter: brightness(1.16); }
+            .fm-input {
+                width: 100%;
+                height: 28px;
+                padding: 3px 8px;
+                border: 1px solid #475569;
+                border-radius: 6px;
+                outline: none;
+                background: #0b1220;
+                color: #f8fafc;
+                font-family: var(--font-display);
+                font-size: 13px;
+                font-weight: 800;
+                letter-spacing: .05em;
+            }
+            .fm-input:focus {
+                border-color: #818cf8;
+                box-shadow: 0 0 0 2px rgba(31, 6, 172, .4);
+            }
+            .fm-del-btn {
+                width: 24px;
+                height: 24px;
+                padding: 0;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid rgba(239, 68, 68, .45);
+                border-radius: 6px;
+                background: rgba(127, 29, 29, .45);
+                color: #fca5a5;
+                cursor: pointer;
+                font-size: 11px;
+                font-weight: 800;
+                line-height: 1;
+            }
+            .fm-del-btn:hover { background: #991b1b; color: #fff; }
+            .fm-empty {
+                padding: 10px;
+                text-align: center;
+                color: #64748b;
+                font-size: 11px;
+            }
+            .fm-edit-bar {
+                margin-top: 8px;
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .fm-add-btn {
+                border-color: #4f46e5;
+                background: rgba(31, 6, 172, .35);
+                color: #c7d2fe;
+            }
+            .fm-notice {
+                margin-top: 6px;
+                color: #86efac;
+                font-size: 10.5px;
+                line-height: 1.35;
+                text-align: center;
+            }
+            .fm-pw-box {
+                position: relative;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .fm-pw-input {
+                flex: 1 1 auto;
+                min-width: 0;
+                height: 38px;
+                padding: 8px 12px;
+                border: 1px solid #52627a;
+                border-radius: 8px;
+                outline: none;
+                background: #0b1220;
+                color: #f8fafc;
+                font-size: 15px;
+                font-weight: 700;
+                letter-spacing: .12em;
+            }
+            .fm-pw-input:focus {
+                border-color: #60a5fa;
+                box-shadow: 0 0 0 2px rgba(96, 165, 250, .25);
+            }
+            .fm-pw-error {
+                min-height: 16px;
+                margin-top: 7px;
+                color: #fca5a5;
+                font-size: 11px;
+                font-weight: 700;
+            }
+            .dialog.fm-shake { animation: fmShake .32s ease; }
+            @keyframes fmShake {
+                0%, 100% { transform: translateX(0); }
+                22% { transform: translateX(-6px); }
+                45% { transform: translateX(6px); }
+                70% { transform: translateX(-4px); }
+            }
+
+            /* ===== Thu / mở bảng công thức ===== */
+            .fm-collapse-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 2px 4px 2px 0;
+                border: 0;
+                background: transparent;
+                color: inherit;
+                cursor: pointer;
+            }
+            .fm-collapse-btn:hover .fm-title { color: #fde68a; }
+            .fm-chev {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 18px;
+                height: 18px;
+                border-radius: 5px;
+                background: #263041;
+                color: #cbd5e1;
+                font-style: normal;
+                font-size: 11px;
+                line-height: 1;
+                transition: transform .2s ease;
+            }
+            .formula-panel[data-collapsed="true"] .fm-chev { transform: rotate(-90deg); }
+            .fm-count {
+                min-width: 20px;
+                padding: 1px 6px;
+                border-radius: 999px;
+                background: rgba(250, 204, 21, .16);
+                border: 1px solid rgba(250, 204, 21, .4);
+                color: #fde68a;
+                font-size: 9.5px;
+                font-weight: 800;
+                line-height: 1.35;
+                text-align: center;
+            }
+            .formula-panel[data-collapsed="true"] .fm-collapse { display: none; }
+            .formula-panel[data-collapsed="true"] .fm-head { margin-bottom: 0; }
+            .fm-table-wrap {
+                max-height: 268px;
+                overflow-y: auto !important;
+                overscroll-behavior: contain;
+                scrollbar-width: thin;
+                scrollbar-color: #475569 transparent;
+            }
+            .fm-table thead th { position: sticky; top: 0; z-index: 1; }
+
+            /* ===== Khung kết quả dò ===== */
+            .scan-panel {
+                width: 0;
+                min-width: 100%;
+                margin-top: 8px;
+                margin-bottom: 0;
+                padding: 10px;
+                border-radius: 10px;
+                background:
+                    radial-gradient(120% 90% at 100% 0%, rgba(168, 85, 247, .12) 0%, transparent 55%),
+                    linear-gradient(180deg, #1c1f2e 0%, #161922 100%);
+                box-shadow: inset 0 0 0 1px #34304a, 0 6px 18px rgba(0, 0, 0, .35);
+            }
+            .scan-panel[data-state="hit"] {
+                box-shadow: inset 0 0 0 1px rgba(250, 204, 21, .5), 0 0 22px rgba(250, 204, 21, .12), 0 6px 18px rgba(0, 0, 0, .35);
+            }
+            .sc-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            .sc-title-wrap { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+            .sc-title {
+                font-family: var(--font-display);
+                color: #f8fafc;
+                font-size: 12px;
+                font-weight: 800;
+                letter-spacing: .06em;
+                text-transform: uppercase;
+            }
+            .sc-sub { color: #94a3b8; font-size: 9.5px; font-weight: 600; }
+            .sc-last3 { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 3px; flex-shrink: 0; max-width: 56%; }
+            .sc-arrow { color: #64748b; font-size: 10px; margin: 0; }
+            .sc-ball {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 25px;
+                height: 25px;
+                border-radius: 50%;
+                font-family: var(--font-display);
+                font-size: 13.5px;
+                font-weight: 800;
+                line-height: 1;
+                color: #fff;
+                background: #334155;
+                box-shadow: inset 0 -3px 5px rgba(0, 0, 0, .35), inset 0 2px 3px rgba(255, 255, 255, .25);
+                text-shadow: 0 1px 2px rgba(0, 0, 0, .55);
+            }
+            .sc-ball[data-kind="L"] { background: radial-gradient(circle at 35% 28%, #fff3b0 0%, #facc15 32%, #d97706 100%); color: #451a03; text-shadow: 0 1px 0 rgba(255,255,255,.4); }
+            .sc-ball[data-kind="N"] { background: radial-gradient(circle at 35% 28%, #ffffff 0%, #c7d2fe 30%, #6d7cff 62%, #1F06AC 100%); color: #150847; text-shadow: 0 1px 0 rgba(255,255,255,.55); }
+            .sc-ball.sm { width: 21px; height: 21px; font-size: 11.5px; }
+            .sc-cells { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 3px; }
+            .sc-cells[data-many="true"] .sc-ball.sm { width: 18px; height: 18px; font-size: 10.5px; }
+            .sc-cells[data-many="true"] .sc-cell-tag { min-width: 14px; padding: 0 2px; font-size: 7.5px; }
+            .sc-cell { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+            .sc-cell-tag {
+                min-width: 16px;
+                padding: 0 3px;
+                border-radius: 4px;
+                background: #263041;
+                color: #cbd5e1;
+                font-size: 8.5px;
+                font-weight: 800;
+                line-height: 1.4;
+                text-align: center;
+            }
+            .sc-cell-tag[data-tok="B"] {
+                background: rgba(168, 85, 247, .3);
+                border: 1px solid rgba(216, 180, 254, .6);
+                color: #f3e8ff;
+                line-height: 1.25;
+            }
+            .sc-table-wrap {
+                max-height: 232px;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                border-radius: 8px;
+                border: 1px solid #2f2d44;
+                background: #12141c;
+                scrollbar-width: thin;
+                scrollbar-color: #475569 transparent;
+            }
+            .sc-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+            .sc-table th {
+                position: sticky;
+                top: 0;
+                z-index: 1;
+                padding: 6px;
+                background: #1f2133;
+                color: #a5b4fc;
+                font-size: 9.5px;
+                font-weight: 800;
+                letter-spacing: .06em;
+                text-transform: uppercase;
+                border-bottom: 1px solid #2f2d44;
+                text-align: left;
+            }
+            .sc-table td { padding: 6px; border-bottom: 1px solid #22243a; vertical-align: middle; }
+            .sc-table tbody tr:last-child td { border-bottom: 0; }
+            .sc-table tbody tr.sc-row { animation: scRowIn .35s ease both; }
+            @keyframes scRowIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+            .sc-col-idx { width: 28px; text-align: center !important; color: #64748b; font-weight: 700; }
+            .sc-col-code { width: auto; }
+            .sc-col-cells { width: 118px; text-align: center !important; }
+            .sc-col-side { width: 88px; text-align: center !important; }
+            .sc-empty { padding: 12px 8px !important; text-align: center; color: #7c8aa3; font-size: 11px; line-height: 1.45; }
+            .sc-hint {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 76px;
+                padding: 5px 9px;
+                border-radius: 999px;
+                font-family: var(--font-display);
+                font-size: 11.5px;
+                font-weight: 800;
+                letter-spacing: .06em;
+                line-height: 1.15;
+                overflow: hidden;
+                isolation: isolate;
+            }
+            .sc-hint::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                z-index: -1;
+                background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .55) 50%, transparent 70%);
+                transform: translateX(-120%);
+                animation: scShine 1.8s ease-in-out infinite;
+            }
+            .sc-hint[data-kind="L"] {
+                color: #451a03;
+                background: linear-gradient(180deg, #fff7c2 0%, #facc15 45%, #f59e0b 100%);
+                border: 1px solid #fde68a;
+                animation: scGlowL 1s ease-in-out infinite;
+            }
+            .sc-hint[data-kind="N"] {
+                color: #e8ebff;
+                background: linear-gradient(180deg, #8b8dff 0%, #3f43d8 48%, #1F06AC 100%);
+                border: 1px solid #a5b4fc;
+                text-shadow: 0 1px 2px rgba(8, 3, 38, .65);
+                animation: scGlowN 1s ease-in-out infinite;
+            }
+            .sc-hint:not([data-kind]) { color: #e2e8f0; background: #334155; border: 1px solid #64748b; }
+            @keyframes scGlowL {
+                0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(250, 204, 21, .55), 0 0 14px rgba(245, 158, 11, .35); filter: brightness(1); }
+                50% { opacity: .55; box-shadow: 0 0 14px rgba(250, 204, 21, .95), 0 0 28px rgba(245, 158, 11, .7); filter: brightness(1.25); }
+            }
+            @keyframes scGlowN {
+                0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(31, 6, 172, .65), 0 0 14px rgba(99, 102, 241, .4); filter: brightness(1); }
+                50% { opacity: .55; box-shadow: 0 0 14px rgba(99, 102, 241, 1), 0 0 28px rgba(31, 6, 172, .75); filter: brightness(1.3); }
+            }
+            @keyframes scShine { 0% { transform: translateX(-120%); } 60%, 100% { transform: translateX(120%); } }
+            .sc-summary {
+                margin-top: 7px;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                color: #cbd5e1;
+                font-size: 10.5px;
+                font-weight: 700;
+                text-align: center;
+            }
+            .sc-summary:empty { display: none; }
+            .sc-pill { padding: 2px 8px; border-radius: 999px; border: 1px solid #475569; background: #1e293b; }
+            .sc-pill[data-kind="L"] { border-color: rgba(250, 204, 21, .6); color: #fde68a; background: rgba(250, 204, 21, .12); }
+            .sc-pill[data-kind="N"] { border-color: rgba(129, 140, 248, .65); color: #c7d2fe; background: rgba(31, 6, 172, .22); }
+            .sc-pill.warn { border-color: rgba(248, 113, 113, .6); color: #fecaca; background: rgba(127, 29, 29, .35); }
+            .grid-cell.scan-hl {
+                outline: 2px solid #c084fc;
+                outline-offset: 1px;
+                box-shadow: 0 0 10px rgba(192, 132, 252, .75);
+                z-index: 1;
+            }
             @media (max-width: 380px) {
+                .scan-panel { padding: 8px; }
+                .sc-col-idx { width: 24px; }
+                .sc-col-cells { width: 98px; }
+                .sc-col-side { width: 78px; }
+                .sc-hint { min-width: 64px; padding: 4px 6px; font-size: 10px; }
+                .sc-ball { width: 21px; height: 21px; font-size: 11.5px; }
+                .sc-ball.sm { width: 18px; height: 18px; font-size: 10.5px; }
+                .sc-cells[data-many="true"] .sc-ball.sm { width: 16px; height: 16px; font-size: 9.5px; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .sc-hint, .sc-hint::after, .sc-table tbody tr.sc-row { animation: none; }
+            }
+            @media (max-width: 380px) {
+                .formula-panel { padding: 8px; }
+                .fm-col-idx { width: 28px; }
+                .fm-col-side { width: 76px; }
+                .fm-code-text { font-size: 12.5px; }
+                .fm-badge { min-width: 58px; padding: 2px 6px; font-size: 9.5px; }
                 .predict-panel { padding: 8px; }
                 .pd-issue-no { font-size: 19px; }
                 .pd-time { font-size: 26px; }
-                .pd-btn { min-height: 56px; }
-                .pd-btn-name { font-size: 20px; }
+                .pd-btn { min-height: 62px; }
+                .pd-btn-name { font-size: 22px; }
                 .pd-verdict { font-size: 16px; }
                 .pd-result { gap: 8px; padding: 8px; }
                 .pd-sync { flex-basis: 100%; }
                 #pdReset { margin-left: auto; }
             }
             @media (max-width: 300px) {
+                .fm-col-side { width: 66px; }
                 .pd-time { font-size: 24px; }
-                .pd-btn-name { font-size: 18px; }
-                .pd-ball { width: 30px; height: 30px; font-size: 16px; }
+                .pd-btn-name { font-size: 19px; }
+                .pd-ball { width: 32px; height: 32px; font-size: 16px; }
                 .pd-result-main { font-size: 11px; }
                 .pd-verdict { font-size: 14px; }
             }
             @media (prefers-reduced-motion: reduce) {
                 .pd-btn, .pd-bar i { transition: none; }
-                .pd-result.pd-flash, .pd-result[data-state="wait"] .pd-ball { animation: none; }
+                .pd-btn-fx::after, .pd-spark, .pd-result.pd-flash, .pd-result[data-state="wait"] .pd-ball, .dialog.fm-shake { animation: none; }
             }
             @media (max-width: 380px) {
                 :root { --cell: 25px; }
@@ -523,6 +1188,30 @@ NN9-L
         <main class="board-panel" aria-label="Bảng kết quả 100 kỳ">
             <div id="gridContainer" class="grid-table" role="grid" aria-label="Bảng 10 dòng và 10 cột"></div>
 
+            <section class="scan-panel" id="scPanel" data-state="empty" aria-label="Kết quả dò công thức">
+                <div class="sc-head">
+                    <div class="sc-title-wrap">
+                        <span class="sc-title">Kết quả dò</span>
+                        <span class="sc-sub" id="scSub">Tự động xét số ô theo từng công thức</span>
+                    </div>
+                    <div class="sc-last3" id="scLast3" aria-label="Các ô cuối đang xét"></div>
+                </div>
+                <div class="sc-table-wrap">
+                    <table class="sc-table">
+                        <thead>
+                            <tr>
+                                <th class="sc-col-idx">STT</th>
+                                <th class="sc-col-code">Công thức</th>
+                                <th class="sc-col-cells">Ô đang xét</th>
+                                <th class="sc-col-side">Gợi ý đánh</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scBody"></tbody>
+                    </table>
+                </div>
+                <div class="sc-summary" id="scSummary" role="status" aria-live="polite"></div>
+            </section>
+
             <section class="predict-panel" id="pdPanel" data-phase="off" aria-label="Dự đoán Lớn / Nhỏ">
                 <div class="pd-head">
                     <div>
@@ -538,10 +1227,20 @@ NN9-L
 
                 <div class="pd-buttons" id="pdButtons">
                     <button type="button" class="pd-btn pd-big" id="pdBtnBig" aria-pressed="false" aria-disabled="true">
+                        <span class="pd-btn-fx" aria-hidden="true">
+                            <i class="pd-spark s1"></i>
+                            <i class="pd-spark s2"></i>
+                            <i class="pd-spark s3"></i>
+                        </span>
                         <span class="pd-btn-name">LỚN</span>
                         <span class="pd-btn-range">5 – 9</span>
                     </button>
                     <button type="button" class="pd-btn pd-small" id="pdBtnSmall" aria-pressed="false" aria-disabled="true">
+                        <span class="pd-btn-fx" aria-hidden="true">
+                            <i class="pd-spark s1"></i>
+                            <i class="pd-spark s2"></i>
+                            <i class="pd-spark s3"></i>
+                        </span>
                         <span class="pd-btn-name">NHỎ</span>
                         <span class="pd-btn-range">0 – 4</span>
                     </button>
@@ -572,6 +1271,41 @@ NN9-L
                     <button type="button" class="pd-mini" id="pdReset">Xoá thống kê</button>
                 </div>
             </section>
+            <section class="formula-panel" id="fmPanel" data-unlocked="false" data-collapsed="true" aria-label="Bảng công thức">
+                <div class="fm-head">
+                    <div class="fm-title-wrap">
+                        <button type="button" class="fm-collapse-btn" id="fmBtnCollapse" aria-expanded="false" aria-controls="fmCollapse" title="Thu gọn / mở rộng bảng công thức">
+                            <i class="fm-chev" aria-hidden="true">▾</i>
+                            <span class="fm-title">Bảng công thức</span>
+                            <span class="fm-count" id="fmCount">0</span>
+                        </button>
+                        <span class="fm-lock-tag" id="fmLockTag" data-unlocked="false">🔒 Đã khoá</span>
+                    </div>
+                    <button type="button" class="fm-btn" id="fmBtnUnlock">🔑 Sửa</button>
+                    <button type="button" class="fm-btn fm-btn-save" id="fmBtnSaveLock" hidden>✓ Lưu &amp; Khoá</button>
+                </div>
+                <div class="fm-collapse" id="fmCollapse">
+                <div class="fm-table-wrap">
+                    <table class="fm-table" id="fmTable">
+                        <thead>
+                            <tr>
+                                <th class="fm-col-idx">STT</th>
+                                <th class="fm-col-code">Công thức</th>
+                                <th class="fm-col-side">Đánh</th>
+                                <th class="fm-col-act" id="fmHeadAct" hidden>Xoá</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fmBody"></tbody>
+                    </table>
+                </div>
+                <div class="fm-edit-bar" id="fmEditBar" hidden>
+                    <button type="button" class="pd-mini fm-add-btn" id="fmBtnAdd">＋ Thêm công thức</button>
+                    <button type="button" class="pd-mini" id="fmBtnReset">↺ Mặc định</button>
+                </div>
+                </div>
+                <div class="fm-notice" id="fmNotice" role="status" aria-live="polite" hidden></div>
+            </section>
+
             <div hidden aria-hidden="true">
                 <span id="boardCount">0/100 kỳ</span>
                 <span id="boardStatus" role="status" aria-live="polite"></span>
@@ -589,6 +1323,22 @@ NN9-L
                     <button type="button" class="dialog-btn danger" id="btnClearToken">Xoá token</button>
                     <button type="button" class="dialog-btn" id="btnCloseToken">Đóng</button>
                     <button type="button" class="dialog-btn primary" id="btnSaveToken">Lưu &amp; nạp bảng</button>
+                </div>
+            </section>
+        </div>
+
+        <div class="dialog-backdrop" id="fmPwDialog" aria-hidden="true">
+            <section class="dialog" id="fmPwCard" role="dialog" aria-modal="true" aria-labelledby="fmPwTitle">
+                <h2 id="fmPwTitle">Mở khoá chỉnh sửa công thức</h2>
+                <p>Nhập mật khẩu quản trị để chỉnh sửa, thêm hoặc xoá các dòng trong bảng công thức.</p>
+                <div class="fm-pw-box">
+                    <input type="password" class="fm-pw-input" id="fmPwInput" inputmode="numeric" autocomplete="off" placeholder="Nhập mật khẩu...">
+                    <button type="button" class="dialog-btn" id="fmPwToggle" aria-label="Hiện hoặc ẩn mật khẩu">Hiện</button>
+                </div>
+                <div class="fm-pw-error" id="fmPwError" role="alert"></div>
+                <div class="dialog-actions">
+                    <button type="button" class="dialog-btn" id="fmPwCancel">Huỷ</button>
+                    <button type="button" class="dialog-btn primary" id="fmPwSubmit">Mở khoá</button>
                 </div>
             </section>
         </div>
@@ -801,6 +1551,7 @@ NN9-L
                     applyPatHighlight();
                     updateBoardCount();
                     try { pdOnBoardChanged(); } catch (e) {}
+                    try { scRender(); } catch (e) {}
                 }
             
                 function recountBoard() {
@@ -1108,6 +1859,10 @@ NN9-L
                                 renderAll();
                                 setStatus('Đã đồng bộ bảng từ Firebase.', 'ok');
                             }
+                        }
+
+                        if (data.formulas && typeof fmApplyRemote === 'function') {
+                            fmApplyRemote(data.formulas);
                         }
                     } finally {
                         applyingRemote = false;
@@ -2259,9 +3014,714 @@ NN9-L
                     setInterval(pdTick, 100);
                 }
             
+                // =====================================================================
+                // BẢNG CÔNG THỨC (khoá mặc định, mở sửa sau khi nhập đúng mật khẩu)
+                // =====================================================================
+                const FM_DEFAULT = ['NN4-N', 'NN5-L', 'NN6-N', 'LL6-L', 'NBB-N', 'LBB-L'];
+                const FM_PASSWORD = '123456';
+                const LS_FORMULAS = 'vn168_formulas_v1';
+
+                const fmPanel = document.getElementById('fmPanel');
+                const fmLockTag = document.getElementById('fmLockTag');
+                const fmBtnUnlock = document.getElementById('fmBtnUnlock');
+                const fmBtnSaveLock = document.getElementById('fmBtnSaveLock');
+                const fmHeadAct = document.getElementById('fmHeadAct');
+                const fmBody = document.getElementById('fmBody');
+                const fmEditBar = document.getElementById('fmEditBar');
+                const fmBtnAdd = document.getElementById('fmBtnAdd');
+                const fmBtnReset = document.getElementById('fmBtnReset');
+                const fmNotice = document.getElementById('fmNotice');
+                const fmCount = document.getElementById('fmCount');
+                const fmBtnCollapse = document.getElementById('fmBtnCollapse');
+                const scPanel = document.getElementById('scPanel');
+                const scSub = document.getElementById('scSub');
+                const scLast3 = document.getElementById('scLast3');
+                const scBody = document.getElementById('scBody');
+                const scSummary = document.getElementById('scSummary');
+                const LS_FM_COLLAPSED = 'vn168_fm_collapsed_v1';
+                const fmPwDialog = document.getElementById('fmPwDialog');
+                const fmPwCard = document.getElementById('fmPwCard');
+                const fmPwInput = document.getElementById('fmPwInput');
+                const fmPwToggle = document.getElementById('fmPwToggle');
+                const fmPwError = document.getElementById('fmPwError');
+                const fmPwCancel = document.getElementById('fmPwCancel');
+                const fmPwSubmit = document.getElementById('fmPwSubmit');
+
+                let fmItems = FM_DEFAULT.slice();
+                let fmUpdatedAt = 0;
+                let fmUnlocked = false;
+                let fmResetArmedUntil = 0;
+                let fmNoticeTimer = null;
+                let fmSyncTimer = null;
+
+                function fmParse(raw) {
+                    const s = String(raw == null ? '' : raw).trim();
+                    const idx = s.lastIndexOf('-');
+                    if (idx > 0 && idx < s.length - 1) {
+                        const pat = s.slice(0, idx).trim();
+                        const tgt = s.slice(idx + 1).trim();
+                        const up = tgt.toUpperCase();
+                        let kind = '';
+                        if (up === 'L' || up === 'LON' || up === 'LỚN' || up === 'B') kind = 'L';
+                        else if (up === 'N' || up === 'NHO' || up === 'NHỎ' || up === 'S') kind = 'N';
+                        return { full: s, pat: pat, tgt: tgt, kind: kind, hasSep: true };
+                    }
+                    return { full: s, pat: s, tgt: '', kind: '', hasSep: false };
+                }
+
+                function fmBadgeLabel(parsed, editable) {
+                    let base;
+                    if (parsed.kind === 'L') base = 'LỚN (L)';
+                    else if (parsed.kind === 'N') base = 'NHỎ (N)';
+                    else if (parsed.tgt) base = parsed.tgt;
+                    else base = '—';
+                    return editable ? (base + ' ⇄') : base;
+                }
+
+                function fmShowNotice(text) {
+                    if (fmNoticeTimer) clearTimeout(fmNoticeTimer);
+                    fmNotice.textContent = text;
+                    fmNotice.hidden = !text;
+                    if (text) {
+                        fmNoticeTimer = setTimeout(function () {
+                            fmNotice.hidden = true;
+                        }, 3200);
+                    }
+                }
+
+                function fmLoad() {
+                    try {
+                        const raw = JSON.parse(localStorage.getItem(LS_FORMULAS) || 'null');
+                        if (raw && Array.isArray(raw.items)) {
+                            fmItems = raw.items.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
+                            fmUpdatedAt = Number(raw.updatedAt || 0) || 0;
+                            if (!fmItems.length && !fmUpdatedAt) fmItems = FM_DEFAULT.slice();
+                            return;
+                        }
+                    } catch (e) {}
+                    fmItems = FM_DEFAULT.slice();
+                    fmUpdatedAt = 0;
+                }
+
+                function fmSyncFirebaseNow() {
+                    if (!fbDB || applyingRemote) return;
+                    const clean = fmItems.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
+                    fbDB.collection(FB_COLLECTION).doc(FB_DOC).set({
+                        formulas: {
+                            items: clean,
+                            updatedAt: fmUpdatedAt || Date.now()
+                        }
+                    }, { merge: true }).catch(function () {});
+                }
+
+                function fmSave(syncImmediate) {
+                    fmUpdatedAt = Date.now();
+                    try { scRender(); } catch (e) {}
+                    fmCount.textContent = String(fmItems.filter(function (x) { return String(x || '').trim(); }).length);
+                    const clean = fmItems.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
+                    try {
+                        localStorage.setItem(LS_FORMULAS, JSON.stringify({ items: clean, updatedAt: fmUpdatedAt }));
+                    } catch (e) {}
+                    if (fmSyncTimer) clearTimeout(fmSyncTimer);
+                    if (syncImmediate) fmSyncFirebaseNow();
+                    else fmSyncTimer = setTimeout(fmSyncFirebaseNow, 700);
+                }
+
+                function fmApplyRemote(remoteFormulas) {
+                    if (!remoteFormulas || !Array.isArray(remoteFormulas.items)) return;
+                    const remoteAt = Number(remoteFormulas.updatedAt || 0) || 0;
+                    if (remoteAt && remoteAt <= fmUpdatedAt) return;
+                    if (fmUnlocked) return;
+                    fmItems = remoteFormulas.items.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
+                    fmUpdatedAt = remoteAt || Date.now();
+                    try {
+                        localStorage.setItem(LS_FORMULAS, JSON.stringify({ items: fmItems, updatedAt: fmUpdatedAt }));
+                    } catch (e) {}
+                    fmRender();
+                }
+
+                function fmUpdateBadgeEl(el, raw, editable) {
+                    const p = fmParse(raw);
+                    if (p.kind) el.setAttribute('data-kind', p.kind);
+                    else el.removeAttribute('data-kind');
+                    el.textContent = fmBadgeLabel(p, editable);
+                }
+
+                function fmRender(focusIdx) {
+                    const u = fmUnlocked;
+                    fmCount.textContent = String(fmItems.filter(function (x) { return String(x || '').trim(); }).length);
+                    try { scRender(); } catch (e) {}
+                    fmPanel.setAttribute('data-unlocked', u ? 'true' : 'false');
+                    fmLockTag.setAttribute('data-unlocked', u ? 'true' : 'false');
+                    fmLockTag.textContent = u ? '🔓 Đang mở sửa' : '🔒 Đã khoá';
+                    fmBtnUnlock.hidden = u;
+                    fmBtnSaveLock.hidden = !u;
+                    fmHeadAct.hidden = !u;
+                    fmEditBar.hidden = !u;
+                    fmBtnReset.textContent = (Date.now() < fmResetArmedUntil) ? 'Bấm lần nữa để khôi phục' : '↺ Mặc định';
+                    fmBtnReset.classList.toggle('armed', Date.now() < fmResetArmedUntil);
+
+                    fmBody.textContent = '';
+                    if (!fmItems.length) {
+                        const tr = document.createElement('tr');
+                        const td = document.createElement('td');
+                        td.colSpan = u ? 4 : 3;
+                        td.className = 'fm-empty';
+                        td.textContent = u ? 'Chưa có công thức. Bấm “＋ Thêm công thức” để tạo mới.' : 'Chưa có công thức nào.';
+                        tr.appendChild(td);
+                        fmBody.appendChild(tr);
+                        return;
+                    }
+
+                    const frag = document.createDocumentFragment();
+                    let toFocus = null;
+
+                    for (let i = 0; i < fmItems.length; i++) {
+                        (function (idx) {
+                            const raw = fmItems[idx];
+                            const tr = document.createElement('tr');
+
+                            const tdIdx = document.createElement('td');
+                            tdIdx.className = 'fm-col-idx';
+                            tdIdx.textContent = String(idx + 1);
+                            tr.appendChild(tdIdx);
+
+                            const tdCode = document.createElement('td');
+                            tdCode.className = 'fm-col-code';
+
+                            const tdSide = document.createElement('td');
+                            tdSide.className = 'fm-col-side';
+
+                            if (u) {
+                                const inp = document.createElement('input');
+                                inp.type = 'text';
+                                inp.className = 'fm-input';
+                                inp.value = raw;
+                                inp.autocomplete = 'off';
+                                inp.spellcheck = false;
+                                inp.placeholder = 'VD: LBB-L, LBBN-L';
+                                inp.setAttribute('aria-label', 'Công thức dòng ' + (idx + 1));
+
+                                const badgeBtn = document.createElement('button');
+                                badgeBtn.type = 'button';
+                                badgeBtn.className = 'fm-badge fm-badge-btn';
+                                badgeBtn.title = 'Bấm để đổi nhanh LỚN (L) / NHỎ (N)';
+                                fmUpdateBadgeEl(badgeBtn, raw, true);
+
+                                inp.addEventListener('input', function () {
+                                    fmItems[idx] = inp.value;
+                                    fmUpdateBadgeEl(badgeBtn, inp.value, true);
+                                    fmSave(false);
+                                });
+                                inp.addEventListener('keydown', function (ev) {
+                                    if (ev.key === 'Enter') {
+                                        ev.preventDefault();
+                                        fmLockAndSave();
+                                    }
+                                });
+                                badgeBtn.addEventListener('click', function () {
+                                    const p = fmParse(fmItems[idx]);
+                                    const basePat = p.pat || 'CT' + (idx + 1);
+                                    const nextSide = p.kind === 'L' ? 'N' : 'L';
+                                    fmItems[idx] = basePat + '-' + nextSide;
+                                    inp.value = fmItems[idx];
+                                    fmUpdateBadgeEl(badgeBtn, fmItems[idx], true);
+                                    fmSave(false);
+                                    inp.focus();
+                                });
+
+                                tdCode.appendChild(inp);
+                                tdSide.appendChild(badgeBtn);
+                                if (focusIdx === idx) toFocus = inp;
+                            } else {
+                                const p = fmParse(raw);
+                                const wrap = document.createElement('span');
+                                wrap.className = 'fm-code-text';
+                                if (p.hasSep) {
+                                    const bPat = document.createElement('span');
+                                    bPat.textContent = p.pat;
+                                    const sep = document.createElement('span');
+                                    sep.className = 'fm-code-sep';
+                                    sep.textContent = '-';
+                                    const bTgt = document.createElement('span');
+                                    bTgt.className = 'fm-code-tgt';
+                                    if (p.kind) bTgt.setAttribute('data-kind', p.kind);
+                                    bTgt.textContent = p.tgt;
+                                    wrap.appendChild(bPat);
+                                    wrap.appendChild(sep);
+                                    wrap.appendChild(bTgt);
+                                } else {
+                                    wrap.textContent = p.full;
+                                }
+                                tdCode.appendChild(wrap);
+
+                                const badge = document.createElement('span');
+                                badge.className = 'fm-badge';
+                                fmUpdateBadgeEl(badge, raw, false);
+                                tdSide.appendChild(badge);
+
+                                tr.title = 'Đang khoá · Bấm nút “🔑 Sửa” và nhập mật khẩu để chỉnh sửa';
+                                tr.addEventListener('dblclick', openFmPwDialog);
+                                tr.addEventListener('click', function () {
+                                    fmBtnUnlock.classList.remove('fm-pulse');
+                                    void fmBtnUnlock.offsetWidth;
+                                    fmBtnUnlock.classList.add('fm-pulse');
+                                    setTimeout(function () { fmBtnUnlock.classList.remove('fm-pulse'); }, 650);
+                                });
+                            }
+
+                            tr.appendChild(tdCode);
+                            tr.appendChild(tdSide);
+
+                            if (u) {
+                                const tdAct = document.createElement('td');
+                                tdAct.className = 'fm-col-act';
+                                const delBtn = document.createElement('button');
+                                delBtn.type = 'button';
+                                delBtn.className = 'fm-del-btn';
+                                delBtn.textContent = '✕';
+                                delBtn.title = 'Xoá dòng ' + (idx + 1);
+                                delBtn.setAttribute('aria-label', 'Xoá dòng ' + (idx + 1));
+                                delBtn.addEventListener('click', function () {
+                                    fmItems.splice(idx, 1);
+                                    fmSave(true);
+                                    fmRender();
+                                });
+                                tdAct.appendChild(delBtn);
+                                tr.appendChild(tdAct);
+                            }
+
+                            frag.appendChild(tr);
+                        })(i);
+                    }
+
+                    fmBody.appendChild(frag);
+                    if (toFocus) {
+                        setTimeout(function () {
+                            toFocus.focus();
+                            const len = toFocus.value.length;
+                            try { toFocus.setSelectionRange(len, len); } catch (e) {}
+                        }, 0);
+                    }
+                }
+
+                function openFmPwDialog() {
+                    fmPwInput.type = 'password';
+                    fmPwToggle.textContent = 'Hiện';
+                    fmPwInput.value = '';
+                    fmPwError.textContent = '';
+                    fmPwCard.classList.remove('fm-shake');
+                    fmPwDialog.classList.add('open');
+                    fmPwDialog.setAttribute('aria-hidden', 'false');
+                    setTimeout(function () { fmPwInput.focus(); }, 0);
+                }
+
+                function closeFmPwDialog() {
+                    fmPwDialog.classList.remove('open');
+                    fmPwDialog.setAttribute('aria-hidden', 'true');
+                }
+
+                function submitFmPw() {
+                    const entered = String(fmPwInput.value || '').trim();
+                    if (entered === FM_PASSWORD) {
+                        closeFmPwDialog();
+                        fmUnlocked = true;
+                        fmResetArmedUntil = 0;
+                        fmShowNotice('');
+                        fmApplyCollapsed(false);
+                        fmRender(0);
+                    } else {
+                        fmPwError.textContent = 'Mật khẩu không đúng! Vui lòng kiểm tra lại.';
+                        fmPwCard.classList.remove('fm-shake');
+                        void fmPwCard.offsetWidth;
+                        fmPwCard.classList.add('fm-shake');
+                        fmPwInput.focus();
+                        fmPwInput.select();
+                    }
+                }
+
+                function fmLockAndSave() {
+                    fmItems = fmItems.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
+                    fmUnlocked = false;
+                    fmResetArmedUntil = 0;
+                    fmSave(true);
+                    fmRender();
+                    fmShowNotice('✓ Đã lưu & khoá bảng công thức.');
+                }
+
+                // =====================================================================
+                // DÒ CÔNG THỨC TỰ ĐỘNG THEO ĐỘ DÀI MẪU:
+                //   • Công thức có bao nhiêu ký tự phần MẪU thì tự lấy bấy nhiêu ô cuối của bảng 100 kỳ
+                //     (VD: LBB-L → xét 3 ô cuối; LBBN-L → xét 4 ô cuối; LLBBN-N → xét 5 ô cuối)
+                //   • Ký hiệu trong MẪU (đọc từ trái → phải = ô cũ → ô mới nhất):
+                //       N = Nhỏ (0–4) · L = Lớn (5–9) · 0–9 = đúng con số đó
+                //       BB / BBB = các vị trí B mang cùng một con số giống nhau (VD: 255 → NBB, 7552 → LBBN)
+                //       X / ? / * = ô bất kỳ
+                // =====================================================================
+                function scKind(d) { return d >= 5 ? 'L' : 'N'; }
+
+                function scMatchPattern(pat, slice) {
+                    const len = pat ? pat.length : 0;
+                    if (!len || !slice || slice.length !== len) return false;
+                    for (let j = 0; j < len; j++) {
+                        const c = String(pat[j]).toUpperCase();
+                        const d = slice[j].d;
+                        if (c === 'N') {
+                            if (!(d <= 4)) return false;
+                        } else if (c === 'L') {
+                            if (!(d >= 5)) return false;
+                        } else if (/^[0-9]$/.test(c)) {
+                            if (d !== Number(c)) return false;
+                        } else if (c === 'B' || c === 'X' || c === '?' || c === '*') {
+                            // kiểm tra nhóm B bên dưới
+                        } else {
+                            return false;
+                        }
+                    }
+
+                    // Gom các cụm B liền nhau (VD: LBBN -> [[1,2]], BBNBB -> [[0,1],[3,4]])
+                    // và các chữ B đứng cách nhau (VD: BNB -> [0,2])
+                    const bRuns = [];
+                    const singleBs = [];
+                    let r = 0;
+                    while (r < len) {
+                        if (String(pat[r]).toUpperCase() === 'B') {
+                            const run = [r];
+                            r++;
+                            while (r < len && String(pat[r]).toUpperCase() === 'B') {
+                                run.push(r);
+                                r++;
+                            }
+                            if (run.length >= 2) bRuns.push(run);
+                            else singleBs.push(run[0]);
+                        } else {
+                            r++;
+                        }
+                    }
+                    if (singleBs.length === 1 && bRuns.length === 0) return false;
+                    if (singleBs.length === 1 && bRuns.length > 0) bRuns[0].push(singleBs[0]);
+                    else if (singleBs.length >= 2) bRuns.push(singleBs);
+
+                    for (let g = 0; g < bRuns.length; g++) {
+                        const grp = bRuns[g];
+                        const sameDigit = slice[grp[0]].d;
+                        for (let m = 1; m < grp.length; m++) {
+                            if (slice[grp[m]].d !== sameDigit) return false;
+                        }
+                    }
+                    return true;
+                }
+
+                function scTokenLabel(ch) {
+                    return String(ch).toUpperCase();
+                }
+
+                function scAllDigits() {
+                    const out = [];
+                    for (let i = 0; i < cells.length; i++) {
+                        const v = String(cells[i].value == null ? '' : cells[i].value);
+                        if (/^[0-9]$/.test(v)) out.push({ i: i, d: Number(v) });
+                    }
+                    return out;
+                }
+
+                function scMakeBall(d, small) {
+                    const b = document.createElement('span');
+                    b.className = 'sc-ball' + (small ? ' sm' : '');
+                    b.setAttribute('data-kind', scKind(d));
+                    b.textContent = String(d);
+                    return b;
+                }
+
+                function scRenderHeaderBalls(list) {
+                    scLast3.textContent = '';
+                    const show = list.length > 6 ? list.slice(list.length - 6) : list;
+                    show.forEach(function (it, k) {
+                        if (k) {
+                            const a = document.createElement('span');
+                            a.className = 'sc-arrow';
+                            a.textContent = '›';
+                            scLast3.appendChild(a);
+                        }
+                        scLast3.appendChild(scMakeBall(it.d, false));
+                    });
+                }
+
+                function scRender() {
+                    if (!scBody || !cells || !cells.length) return;
+                    const all = scAllDigits();
+
+                    for (let i = 0; i < cells.length; i++) {
+                        const box = cells[i].valEl && cells[i].valEl.parentElement;
+                        if (box) box.classList.remove('scan-hl');
+                    }
+
+                    scBody.textContent = '';
+                    scSummary.textContent = '';
+
+                    // Xác định độ dài mẫu của từng công thức trong bảng
+                    const parsedFormulas = [];
+                    let minLen = Infinity;
+                    let maxLen = 0;
+                    for (let k = 0; k < fmItems.length; k++) {
+                        const p = fmParse(fmItems[k]);
+                        if (!p.full) continue;
+                        const pat = String(p.pat || '').replace(/\s+/g, '').toUpperCase();
+                        if (!pat.length) continue;
+                        parsedFormulas.push({ idx: k, p: p, pat: pat, len: pat.length });
+                        if (pat.length < minLen) minLen = pat.length;
+                        if (pat.length > maxLen) maxLen = pat.length;
+                    }
+                    if (!parsedFormulas.length) {
+                        minLen = 3;
+                        maxLen = 3;
+                    }
+
+                    if (!all.length || all.length < minLen) {
+                        scRenderHeaderBalls(all);
+                        scPanel.setAttribute('data-state', 'empty');
+                        scSub.textContent = 'Cần ít nhất ' + minLen + ' ô kết quả để bắt đầu dò';
+                        const tr = document.createElement('tr');
+                        const td = document.createElement('td');
+                        td.colSpan = 4;
+                        td.className = 'sc-empty';
+                        td.textContent = 'Bảng chưa đủ dữ liệu (đang có ' + all.length + '/' + minLen + ' ô). Hãy nạp kết quả vào bảng 100 kỳ.';
+                        tr.appendChild(td);
+                        scBody.appendChild(tr);
+                        return;
+                    }
+
+                    // Kiểm tra từng công thức với đúng số ô cuối tương ứng độ dài công thức đó
+                    const hits = [];
+                    for (let k = 0; k < parsedFormulas.length; k++) {
+                        const item = parsedFormulas[k];
+                        if (all.length < item.len) continue;
+                        const slice = all.slice(all.length - item.len);
+                        if (scMatchPattern(item.pat, slice)) {
+                            hits.push({ idx: item.idx, p: item.p, pat: item.pat, len: item.len, slice: slice });
+                        }
+                    }
+
+                    if (!hits.length) {
+                        const watchN = Math.min(all.length, maxLen);
+                        const tail = all.slice(all.length - watchN);
+                        tail.forEach(function (it) {
+                            const box = cells[it.i].valEl && cells[it.i].valEl.parentElement;
+                            if (box) box.classList.add('scan-hl');
+                        });
+                        scRenderHeaderBalls(tail);
+                        scPanel.setAttribute('data-state', 'miss');
+                        const rangeLabel = (minLen === maxLen)
+                            ? (maxLen + ' ô cuối')
+                            : (minLen + '–' + maxLen + ' ô cuối');
+                        const lnStr = tail.map(function (it) { return scKind(it.d); }).join('');
+                        scSub.textContent = 'Xét ' + rangeLabel + ': ' + tail.map(function (it) { return it.d; }).join(' · ') + ' (' + lnStr + ')';
+
+                        const tr = document.createElement('tr');
+                        const td = document.createElement('td');
+                        td.colSpan = 4;
+                        td.className = 'sc-empty';
+                        td.textContent = 'Chưa có công thức nào khớp với ' + rangeLabel + ' (' + tail.map(function (it) { return it.d; }).join('-') + '). Chờ kỳ tiếp theo…';
+                        tr.appendChild(td);
+                        scBody.appendChild(tr);
+                        return;
+                    }
+
+                    // Có công thức khớp: tô sáng đúng các ô đang tham gia khớp trên bảng 100 kỳ
+                    let hitMinLen = Infinity;
+                    let hitMaxLen = 0;
+                    hits.forEach(function (h) {
+                        if (h.len < hitMinLen) hitMinLen = h.len;
+                        if (h.len > hitMaxLen) hitMaxLen = h.len;
+                        h.slice.forEach(function (it) {
+                            const box = cells[it.i].valEl && cells[it.i].valEl.parentElement;
+                            if (box) box.classList.add('scan-hl');
+                        });
+                    });
+                    const hitTail = all.slice(all.length - hitMaxLen);
+                    scRenderHeaderBalls(hitTail);
+                    const hitRangeLabel = (hitMinLen === hitMaxLen)
+                        ? (hitMaxLen + ' ô cuối')
+                        : (hitMinLen + '–' + hitMaxLen + ' ô cuối');
+                    scSub.textContent = 'Khớp trên ' + hitRangeLabel + ': ' + hitTail.map(function (it) { return it.d; }).join(' · ');
+
+                    scPanel.setAttribute('data-state', 'hit');
+                    const frag = document.createDocumentFragment();
+                    let cntL = 0, cntN = 0;
+
+                    hits.forEach(function (h) {
+                        if (h.p.kind === 'L') cntL++;
+                        else if (h.p.kind === 'N') cntN++;
+
+                        const tr = document.createElement('tr');
+                        tr.className = 'sc-row';
+
+                        const tdIdx = document.createElement('td');
+                        tdIdx.className = 'sc-col-idx';
+                        tdIdx.textContent = String(h.idx + 1);
+
+                        const tdCode = document.createElement('td');
+                        tdCode.className = 'sc-col-code';
+                        const wrap = document.createElement('span');
+                        wrap.className = 'fm-code-text';
+                        const sPat = document.createElement('span');
+                        sPat.textContent = h.p.pat;
+                        const sep = document.createElement('span');
+                        sep.className = 'fm-code-sep';
+                        sep.textContent = '-';
+                        const tgt = document.createElement('span');
+                        tgt.className = 'fm-code-tgt';
+                        if (h.p.kind) tgt.setAttribute('data-kind', h.p.kind);
+                        tgt.textContent = h.p.tgt;
+                        wrap.appendChild(sPat); wrap.appendChild(sep); wrap.appendChild(tgt);
+                        tdCode.appendChild(wrap);
+
+                        const tdCells = document.createElement('td');
+                        tdCells.className = 'sc-col-cells';
+                        const cw = document.createElement('span');
+                        cw.className = 'sc-cells';
+                        if (h.len >= 4) cw.setAttribute('data-many', 'true');
+                        for (let j = 0; j < h.len; j++) {
+                            const c = document.createElement('span');
+                            c.className = 'sc-cell';
+                            const tag = document.createElement('span');
+                            tag.className = 'sc-cell-tag';
+                            const tok = scTokenLabel(h.pat[j]);
+                            tag.setAttribute('data-tok', tok);
+                            if (tok === 'B') tag.title = 'BB: các số giống nhau';
+                            tag.textContent = tok;
+                            c.appendChild(tag);
+                            c.appendChild(scMakeBall(h.slice[j].d, true));
+                            cw.appendChild(c);
+                        }
+                        tdCells.appendChild(cw);
+
+                        const tdSide = document.createElement('td');
+                        tdSide.className = 'sc-col-side';
+                        const hint = document.createElement('span');
+                        hint.className = 'sc-hint';
+                        if (h.p.kind) hint.setAttribute('data-kind', h.p.kind);
+                        hint.textContent = h.p.kind === 'L' ? 'LỚN (L)' : (h.p.kind === 'N' ? 'NHỎ (N)' : (h.p.tgt || '—'));
+                        tdSide.appendChild(hint);
+
+                        tr.appendChild(tdIdx);
+                        tr.appendChild(tdCode);
+                        tr.appendChild(tdCells);
+                        tr.appendChild(tdSide);
+                        frag.appendChild(tr);
+                    });
+                    scBody.appendChild(frag);
+
+                    const pill = function (text, kind, cls) {
+                        const s = document.createElement('span');
+                        s.className = 'sc-pill' + (cls ? ' ' + cls : '');
+                        if (kind) s.setAttribute('data-kind', kind);
+                        s.textContent = text;
+                        scSummary.appendChild(s);
+                    };
+                    pill('Khớp ' + hits.length + ' công thức');
+                    if (cntL) pill('LỚN × ' + cntL, 'L');
+                    if (cntN) pill('NHỎ × ' + cntN, 'N');
+                    if (cntL && cntN) pill('⚠ Mâu thuẫn LỚN / NHỎ', '', 'warn');
+                }
+
+                function fmApplyCollapsed(collapsed) {
+                    fmPanel.setAttribute('data-collapsed', collapsed ? 'true' : 'false');
+                    fmBtnCollapse.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                    try { localStorage.setItem(LS_FM_COLLAPSED, collapsed ? '1' : '0'); } catch (e) {}
+                }
+
+                function fmInitCollapse() {
+                    // Bình thường thu gọn bảng công thức (nằm dưới khung "Kỳ đang chạy")
+                    let collapsed = true;
+                    try {
+                        const v = localStorage.getItem(LS_FM_COLLAPSED);
+                        collapsed = (v === null) ? true : (v === '1');
+                    } catch (e) {}
+                    fmApplyCollapsed(collapsed);
+                    fmBtnCollapse.addEventListener('click', function () {
+                        const next = fmPanel.getAttribute('data-collapsed') !== 'true';
+                        fmApplyCollapsed(next);
+                        // Bấm vào để mở ra sửa: đang khoá thì hỏi mật khẩu ngay
+                        if (!next && !fmUnlocked) openFmPwDialog();
+                    });
+                    // Bấm ra ngoài khung: tự lưu, khoá lại và thu gọn như cũ
+                    document.addEventListener('pointerdown', function (ev) {
+                        if (!fmUnlocked) return;
+                        if (fmPwDialog && fmPwDialog.classList.contains('open')) return;
+                        if (fmPanel.contains(ev.target)) return;
+                        fmLockAndSave();
+                        fmApplyCollapsed(true);
+                    });
+                }
+
+                function fmInit() {
+                    fmInitCollapse();
+                    fmLoad();
+                    fmRender();
+
+                    fmBtnUnlock.addEventListener('click', openFmPwDialog);
+                    fmBtnSaveLock.addEventListener('click', fmLockAndSave);
+                    fmPwCancel.addEventListener('click', closeFmPwDialog);
+                    fmPwSubmit.addEventListener('click', submitFmPw);
+                    fmPwToggle.addEventListener('click', function () {
+                        const isPw = fmPwInput.type === 'password';
+                        fmPwInput.type = isPw ? 'text' : 'password';
+                        fmPwToggle.textContent = isPw ? 'Ẩn' : 'Hiện';
+                        fmPwInput.focus();
+                    });
+                    fmPwInput.addEventListener('keydown', function (ev) {
+                        if (ev.key === 'Enter') {
+                            ev.preventDefault();
+                            submitFmPw();
+                        }
+                    });
+                    fmPwDialog.addEventListener('click', function (ev) {
+                        if (ev.target === fmPwDialog) closeFmPwDialog();
+                    });
+                    document.addEventListener('keydown', function (ev) {
+                        if (ev.key === 'Escape' && fmPwDialog.classList.contains('open')) closeFmPwDialog();
+                    });
+
+                    fmBtnAdd.addEventListener('click', function () {
+                        if (!fmUnlocked) return;
+                        fmItems.push('');
+                        fmRender(fmItems.length - 1);
+                    });
+
+                    fmBtnReset.addEventListener('click', function () {
+                        if (!fmUnlocked) return;
+                        const now = Date.now();
+                        if (now < fmResetArmedUntil) {
+                            fmItems = FM_DEFAULT.slice();
+                            fmResetArmedUntil = 0;
+                            fmSave(true);
+                            fmRender();
+                            fmShowNotice('↺ Đã khôi phục 6 công thức mặc định.');
+                        } else {
+                            fmResetArmedUntil = now + 3000;
+                            fmBtnReset.textContent = 'Bấm lần nữa để khôi phục';
+                            fmBtnReset.classList.add('armed');
+                            setTimeout(function () {
+                                if (fmUnlocked && Date.now() >= fmResetArmedUntil) {
+                                    fmBtnReset.textContent = '↺ Mặc định';
+                                    fmBtnReset.classList.remove('armed');
+                                }
+                            }, 3050);
+                        }
+                    });
+
+                    window.addEventListener('storage', function (ev) {
+                        if (ev.key !== LS_FORMULAS || fmUnlocked) return;
+                        fmLoad();
+                        fmRender();
+                    });
+                }
+
                 initGrid();
                 loadToken();
                 const hasLocalBoard = loadBoardLocal();
+                fmInit();
                 pdInit();
                 startRealtimeSync();
                 if (hasLocalBoard) setStatus('Đã mở bảng đã lưu · đang kiểm tra kết quả mới…');
@@ -2276,9 +3736,6 @@ NN9-L
                     if (getToken() && getRefreshToken()) ensureFreshToken(120000).catch(function () {});
                 }, 30000);
             })();
-        </script>
-        <script>
-            (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5860eb5fa9c0865',t:'MTc5NDMyNDE5Ng=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5860eb5fa9c0865',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
         </script>
     </body>
 
