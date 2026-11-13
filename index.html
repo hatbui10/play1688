@@ -133,14 +133,52 @@
                 pointer-events: none;
                 user-select: none;
             }
-            /* Màu duy nhất được giữ lại: nhóm B nằm giữa hai loại A. */
-            .grid-cell.pat-hl {
+            /* Tô màu bảng — xem applyRunHighlight(): NNN / LLL ở hai đầu (đúng 3 ô) tô tím (màu nút NHỎ), các NN / LL nằm giữa tô vàng */
+            .grid-cell.run-pair {
                 border-color: #f59e0b !important;
                 background: linear-gradient(180deg,#fef3c7 0%,#fde68a 45%,#fbbf24 100%) !important;
                 box-shadow: 0 0 6px rgba(251,191,36,.55);
             }
-            .grid-cell.pat-hl .val-input { color: #451a03 !important; }
-            .grid-cell.pat-hl .stt-label { color: #78350f !important; }
+            .grid-cell.run-pair .val-input { color: #451a03 !important; }
+            .grid-cell.run-pair .stt-label { color: #78350f !important; }
+            .grid-cell.run-triple {
+                border-color: #a5b4fc !important;
+                background: linear-gradient(180deg,#6f72f2 0%,#3f43d8 45%,#1F06AC 100%) !important;
+                box-shadow: 0 0 6px rgba(99,102,241,.7);
+            }
+            .grid-cell.run-triple .val-input { color: #fff !important; }
+            .grid-cell.run-triple .stt-label { color: #eef0ff !important; }
+            /* Bo tròn hai đầu mỗi nhóm / mỗi cặp: hai nhóm cùng màu đứng sát nhau (VD: NN rồi LL) vẫn tách bạch */
+            .grid-cell.run-first { border-top-left-radius: 11px; border-bottom-left-radius: 11px; }
+            .grid-cell.run-last { border-top-right-radius: 11px; border-bottom-right-radius: 11px; }
+            /* 4 ô cuối khi đủ điều kiện cược (2 cặp cùng loại): phát sáng — ô NHỎ tím (màu nút NHỎ), ô LỚN vàng */
+            .grid-cell.bet-n,
+            .grid-cell.bet-l { position: relative; z-index: 1; border-color: #fff !important; }
+            .grid-cell.bet-n {
+                background: linear-gradient(180deg,#8b8dff 0%,#4a4ee6 45%,#2410b8 100%) !important;
+                box-shadow: 0 0 0 1px #fff, 0 0 9px 2px rgba(139,141,255,.95);
+                animation: betGlowN 1s ease-in-out infinite;
+            }
+            .grid-cell.bet-n .val-input,
+            .grid-cell.bet-n .stt-label { color: #fff !important; text-shadow: 0 1px 1px rgba(10,4,48,.75); }
+            .grid-cell.bet-l {
+                background: linear-gradient(180deg,#fffbe0 0%,#ffe140 45%,#ffb000 100%) !important;
+                box-shadow: 0 0 0 1px #fff, 0 0 9px 2px rgba(255,205,40,.95);
+                animation: betGlowL 1s ease-in-out infinite;
+            }
+            .grid-cell.bet-l .val-input { color: #3b1702 !important; }
+            .grid-cell.bet-l .stt-label { color: #78350f !important; }
+            @keyframes betGlowN {
+                0%, 100% { box-shadow: 0 0 0 1px #fff, 0 0 5px 1px rgba(139,141,255,.75); filter: brightness(1); }
+                50% { box-shadow: 0 0 0 1px #fff, 0 0 15px 5px rgba(139,141,255,1); filter: brightness(1.25); }
+            }
+            @keyframes betGlowL {
+                0%, 100% { box-shadow: 0 0 0 1px #fff, 0 0 5px 1px rgba(255,205,40,.7); filter: brightness(1); }
+                50% { box-shadow: 0 0 0 1px #fff, 0 0 15px 5px rgba(255,205,40,1); filter: brightness(1.2); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .grid-cell.bet-n, .grid-cell.bet-l { animation: none; }
+            }
             .board-status {
                 min-height: 16px;
                 margin-top: 8px;
@@ -599,21 +637,6 @@
             .pd-result-text { flex: 1 1 auto; min-width: 0; }
             .pd-result-main { color: #f1f5f9; font-size: 12px; font-weight: 700; line-height: 1.35; }
             .pd-result-sub { margin-top: 2px; color: var(--muted); font-size: 10px; line-height: 1.45; }
-            .pd-fm-tag {
-                display: inline-flex;
-                align-items: center;
-                margin-left: 3px;
-                padding: 1px 6px;
-                border-radius: 5px;
-                border: 1px solid rgba(250, 204, 21, .52);
-                background: rgba(250, 204, 21, .16);
-                color: #fef08a;
-                font-family: var(--font-display);
-                font-size: 10px;
-                font-weight: 800;
-                letter-spacing: .05em;
-                line-height: 1.25;
-            }
             .pd-verdict { flex: 0 0 auto; font-size: 18px; font-weight: 800; white-space: nowrap; }
             .pd-result[data-state="win"] {
                 border-color: #15803d;
@@ -717,348 +740,7 @@
             .pd-mini:hover { filter: brightness(1.18); }
             .pd-mini:active { transform: translateY(1px); }
             .pd-mini.armed { border-color: #b91c1c; background: #7f1d1d; color: #fff; }
-            /* ===== Bảng công thức (khoá bằng mật khẩu) ===== */
-            .formula-panel {
-                width: 0;
-                min-width: 100%;
-                margin-top: 8px;
-                margin-bottom: 0;
-                padding: 10px;
-                border-radius: 10px;
-                background: linear-gradient(180deg, #1b2230 0%, #171a21 100%);
-                box-shadow: inset 0 0 0 1px #2d3748, 0 6px 18px rgba(0, 0, 0, .35);
-            }
-            .formula-panel[data-unlocked="true"] {
-                box-shadow: inset 0 0 0 1px rgba(56, 189, 248, .55), 0 6px 20px rgba(14, 165, 233, .16);
-            }
-            .fm-head {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 8px;
-                margin-bottom: 8px;
-            }
-            .fm-title-wrap {
-                display: flex;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 6px;
-                min-width: 0;
-            }
-            .fm-title {
-                font-family: var(--font-display);
-                color: #f8fafc;
-                font-size: 12px;
-                font-weight: 800;
-                letter-spacing: .06em;
-                text-transform: uppercase;
-            }
-            .fm-lock-tag {
-                display: inline-flex;
-                align-items: center;
-                gap: 4px;
-                padding: 2px 7px;
-                border-radius: 999px;
-                border: 1px solid #475569;
-                background: #1e293b;
-                color: #cbd5e1;
-                font-size: 9.5px;
-                font-weight: 700;
-                line-height: 1.3;
-            }
-            .fm-lock-tag[data-unlocked="true"] {
-                border-color: rgba(34, 197, 94, .6);
-                background: rgba(21, 128, 61, .28);
-                color: #86efac;
-            }
-            .fm-btn {
-                flex-shrink: 0;
-                min-height: 28px;
-                padding: 4px 10px;
-                border-radius: 7px;
-                border: 1px solid #475569;
-                background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
-                color: #f1f5f9;
-                cursor: pointer;
-                font-size: 10.5px;
-                font-weight: 700;
-                transition: filter .15s ease, transform .08s ease, box-shadow .15s ease;
-            }
-            .fm-btn:hover { filter: brightness(1.14); }
-            .fm-btn:active { transform: translateY(1px); }
-            .fm-btn.fm-pulse {
-                border-color: #fbbf24;
-                box-shadow: 0 0 0 3px rgba(251, 191, 36, .32);
-            }
-            .fm-btn-save {
-                border-color: #22c55e;
-                background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
-                color: #ffffff;
-                box-shadow: 0 2px 8px rgba(22, 163, 74, .35);
-            }
-            .fm-table-wrap {
-                overflow: hidden;
-                border-radius: 8px;
-                border: 1px solid #2d3748;
-                background: #131720;
-            }
-            .fm-table {
-                width: 100%;
-                border-collapse: collapse;
-                table-layout: fixed;
-                font-size: 12px;
-            }
-            .fm-table th {
-                padding: 6px 6px;
-                background: #1e2533;
-                color: #94a3b8;
-                font-size: 9.5px;
-                font-weight: 800;
-                letter-spacing: .06em;
-                text-transform: uppercase;
-                border-bottom: 1px solid #2d3748;
-                text-align: left;
-            }
-            .fm-table td {
-                padding: 5px 6px;
-                border-bottom: 1px solid #222938;
-                vertical-align: middle;
-            }
-            .fm-table tbody tr:last-child td { border-bottom: 0; }
-            .fm-table tbody tr:nth-child(even) { background: rgba(255, 255, 255, .018); }
-            .fm-table tbody tr:hover { background: rgba(96, 165, 250, .06); }
-            .fm-col-idx { width: 34px; text-align: center !important; color: #64748b; font-weight: 700; font-variant-numeric: tabular-nums; }
-            .fm-col-code { width: auto; }
-            .fm-col-side { width: 88px; text-align: center !important; }
-            .fm-col-act { width: 34px; text-align: center !important; }
-            .fm-code-text {
-                display: inline-flex;
-                align-items: center;
-                gap: 1px;
-                font-family: var(--font-display);
-                font-size: 13.5px;
-                font-weight: 800;
-                letter-spacing: .06em;
-                color: #f1f5f9;
-            }
-            .fm-code-sep { color: #64748b; margin: 0 2px; font-weight: 700; }
-            .fm-code-tgt[data-kind="L"] { color: #fde047; }
-            .fm-code-tgt[data-kind="N"] { color: #a5b4fc; }
-            .fm-badge {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                gap: 3px;
-                min-width: 66px;
-                padding: 3px 8px;
-                border-radius: 999px;
-                border: 1px solid #334155;
-                background: #1e293b;
-                color: #cbd5e1;
-                font-family: var(--font-display);
-                font-size: 10.5px;
-                font-weight: 800;
-                line-height: 1.2;
-                letter-spacing: .05em;
-            }
-            .fm-badge[data-kind="L"] {
-                border-color: rgba(251, 191, 36, .65);
-                background: linear-gradient(180deg, rgba(251, 191, 36, .28) 0%, rgba(217, 119, 6, .22) 100%);
-                color: #fef08a;
-                text-shadow: 0 1px 2px rgba(0, 0, 0, .55);
-            }
-            .fm-badge[data-kind="N"] {
-                border-color: rgba(129, 140, 248, .7);
-                background: linear-gradient(180deg, rgba(31, 6, 172, .55) 0%, rgba(31, 6, 172, .28) 100%);
-                color: #dfe4ff;
-                text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
-            }
-            .fm-badge-btn { cursor: pointer; }
-            .fm-badge-btn:hover { filter: brightness(1.16); }
-            .fm-input {
-                width: 100%;
-                height: 28px;
-                padding: 3px 8px;
-                border: 1px solid #475569;
-                border-radius: 6px;
-                outline: none;
-                background: #0b1220;
-                color: #f8fafc;
-                font-family: var(--font-display);
-                font-size: 13px;
-                font-weight: 800;
-                letter-spacing: .05em;
-            }
-            .fm-input:focus {
-                border-color: #818cf8;
-                box-shadow: 0 0 0 2px rgba(31, 6, 172, .4);
-            }
-            .fm-del-btn {
-                width: 24px;
-                height: 24px;
-                padding: 0;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                border: 1px solid rgba(239, 68, 68, .45);
-                border-radius: 6px;
-                background: rgba(127, 29, 29, .45);
-                color: #fca5a5;
-                cursor: pointer;
-                font-size: 11px;
-                font-weight: 800;
-                line-height: 1;
-            }
-            .fm-del-btn:hover { background: #991b1b; color: #fff; }
-            .fm-empty {
-                padding: 10px;
-                text-align: center;
-                color: #64748b;
-                font-size: 11px;
-            }
-            .fm-legend {
-                margin-top: 8px;
-                padding: 6px 8px;
-                border: 1px dashed #334155;
-                border-radius: 8px;
-                color: #94a3b8;
-                font-size: 10.5px;
-                line-height: 1.7;
-            }
-            .fm-legend b {
-                color: #e2e8f0;
-                font-family: var(--font-display);
-                font-weight: 800;
-                letter-spacing: .04em;
-            }
-            .fm-legend b.k-c { color: #5eead4; }
-            .fm-legend b.k-e { color: #fdba74; }
-            .fm-edit-bar {
-                margin-top: 8px;
-                display: flex;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 6px;
-            }
-            .fm-add-btn {
-                border-color: #4f46e5;
-                background: rgba(31, 6, 172, .35);
-                color: #c7d2fe;
-            }
-            .fm-notice {
-                margin-top: 6px;
-                color: #86efac;
-                font-size: 10.5px;
-                line-height: 1.35;
-                text-align: center;
-            }
-            .fm-pw-box {
-                position: relative;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-            }
-            .fm-pw-input {
-                flex: 1 1 auto;
-                min-width: 0;
-                height: 40px;
-                padding: 8px 12px;
-                border: 1px solid #52627a;
-                border-radius: 8px;
-                outline: none;
-                background: #0b1220;
-                color: #f8fafc;
-                font-size: 16px; /* ≥16px để iPhone không tự phóng to trang khi chạm vào ô */
-                font-weight: 700;
-                letter-spacing: .12em;
-            }
-            /* Che ký tự bằng CSS thay cho type="password": trình duyệt không coi đây là ô mật khẩu
-               nên không bật thông báo của Trình quản lý mật khẩu Google (xem ghi chú trong script). */
-            .fm-pw-input.fm-masked { -webkit-text-security: disc; }
-            .fm-pw-input::placeholder {
-                color: #64748b;
-                font-size: 14px;
-                font-weight: 600;
-                letter-spacing: .02em;
-                opacity: 1;
-            }
-            .fm-pw-input:focus {
-                border-color: #60a5fa;
-                box-shadow: 0 0 0 2px rgba(96, 165, 250, .25);
-            }
-            .fm-pw-box .dialog-btn {
-                flex: 0 0 auto;
-                align-self: stretch;
-                min-width: 56px;
-            }
-            #fmPwCard { max-width: 380px; }
-            .fm-pw-error {
-                min-height: 16px;
-                margin-top: 7px;
-                color: #fca5a5;
-                font-size: 11px;
-                font-weight: 700;
-            }
-            .dialog-backdrop.open > .dialog.fm-shake { animation: fmShake .32s ease; }
-            @keyframes fmShake {
-                0%, 100% { transform: translateX(0); }
-                22% { transform: translateX(-6px); }
-                45% { transform: translateX(6px); }
-                70% { transform: translateX(-4px); }
-            }
-
-            /* ===== Thu / mở bảng công thức ===== */
-            .fm-collapse-btn {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                padding: 2px 4px 2px 0;
-                border: 0;
-                background: transparent;
-                color: inherit;
-                cursor: pointer;
-            }
-            .fm-collapse-btn:hover .fm-title { color: #fde68a; }
-            .fm-chev {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 18px;
-                height: 18px;
-                border-radius: 5px;
-                background: #263041;
-                color: #cbd5e1;
-                font-style: normal;
-                font-size: 11px;
-                line-height: 1;
-                transition: transform .2s ease;
-            }
-            .formula-panel[data-collapsed="true"] .fm-chev { transform: rotate(-90deg); }
-            .fm-count {
-                min-width: 20px;
-                padding: 1px 6px;
-                border-radius: 999px;
-                background: rgba(250, 204, 21, .16);
-                border: 1px solid rgba(250, 204, 21, .4);
-                color: #fde68a;
-                font-size: 9.5px;
-                font-weight: 800;
-                line-height: 1.35;
-                text-align: center;
-            }
-            .formula-panel[data-collapsed="true"] .fm-collapse { display: none; }
-            .formula-panel[data-collapsed="true"] .fm-head { margin-bottom: 0; }
-            .formula-panel[data-unlocked="false"] .fm-head { cursor: pointer; }
-            .fm-table-wrap {
-                max-height: 352px;   /* đủ chỗ cho 8 dòng khi đang mở sửa; nhiều hơn thì cuộn bên trong */
-                overflow-y: auto !important;
-                overscroll-behavior: contain;
-                scrollbar-width: thin;
-                scrollbar-color: #475569 transparent;
-            }
-            .fm-table thead th { position: sticky; top: 0; z-index: 1; }
-
-            /* ===== Khung kết quả dò ===== */
+            /* ===== Khung tín hiệu cược: 4 ô cuối của bảng ===== */
             .scan-panel {
                 width: 0;
                 min-width: 100%;
@@ -1079,10 +761,12 @@
                 align-items: center;
                 justify-content: space-between;
                 gap: 8px;
-                margin-bottom: 8px;
             }
-            .sc-title-wrap { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+            .sc-title-wrap { display: flex; flex-direction: column; flex: 1 1 auto; gap: 5px; min-width: 0; }
+            .sc-line { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
             .sc-title {
+                flex: 0 0 auto;
+                white-space: nowrap;
                 font-family: var(--font-display);
                 color: #f8fafc;
                 font-size: 12px;
@@ -1090,19 +774,19 @@
                 letter-spacing: .06em;
                 text-transform: uppercase;
             }
-            .sc-sub { color: #94a3b8; font-size: 9.5px; font-weight: 600; }
-            .sc-last3 { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 3px; flex-shrink: 0; max-width: 56%; }
-            .sc-arrow { color: #64748b; font-size: 10px; margin: 0; }
+            .sc-sub { flex: 1 1 auto; min-width: 0; overflow: hidden; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: .06em; white-space: nowrap; text-overflow: ellipsis; }
+            .sc-last { display: flex; align-items: center; gap: 3px; min-height: 22px; }
+            .sc-arrow { color: #64748b; font-size: 11px; margin: 0 2px; }
             .sc-ball {
                 position: relative;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                width: 25px;
-                height: 25px;
+                width: 22px;
+                height: 22px;
                 border-radius: 50%;
                 font-family: var(--font-display);
-                font-size: 13.5px;
+                font-size: 12.5px;
                 font-weight: 800;
                 line-height: 1;
                 color: #fff;
@@ -1112,78 +796,11 @@
             }
             .sc-ball[data-kind="L"] { background: radial-gradient(circle at 35% 28%, #fff3b0 0%, #facc15 32%, #d97706 100%); color: #451a03; text-shadow: 0 1px 0 rgba(255,255,255,.4); }
             .sc-ball[data-kind="N"] { background: radial-gradient(circle at 35% 28%, #ffffff 0%, #c7d2fe 30%, #6d7cff 62%, #1F06AC 100%); color: #150847; text-shadow: 0 1px 0 rgba(255,255,255,.55); }
-            .sc-ball.sm { width: 21px; height: 21px; font-size: 11.5px; }
-            .sc-cells { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 3px; }
-            .sc-cells[data-many="true"] .sc-ball.sm { width: 18px; height: 18px; font-size: 10.5px; }
-            .sc-cells[data-many="true"] .sc-cell-tag { min-width: 14px; padding: 0 2px; font-size: 7.5px; }
-            .sc-cell { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
-            .sc-cell-tag {
-                min-width: 16px;
-                padding: 0 3px;
-                border-radius: 4px;
-                background: #263041;
-                color: #cbd5e1;
-                font-size: 8.5px;
-                font-weight: 800;
-                line-height: 1.4;
-                text-align: center;
-            }
-            .sc-cell-tag[data-tok="B"] {
-                background: rgba(168, 85, 247, .3);
-                border: 1px solid rgba(216, 180, 254, .6);
-                color: #f3e8ff;
-                line-height: 1.25;
-            }
-            /* C = số chẵn · E = số lẻ */
-            .sc-cell-tag[data-tok="C"] {
-                background: rgba(20, 184, 166, .28);
-                border: 1px solid rgba(94, 234, 212, .55);
-                color: #ccfbf1;
-                line-height: 1.25;
-            }
-            .sc-cell-tag[data-tok="E"] {
-                background: rgba(249, 115, 22, .28);
-                border: 1px solid rgba(253, 186, 116, .6);
-                color: #ffedd5;
-                line-height: 1.25;
-            }
-            .sc-table-wrap {
-                max-height: 232px;
-                overflow-y: auto;
-                overscroll-behavior: contain;
-                border-radius: 8px;
-                border: 1px solid #2f2d44;
-                background: #12141c;
-                scrollbar-width: thin;
-                scrollbar-color: #475569 transparent;
-            }
-            .sc-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
-            .sc-table th {
-                position: sticky;
-                top: 0;
-                z-index: 1;
-                padding: 6px;
-                background: #1f2133;
-                color: #a5b4fc;
-                font-size: 9.5px;
-                font-weight: 800;
-                letter-spacing: .06em;
-                text-transform: uppercase;
-                border-bottom: 1px solid #2f2d44;
-                text-align: left;
-            }
-            .sc-table td { padding: 6px; border-bottom: 1px solid #22243a; vertical-align: middle; }
-            .sc-table tbody tr:last-child td { border-bottom: 0; }
-            .sc-table tbody tr.sc-row { animation: scRowIn .35s ease both; }
-            @keyframes scRowIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
-            .sc-col-idx { width: 28px; text-align: center !important; color: #64748b; font-weight: 700; }
-            .sc-col-code { width: auto; }
-            .sc-col-cells { width: 118px; text-align: center !important; }
-            .sc-col-side { width: 88px; text-align: center !important; }
-            .sc-empty { padding: 12px 8px !important; text-align: center; color: #7c8aa3; font-size: 11px; line-height: 1.45; }
+            .sc-ball:not([data-kind]) { color: #64748b; background: #1e293b; box-shadow: inset 0 0 0 1px #334155; text-shadow: none; }
             .sc-hint {
                 position: relative;
                 display: inline-flex;
+                flex-shrink: 0;
                 align-items: center;
                 justify-content: center;
                 min-width: 76px;
@@ -1194,6 +811,7 @@
                 font-weight: 800;
                 letter-spacing: .06em;
                 line-height: 1.15;
+                white-space: nowrap;
                 overflow: hidden;
                 isolation: isolate;
             }
@@ -1219,7 +837,8 @@
                 text-shadow: 0 1px 2px rgba(8, 3, 38, .65);
                 animation: scGlowN 1s ease-in-out infinite;
             }
-            .sc-hint:not([data-kind]) { color: #e2e8f0; background: #334155; border: 1px solid #64748b; }
+            .sc-hint:not([data-kind]) { color: #cbd5e1; background: #273142; border: 1px solid #475569; }
+            .sc-hint:not([data-kind])::after { display: none; }
             @keyframes scGlowL {
                 0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(250, 204, 21, .55), 0 0 14px rgba(245, 158, 11, .35); filter: brightness(1); }
                 50% { opacity: .55; box-shadow: 0 0 14px rgba(250, 204, 21, .95), 0 0 28px rgba(245, 158, 11, .7); filter: brightness(1.25); }
@@ -1229,62 +848,16 @@
                 50% { opacity: .55; box-shadow: 0 0 14px rgba(99, 102, 241, 1), 0 0 28px rgba(31, 6, 172, .75); filter: brightness(1.3); }
             }
             @keyframes scShine { 0% { transform: translateX(-120%); } 60%, 100% { transform: translateX(120%); } }
-            .sc-summary {
-                margin-top: 7px;
-                display: flex;
-                flex-wrap: wrap;
-                align-items: center;
-                justify-content: center;
-                gap: 6px;
-                color: #cbd5e1;
-                font-size: 10.5px;
-                font-weight: 700;
-                text-align: center;
-            }
-            .sc-summary:empty { display: none; }
-            .sc-pill { padding: 2px 8px; border-radius: 999px; border: 1px solid #475569; background: #1e293b; }
-            .sc-pill[data-kind="L"] { border-color: rgba(250, 204, 21, .6); color: #fde68a; background: rgba(250, 204, 21, .12); }
-            .sc-pill[data-kind="N"] { border-color: rgba(129, 140, 248, .65); color: #c7d2fe; background: rgba(31, 6, 172, .22); }
-            .sc-pill.warn { border-color: rgba(248, 113, 113, .6); color: #fecaca; background: rgba(127, 29, 29, .35); }
-            .sc-pill.prio { border-color: rgba(45, 212, 191, .6); color: #99f6e4; background: rgba(13, 148, 136, .22); }
-            /* Công thức đang khớp nhưng phải nhường công thức ghi số cụ thể hơn: làm mờ, không tính phiếu */
-            .sc-table tbody tr.sc-row-yield td { opacity: .45; }
-            .sc-row-yield .sc-hint { animation: none; box-shadow: none; }
-            .sc-row-yield .sc-hint::after { display: none; }
-            .sc-yield-note {
-                display: block;
-                margin-top: 3px;
-                color: #e2e8f0;
-                font-size: 9.5px;
-                font-weight: 700;
-                letter-spacing: .02em;
-                line-height: 1.2;
-            }
-            .grid-cell.scan-hl {
-                outline: 2px solid #c084fc;
-                outline-offset: 1px;
-                box-shadow: 0 0 10px rgba(192, 132, 252, .75);
-                z-index: 1;
-            }
             @media (max-width: 380px) {
                 .scan-panel { padding: 8px; }
-                .sc-col-idx { width: 24px; }
-                .sc-col-cells { width: 98px; }
-                .sc-col-side { width: 78px; }
-                .sc-hint { min-width: 64px; padding: 4px 6px; font-size: 10px; }
-                .sc-ball { width: 21px; height: 21px; font-size: 11.5px; }
-                .sc-ball.sm { width: 18px; height: 18px; font-size: 10.5px; }
-                .sc-cells[data-many="true"] .sc-ball.sm { width: 16px; height: 16px; font-size: 9.5px; }
+                .sc-hint { min-width: 64px; padding: 4px 7px; font-size: 10.5px; }
+                .sc-ball { width: 20px; height: 20px; font-size: 11.5px; }
+                .sc-last { min-height: 20px; }
             }
             @media (prefers-reduced-motion: reduce) {
-                .sc-hint, .sc-hint::after, .sc-table tbody tr.sc-row { animation: none; }
+                .sc-hint, .sc-hint::after { animation: none; }
             }
             @media (max-width: 380px) {
-                .formula-panel { padding: 8px; }
-                .fm-col-idx { width: 28px; }
-                .fm-col-side { width: 76px; }
-                .fm-code-text { font-size: 12.5px; }
-                .fm-badge { min-width: 58px; padding: 2px 6px; font-size: 9.5px; }
                 .predict-panel { padding: 8px; }
                 .pd-issue-no { font-size: 19px; }
                 .pd-time { font-size: 26px; }
@@ -1296,7 +869,6 @@
                 #pdReset { margin-left: auto; }
             }
             @media (max-width: 300px) {
-                .fm-col-side { width: 66px; }
                 .pd-time { font-size: 24px; }
                 .pd-btn-name { font-size: 19px; }
                 .pd-ball { width: 32px; height: 32px; font-size: 16px; }
@@ -1305,7 +877,7 @@
             }
             @media (prefers-reduced-motion: reduce) {
                 .pd-btn, .pd-bar i, .dialog-backdrop, .board-panel { transition: none; }
-                .pd-btn-fx::after, .pd-spark, .pd-result.pd-flash, .pd-result[data-state="wait"] .pd-ball, .dialog-backdrop.open, .dialog-backdrop.open > .dialog, .dialog-backdrop.open > .dialog.fm-shake { animation: none; }
+                .pd-btn-fx::after, .pd-spark, .pd-result.pd-flash, .pd-result[data-state="wait"] .pd-ball, .dialog-backdrop.open, .dialog-backdrop.open > .dialog { animation: none; }
                 .dialog-backdrop.closing { display: none; }
             }
             @media (max-width: 380px) {
@@ -1327,8 +899,6 @@
                 .dialog-backdrop { --dlg-pad: 8px; }
                 .dialog { padding: 12px 14px; }
                 .dialog h2 { margin-bottom: 6px; font-size: 15px; }
-                #fmPwCard > p { display: none; }
-                .fm-pw-error { min-height: 14px; margin-top: 5px; }
                 .dialog-actions { margin-top: 8px; }
             }
         </style>
@@ -1338,28 +908,17 @@
         <main class="board-panel" aria-label="Bảng kết quả 100 kỳ">
             <div id="gridContainer" class="grid-table" role="grid" aria-label="Bảng 10 dòng và 10 cột"></div>
 
-            <section class="scan-panel" id="scPanel" data-state="empty" aria-label="Kết quả dò công thức">
+            <section class="scan-panel" id="scPanel" data-state="empty" aria-label="Tín hiệu cược theo 4 ô cuối của bảng">
                 <div class="sc-head">
                     <div class="sc-title-wrap">
-                        <span class="sc-title">Kết quả dò</span>
-                        <span class="sc-sub" id="scSub">Tự động xét số ô theo từng công thức</span>
+                        <div class="sc-line">
+                            <span class="sc-title">4 ô cuối</span>
+                            <span class="sc-sub" id="scSub">chưa đủ 4 ô</span>
+                        </div>
+                        <div class="sc-last" id="scLast" aria-hidden="true"></div>
                     </div>
-                    <div class="sc-last3" id="scLast3" aria-label="Các ô cuối đang xét"></div>
+                    <span class="sc-hint" id="scHint" role="status" aria-live="polite" title="4 ô cuối là 2 cặp cùng loại (NNLL · LLNN · NNNN · LLLL) → cược theo cặp sau · còn lại không cược">KHÔNG CƯỢC</span>
                 </div>
-                <div class="sc-table-wrap">
-                    <table class="sc-table">
-                        <thead>
-                            <tr>
-                                <th class="sc-col-idx">STT</th>
-                                <th class="sc-col-code">Công thức</th>
-                                <th class="sc-col-cells">Ô đang xét</th>
-                                <th class="sc-col-side">Gợi ý đánh</th>
-                            </tr>
-                        </thead>
-                        <tbody id="scBody"></tbody>
-                    </table>
-                </div>
-                <div class="sc-summary" id="scSummary" role="status" aria-live="polite"></div>
             </section>
 
             <section class="predict-panel" id="pdPanel" data-phase="off" aria-label="Dự đoán Lớn / Nhỏ">
@@ -1421,41 +980,6 @@
                     <button type="button" class="pd-mini" id="pdReset">Xoá thống kê</button>
                 </div>
             </section>
-            <section class="formula-panel" id="fmPanel" data-unlocked="false" data-collapsed="true" aria-label="Bảng công thức">
-                <div class="fm-head">
-                    <div class="fm-title-wrap">
-                        <button type="button" class="fm-collapse-btn" id="fmBtnCollapse" aria-expanded="false" aria-controls="fmCollapse" title="Bấm để mở ra xem / thu gọn bảng công thức (không cần mật khẩu)">
-                            <i class="fm-chev" aria-hidden="true">▾</i>
-                            <span class="fm-title">Bảng công thức</span>
-                            <span class="fm-count" id="fmCount">0</span>
-                        </button>
-                        <span class="fm-lock-tag" id="fmLockTag" data-unlocked="false">🔒 Đã khoá</span>
-                    </div>
-                    <button type="button" class="fm-btn" id="fmBtnUnlock">🔑 Sửa</button>
-                    <button type="button" class="fm-btn fm-btn-save" id="fmBtnSaveLock" hidden>✓ Lưu &amp; Khoá</button>
-                </div>
-                <div class="fm-collapse" id="fmCollapse">
-                <div class="fm-table-wrap">
-                    <table class="fm-table" id="fmTable">
-                        <thead>
-                            <tr>
-                                <th class="fm-col-idx">STT</th>
-                                <th class="fm-col-code">Công thức</th>
-                                <th class="fm-col-side">Đánh</th>
-                                <th class="fm-col-act" id="fmHeadAct" hidden>Xoá</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fmBody"></tbody>
-                    </table>
-                </div>
-                <div class="fm-legend" id="fmLegend">Ký hiệu: <b>N</b> Nhỏ (0–4) · <b>L</b> Lớn (5–9) · <b class="k-c">C</b> Chẵn (0·2·4·6·8) · <b class="k-e">E</b> Lẻ (1·3·5·7·9) · <b>0–9</b> đúng số đó · <b>BB</b> số giống nhau · <b>X</b> số bất kỳ<br><b class="k-c">CCC</b> / <b class="k-e">EEE</b> chỉ tính khi 3 số đôi một khác nhau (1·3·5 tính · 1·1·3 không tính)<br><b>Ưu tiên</b>: công thức ghi nhiều con số cụ thể hơn được dùng thay cho công thức chung (393-N thay EEE-L · 088-L thay NBB-N)</div>
-                <div class="fm-edit-bar" id="fmEditBar" hidden>
-                    <button type="button" class="pd-mini fm-add-btn" id="fmBtnAdd">＋ Thêm công thức</button>
-                    <button type="button" class="pd-mini" id="fmBtnReset">↺ Mặc định</button>
-                </div>
-                </div>
-                <div class="fm-notice" id="fmNotice" role="status" aria-live="polite" hidden></div>
-            </section>
 
             <div hidden aria-hidden="true">
                 <span id="boardCount">0/100 kỳ</span>
@@ -1474,24 +998,6 @@
                     <button type="button" class="dialog-btn danger" id="btnClearToken">Xoá token</button>
                     <button type="button" class="dialog-btn" id="btnCloseToken">Đóng</button>
                     <button type="button" class="dialog-btn primary" id="btnSaveToken">Lưu &amp; nạp bảng</button>
-                </div>
-            </section>
-        </div>
-
-        <div class="dialog-backdrop" id="fmPwDialog" aria-hidden="true">
-            <section class="dialog" id="fmPwCard" role="dialog" aria-modal="true" aria-labelledby="fmPwTitle">
-                <h2 id="fmPwTitle">Mở khoá chỉnh sửa công thức</h2>
-                <p>Nhập mật khẩu quản trị để chỉnh sửa, thêm hoặc xoá các dòng trong bảng công thức. Gõ đủ mật khẩu là tự vào trang sửa, không cần bấm nút.</p>
-                <div class="fm-pw-box">
-                    <!-- CỐ Ý dùng type="text" (ký tự được che bằng CSS .fm-masked) thay cho type="password"
-                         để Chrome không bật thông báo của Trình quản lý mật khẩu Google. Đừng đổi lại thành "password". -->
-                    <input type="text" class="fm-pw-input fm-masked" id="fmUnlockInput" name="fm_unlock" inputmode="numeric" enterkeyhint="go" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" aria-label="Mật khẩu quản trị" placeholder="Nhập mật khẩu...">
-                    <button type="button" class="dialog-btn" id="fmPwToggle" aria-label="Hiện hoặc ẩn mật khẩu" aria-pressed="false">Hiện</button>
-                </div>
-                <div class="fm-pw-error" id="fmPwError" role="alert"></div>
-                <div class="dialog-actions">
-                    <button type="button" class="dialog-btn" id="fmPwCancel">Huỷ</button>
-                    <button type="button" class="dialog-btn primary" id="fmPwSubmit">Mở khoá</button>
                 </div>
             </section>
         </div>
@@ -1622,86 +1128,73 @@
                     box.setAttribute('aria-label', box.title);
                 }
             
-                // ===== TÔ VÀNG NHÓM "B" THEO MẪU A-B…B-A (CHỈ TÔ B) =====
-                // Lấy 6 Ô CUỐI CÙNG làm chuẩn:
-                //   • B = loại của ô CUỐI CÙNG (LỚN nếu 5-9, NHỎ nếu 0-4). A = loại NGƯỢC LẠI của B.
-                //   • Đếm nhóm B liền nhau ở ĐUÔI bảng (tối đa 6 ô) → gọi là k.
-                //   • k = 1  → tô ô cuối B và các ô B đứng đơn lẻ khi dò ngược; gặp BB liền nhau thì dừng dò.
-                //   • k >= 2 → tô đúng k ô B ở đuôi.
-                //   • Quét NGƯỢC về đầu bảng: mỗi đoạn A | B…B (đúng k ô) | A → chỉ tô k ô B ở GIỮA,
-                //     gặp nhóm B DÀI HƠN k thì KHÔNG tô và DỪNG quét.
-                //   • Mỗi lần áp dụng chỉ tô MỘT loại — không tô lẫn lớn với nhỏ.
-                function applyPatHighlight() {
-                    try {
-                        const boxes = [];
-                        for (let i = 0; i < cells.length; i++) {
-                            const b = cells[i].valEl && cells[i].valEl.parentElement;
-                            boxes.push(b);
-                            if (b) b.classList.remove('pat-hl');
+                // ===== TÔ MÀU BẢNG =====
+                // (1) Dò ngược từ ô cuối về phía trước theo từng nhóm ô liền nhau cùng loại (LỚN 5–9 / NHỎ 0–4):
+                //   • Hai đầu = 2 nhóm từ 3 ô trở lên gặp đầu tiên (lần 1 gần cuối bảng hơn, lần 2 kế tiếp).
+                //   • Chỉ tô khi CẢ HAI đầu đều đúng 3 ô (NNN / LLL — đầu nào là NNNN, LLLL trở lên thì không tô)
+                //     VÀ giữa hai đầu có ít nhất một nhóm đúng 2 ô (NN / LL):
+                //       hai đầu → TÍM (màu nút NHỎ) · các NN / LL nằm giữa → VÀNG · ô đứng lẻ để nguyên.
+                //   • Thiếu một trong các điều kiện trên → không tô gì.
+                //   • Gặp ô chưa có số thì dừng dò. Ô đầu / ô cuối mỗi nhóm được bo tròn (run-first / run-last).
+                // (2) 4 ô cuối đủ điều kiện cược (2 cặp cùng loại — xem scRender): 4 ô đó phát sáng,
+                //     ô NHỎ tím (bet-n), ô LỚN vàng (bet-l), đè lên màu ở (1); mỗi cặp bo tròn hai đầu.
+                function applyRunHighlight() {
+                    const color = new Array(TOTAL).fill('');
+                    const first = new Array(TOTAL).fill(false);
+                    const last = new Array(TOTAL).fill(false);
+
+                    // (1) gom các nhóm từ đầu thứ nhất đến đầu thứ hai (2 nhóm từ 3 ô trở lên gặp đầu tiên)
+                    const runs = [];
+                    let triples = 0;
+                    let i = TOTAL - 1;
+                    while (i >= 0 && triples < 2) {
+                        const kind = pdKind(cells[i].value);
+                        if (!kind) break;
+                        let j = i;
+                        while (j > 0 && pdKind(cells[j - 1].value) === kind) j--;
+                        const len = i - j + 1;
+                        if (len >= 3) triples++;
+                        if (triples) runs.push({ from: j, to: i, len: len });
+                        i = j - 1;
+                    }
+                    const pairBetween = runs.some(function (r) { return r.len === 2; });
+                    // hai đầu phải đúng 3 ô (NNN / LLL); NNNN, LLLL trở lên thì không tô
+                    const exactEnds = triples === 2 && runs[0].len === 3 && runs[runs.length - 1].len === 3;
+                    if (exactEnds && pairBetween) {
+                        runs.forEach(function (r) {
+                            if (r.len < 2) return;
+                            for (let k = r.from; k <= r.to; k++) color[k] = r.len >= 3 ? 'run-triple' : 'run-pair';
+                            first[r.from] = true;
+                            last[r.to] = true;
+                        });
+                    }
+
+                    // (2) 4 ô cuối đủ điều kiện cược
+                    const kinds = scLastFourKinds();
+                    const betFrom = TOTAL - 4;
+                    if (scIsTwoPairs(kinds)) {
+                        if (color[betFrom - 1] && !last[betFrom - 1]) last[betFrom - 1] = true;   // nhóm bị 4 ô cuối che mất phần đuôi
+                        for (let k = betFrom; k < TOTAL; k++) {
+                            color[k] = kinds[k - betFrom] === 'B' ? 'bet-l' : 'bet-n';
+                            first[k] = (k - betFrom) % 2 === 0;
+                            last[k] = (k - betFrom) % 2 === 1;
                         }
-                        const ot = (i) => {
-                            const v = cells[i].value;
-                            if (v === '' || v === null || v === undefined) return -1;
-                            const d = parseInt(String(v), 10);
-                            if (!Number.isInteger(d) || d < 0 || d > 9) return -1;
-                            return d >= 5 ? 1 : 0;
-                        };
-                        const idx = [];
-                        for (let i = 0; i < cells.length; i++) if (ot(i) >= 0) idx.push(i);
-                        const n = idx.length;
-                        if (n < 2) return;
-                        const t = idx.map(ot);
-            
-                        const WIN = 6;
-                        const B = t[n - 1];
-                        const A = B === 1 ? 0 : 1;
-            
-                        let k = 0;
-                        for (let j = n - 1; j >= 0 && j >= n - WIN; j--) {
-                            if (t[j] === B) k++; else break;
-                        }
-                        const mark = (from, to) => {
-                            for (let j = from; j <= to; j++) {
-                                const b = boxes[idx[j]];
-                                if (b) b.classList.add('pat-hl');
-                            }
-                        };
-            
-                        // Ô cuối là B đơn lẻ: tô ô cuối rồi dò ngược các ô B đứng đơn lẻ giữa hai ô A.
-                        // Gặp nhóm BB (hoặc dài hơn) thì DỪNG: không tô các B đơn ở phía trước nhóm đó.
-                        if (k === 1) {
-                            mark(n - 1, n - 1);
-                            let p = n - 2;
-                            while (p >= 0) {
-                                if (t[p] !== B) { p--; continue; }
-                                let q = p;
-                                while (q >= 0 && t[q] === B) q--;
-                                const len = p - q;
-                                if (len >= 2) break;
-                                if (q >= 0 && t[q] === A && p + 1 < n && t[p + 1] === A) mark(p, p);
-                                p = q;
-                            }
-                            return;
-                        }
-            
-                        mark(n - k, n - 1);
-            
-                        let p = n - k - 1;
-                        while (p >= 0) {
-                            if (t[p] !== B) { p--; continue; }
-                            let q = p;
-                            while (q >= 0 && t[q] === B) q--;
-                            const len = p - q;
-                            if (len > k) break;
-                            if (len === k && q >= 0 && t[q] === A) mark(q + 1, p);
-                            p = q;
-                        }
-                    } catch (e) {}
+                    }
+
+                    for (let k = 0; k < TOTAL; k++) {
+                        const list = cells[k].valEl.parentElement.classList;
+                        list.toggle('run-triple', color[k] === 'run-triple');
+                        list.toggle('run-pair', color[k] === 'run-pair');
+                        list.toggle('bet-n', color[k] === 'bet-n');
+                        list.toggle('bet-l', color[k] === 'bet-l');
+                        list.toggle('run-first', first[k]);
+                        list.toggle('run-last', last[k]);
+                    }
                 }
-            
+
                 function renderAll() {
                     for (let i = 0; i < TOTAL; i++) renderCell(i);
-                    applyPatHighlight();
+                    try { applyRunHighlight(); } catch (e) {}
                     updateBoardCount();
                     try { scRender(); } catch (e) {}
                     try { pdOnBoardChanged(); } catch (e) {}
@@ -2012,10 +1505,6 @@
                                 renderAll();
                                 setStatus('Đã đồng bộ bảng từ Firebase.', 'ok');
                             }
-                        }
-
-                        if (data.formulasV2 && typeof fmApplyRemote === 'function') {
-                            fmApplyRemote(data.formulasV2);
                         }
                     } finally {
                         applyingRemote = false;
@@ -2837,7 +2326,7 @@
                 let pdHistoryDirty = true;
                 let pdBannerKey = '';
                 let pdResetArmedUntil = 0;
-                let scSignal = null;                    // gợi ý hiện tại từ bảng dò: { choice: 'B'|'S', fm: '...' }
+                let scSignal = null;                    // tín hiệu cược theo 4 ô cuối của bảng: { choice: 'B' | 'S' } · null = không cược
                 let pdManualRoundEnd = 0;               // mốc endAt của kỳ mà người chơi chủ động bấm tay
                 let pdLastResolvedEndAt = 0;            // mốc endAt của kỳ vừa được chấm xong
             
@@ -2899,7 +2388,6 @@
                                     issue: String(p.issue || ''),
                                     endAt: Number(p.endAt),
                                     at: num(p.at),
-                                    fm: String(p.fm || ''),
                                     auto: !!p.auto
                                 };
                             }).slice(-5),
@@ -2912,7 +2400,8 @@
                                     d: String(h.d),
                                     ok: !!h.ok,
                                     at: num(h.at),
-                                    fm: String(h.fm || '')
+                                    // Bản cũ không lưu "auto" mà lưu tên công thức đã đánh (fm): có fm thì coi là đánh tự động
+                                    auto: h.auto === undefined ? !!h.fm : !!h.auto
                                 };
                             }).slice(-PD_HISTORY_MAX),
                             win: Math.max(0, Math.floor(num(raw.win))),
@@ -3024,13 +2513,11 @@
                     const newest = pdNewestIssue();
                     if (pdIsSynced(round, newest, pdOwed(round, newest)) && Math.floor(round.rem / 1000) > PD_LOCK_SEC) {
                         pdManualRoundEnd = round.end;
-                        const matchedFm = (scSignal && scSignal.choice === choice) ? String(scSignal.fm || '') : '';
                         const i = pdPendingFor(round.end);
                         if (i >= 0 && pdState.pending[i].c === choice) {
                             pdState.pending.splice(i, 1);           // bấm lại nút đang chọn → bỏ chọn
                         } else if (i >= 0) {
                             pdState.pending[i].c = choice;
-                            pdState.pending[i].fm = matchedFm;
                             pdState.pending[i].auto = false;
                             pdState.pending[i].at = now;
                         } else {
@@ -3040,7 +2527,6 @@
                                 issue: pdNextIssue(newest),
                                 endAt: round.end,
                                 at: now,
-                                fm: matchedFm,
                                 auto: false
                             });
                             if (pdState.pending.length > 5) pdState.pending = pdState.pending.slice(-5);
@@ -3051,7 +2537,8 @@
                     pdRender();
                 }
 
-                // Tự động bấm nút LỚN / NHỎ khi bảng dò có gợi ý đánh trong kỳ đang mở
+                // Tự động bấm nút LỚN / NHỎ khi 4 ô cuối của bảng cho tín hiệu cược (scSignal) trong kỳ đang mở;
+                // tín hiệu mất đi (4 ô cuối không còn là 2 cặp cùng loại) thì bỏ lựa chọn tự động đó.
                 function pdMaybeAutoPick(now, round, newest, canPick) {
                     if (!canPick || !newest) return;
                     if (pdLastResolvedEndAt && Math.abs(round.end - pdLastResolvedEndAt) < PD_ROUND_MS / 2) return;
@@ -3072,7 +2559,6 @@
                                 issue: nextIss,
                                 endAt: round.end,
                                 at: now,
-                                fm: String(sig.fm || ''),
                                 auto: true
                             });
                             if (pdState.pending.length > 5) pdState.pending = pdState.pending.slice(-5);
@@ -3080,10 +2566,8 @@
                             pdSave();
                         } else if (pdState.pending[idx].auto) {
                             const curP = pdState.pending[idx];
-                            const nextFm = String(sig.fm || '');
-                            if (curP.c !== sig.choice || curP.fm !== nextFm || curP.base !== newest) {
+                            if (curP.c !== sig.choice || curP.base !== newest) {
                                 curP.c = sig.choice;
-                                curP.fm = nextFm;
                                 curP.base = newest;
                                 curP.issue = nextIss;
                                 curP.at = now;
@@ -3146,7 +2630,7 @@
                             d: String(cell.value),
                             ok: ok,
                             at: now,
-                            fm: String(p.fm || '')
+                            auto: !!p.auto
                         });
                         if (p.endAt > pdLastResolvedEndAt) pdLastResolvedEndAt = p.endAt;
                         if (ok) { pdState.win++; pdState.streak = pdState.streak > 0 ? pdState.streak + 1 : 1; }
@@ -3195,7 +2679,6 @@
                         chip.className = 'pd-chip ' + (h.ok ? 'ok' : 'no');
                         chip.textContent = h.ok ? '✓' : '✗';
                         chip.title = 'Kỳ ' + pdShort(h.issue) + ' · đánh ' + pdKindName(h.c)
-                            + (h.fm ? ' (CT: ' + h.fm + ')' : '')
                             + ' · ra ' + h.d + ' (' + pdKindName(pdKind(h.d)) + ') · ' + (h.ok ? 'ĐÚNG' : 'SAI');
                         chip.setAttribute('role', 'listitem');
                         chip.setAttribute('aria-label', chip.title);
@@ -3223,18 +2706,6 @@
                     pdRender();
                 }
             
-                function pdSetResultSub(el, subText, fmText) {
-                    el.textContent = '';
-                    if (subText) el.appendChild(document.createTextNode(subText));
-                    if (fmText) {
-                        if (subText) el.appendChild(document.createTextNode(' · CT:'));
-                        const badge = document.createElement('span');
-                        badge.className = 'pd-fm-tag';
-                        badge.textContent = fmText;
-                        el.appendChild(badge);
-                    }
-                }
-
                 function pdRender() {
                     if (!pdReady) return;
                     const now = Date.now();
@@ -3248,7 +2719,7 @@
                     const locked = sec <= PD_LOCK_SEC;
                     const canPick = synced && !locked;
 
-                    // Khi có gợi ý đánh từ bảng dò thì tự động bấm chọn LỚN / NHỎ
+                    // 4 ô cuối của bảng cho tín hiệu cược thì tự động bấm chọn LỚN / NHỎ
                     pdMaybeAutoPick(now, round, newest, canPick);
 
                     const curIdx = pdPendingFor(round.end);
@@ -3279,13 +2750,12 @@
                     if (!newest) status = 'Chưa có dữ liệu kết quả.';
                     else if (pdNotice && now < pdNoticeUntil) status = pdNotice;
                     else if (cur) {
-                        const fmNote = cur.fm ? (' · CT: ' + cur.fm) : '';
                         if (locked) {
-                            status = 'Đã khoá · ' + (cur.auto ? 'tự động đánh ' : 'bạn chọn ') + pdKindName(pick) + fmNote + ' (kỳ ' + pdShort(cur.issue) + ')';
+                            status = 'Đã khoá · ' + (cur.auto ? 'tự động đánh ' : 'bạn chọn ') + pdKindName(pick) + ' (kỳ ' + pdShort(cur.issue) + ')';
                         } else if (cur.auto) {
-                            status = '⚡ Tự động đánh ' + pdKindName(pick) + fmNote + ' cho kỳ ' + pdShort(cur.issue) + ' · bấm lại nếu muốn đổi';
+                            status = '⚡ Tự động đánh ' + pdKindName(pick) + ' cho kỳ ' + pdShort(cur.issue) + ' · bấm lại nếu muốn đổi';
                         } else {
-                            status = 'Bạn chọn ' + pdKindName(pick) + fmNote + ' cho kỳ ' + pdShort(cur.issue) + ' · bấm lại để bỏ chọn';
+                            status = 'Bạn chọn ' + pdKindName(pick) + ' cho kỳ ' + pdShort(cur.issue) + ' · bấm lại để bỏ chọn';
                         }
                     } else if (!synced) {
                         if (round.into > 12000) status = 'Chưa nhận được kết quả mới — tạm khoá dự đoán.';
@@ -3295,7 +2765,7 @@
                     else status = 'Chọn LỚN hoặc NHỎ cho kỳ ' + curShort;
                     pdText(pdEl.Status, status);
             
-                    // --- Kết quả gần nhất: ĐÚNG / SAI (kèm công thức đã đánh) ---
+                    // --- Kết quả gần nhất: ĐÚNG / SAI ---
                     let awaiting = null;
                     for (let i = 0; i < pdState.pending.length; i++) {
                         const p = pdState.pending[i];
@@ -3305,11 +2775,10 @@
                     if (awaiting) {
                         banner = {
                             state: 'wait',
-                            key: 'wait|' + awaiting.issue + '|' + awaiting.c + '|' + (awaiting.fm || ''),
+                            key: 'wait|' + awaiting.issue + '|' + awaiting.c + '|' + (awaiting.auto ? 'a' : 'm'),
                             ball: '?', kind: '',
                             main: 'Kỳ ' + pdShort(awaiting.issue) + ' · ' + (awaiting.auto ? 'tự động đánh ' : 'bạn chọn ') + pdKindName(awaiting.c),
                             sub: 'Đang chờ kết quả…',
-                            fm: awaiting.fm || '',
                             verdict: 'CHỜ'
                         };
                     } else if (newest) {
@@ -3321,15 +2790,14 @@
                         }
                         banner = {
                             state: rec ? (rec.ok ? 'win' : 'lose') : 'none',
-                            key: (rec ? (rec.ok ? 'win|' : 'lose|') : 'none|') + newest + '|' + (rec && rec.fm ? rec.fm : ''),
+                            key: (rec ? (rec.ok ? 'win|' : 'lose|') : 'none|') + newest + '|' + (rec ? rec.c + (rec.auto ? 'a' : 'm') : ''),
                             ball: String(cell.value), kind: kind,
                             main: 'Kỳ ' + pdShort(newest) + ' ra ' + cell.value + ' · ' + pdKindName(kind),
-                            sub: rec ? ((rec.fm ? 'Đánh ' : 'Bạn chọn ') + pdKindName(rec.c)) : 'Bạn không dự đoán kỳ này',
-                            fm: rec ? (rec.fm || '') : '',
+                            sub: rec ? ((rec.auto ? 'Tự động đánh ' : 'Bạn chọn ') + pdKindName(rec.c)) : 'Bạn không dự đoán kỳ này',
                             verdict: rec ? (rec.ok ? '✓ ĐÚNG' : '✗ SAI') : ''
                         };
                     } else {
-                        banner = { state: 'idle', key: 'idle', ball: '?', kind: '', main: 'Chưa có kết quả', sub: '', fm: '', verdict: '' };
+                        banner = { state: 'idle', key: 'idle', ball: '?', kind: '', main: 'Chưa có kết quả', sub: '', verdict: '' };
                     }
                     if (banner.key !== pdBannerKey) {
                         const first = pdBannerKey === '';
@@ -3338,7 +2806,7 @@
                         pdAttr(pdEl.Ball, 'data-kind', banner.kind);
                         pdText(pdEl.Ball, banner.ball);
                         pdText(pdEl.ResultMain, banner.main);
-                        pdSetResultSub(pdEl.ResultSub, banner.sub, banner.fm);
+                        pdText(pdEl.ResultSub, banner.sub);
                         pdText(pdEl.Verdict, banner.verdict);
                         pdEl.Result.classList.remove('pd-flash');
                         if (!first && (banner.state === 'win' || banner.state === 'lose')) {
@@ -3421,1016 +2889,66 @@
                 }
             
                 // =====================================================================
-                // BẢNG CÔNG THỨC (khoá mặc định, mở sửa sau khi nhập đúng mật khẩu)
+                // TÍN HIỆU CƯỢC THEO 4 Ô CUỐI CỦA BẢNG (4 kỳ mới nhất; ô cuối cùng là kỳ mới nhất)
+                //   • 2 ô trước cùng loại (NN hoặc LL) VÀ 2 ô sau cùng loại (NN hoặc LL) thì mới cược,
+                //     cược theo loại của 2 ô sau:  NNLL, LLLL → cược LỚN  ·  LLNN, NNNN → cược NHỎ
+                //   • Mọi trường hợp còn lại, hoặc chưa đủ 4 ô có số → KHÔNG cược
+                // Kết quả ghi vào scSignal; khung "Kỳ đang chạy" đọc scSignal để tự bấm LỚN / NHỎ (pdMaybeAutoPick).
+                // Khi đủ điều kiện cược, 4 ô đó phát sáng trên bảng — xem applyRunHighlight().
                 // =====================================================================
-                // 6 công thức đang dùng (theo ảnh chụp bảng công thức ngày 13/11/2026), rồi tới 2 công thức chẵn / lẻ.
-                const FM_DEFAULT = [
-                    'NN4-N',
-                    'NN5-L',
-                    'LL6-L',
-                    'NBB-N',
-                    'LBB-L',
-                    '088-L',
-                    'EEE-L',    // 3 ô cuối hàng 10 là 3 số LẺ đôi một khác nhau   → đánh LỚN
-                    'CCC-L'     // 3 ô cuối hàng 10 là 3 số CHẴN đôi một khác nhau → đánh LỚN
-                ];
-                // Hai công thức chẵn / lẻ ở trên được bổ sung sau. Bảng công thức đã lưu từ trước (trên máy hoặc trên
-                // Firebase) sẽ được tự cập nhật đúng một lần — xem fmUpgradeParity bên dưới.
-                const FM_PARITY_ADD = ['EEE-L', 'CCC-L'];
-                const FM_PARITY_VER = 2;        // 1 = bản đầu (EEE-N, CCC-N: đánh NHỎ) · 2 = đổi sang đánh LỚN (EEE-L, CCC-L)
-                const FM_PASSWORD = '123456';
-                const LS_FORMULAS = 'vn168_formulas_v2';
-
-                const fmPanel = document.getElementById('fmPanel');
-                const fmLockTag = document.getElementById('fmLockTag');
-                const fmBtnUnlock = document.getElementById('fmBtnUnlock');
-                const fmBtnSaveLock = document.getElementById('fmBtnSaveLock');
-                const fmHeadAct = document.getElementById('fmHeadAct');
-                const fmBody = document.getElementById('fmBody');
-                const fmEditBar = document.getElementById('fmEditBar');
-                const fmBtnAdd = document.getElementById('fmBtnAdd');
-                const fmBtnReset = document.getElementById('fmBtnReset');
-                const fmNotice = document.getElementById('fmNotice');
-                const fmCount = document.getElementById('fmCount');
-                const fmBtnCollapse = document.getElementById('fmBtnCollapse');
                 const scPanel = document.getElementById('scPanel');
                 const scSub = document.getElementById('scSub');
-                const scLast3 = document.getElementById('scLast3');
-                const scBody = document.getElementById('scBody');
-                const scSummary = document.getElementById('scSummary');
-                const LS_FM_COLLAPSED = 'vn168_fm_collapsed_v1';
-                const fmPwDialog = document.getElementById('fmPwDialog');
-                const fmPwCard = document.getElementById('fmPwCard');
-                const fmPwInput = document.getElementById('fmUnlockInput');
-                const fmPwToggle = document.getElementById('fmPwToggle');
-                const fmPwError = document.getElementById('fmPwError');
-                const fmPwCancel = document.getElementById('fmPwCancel');
-                const fmPwSubmit = document.getElementById('fmPwSubmit');
+                const scLast = document.getElementById('scLast');
+                const scHint = document.getElementById('scHint');
 
-                let fmItems = FM_DEFAULT.slice();
-                let fmUpdatedAt = 0;
-                let fmUnlocked = false;
-                let fmResetArmedUntil = 0;
-                let fmNoticeTimer = null;
-                let fmSyncTimer = null;
-                let fmParityVer = 0;            // bước cập nhật công thức chẵn / lẻ mà bảng ĐÃ LƯU đang mang (0 = chưa có)
-                let fmParityPending = 0;        // số dòng vừa thêm / đổi trong bộ nhớ nhưng chưa ghi lại
-                let fmParityPushes = 0;         // số lần đã đẩy bản bổ sung lên Firebase trong lần mở trang này
-                let fmParityPushAt = 0;
-
-                function fmParse(raw) {
-                    const s = String(raw == null ? '' : raw).trim();
-                    const idx = s.lastIndexOf('-');
-                    if (idx > 0 && idx < s.length - 1) {
-                        const pat = s.slice(0, idx).trim();
-                        const tgt = s.slice(idx + 1).trim();
-                        const up = tgt.toUpperCase();
-                        let kind = '';
-                        if (up === 'L' || up === 'LON' || up === 'LỚN' || up === 'B') kind = 'L';
-                        else if (up === 'N' || up === 'NHO' || up === 'NHỎ' || up === 'S') kind = 'N';
-                        return { full: s, pat: pat, tgt: tgt, kind: kind, hasSep: true };
-                    }
-                    return { full: s, pat: s, tgt: '', kind: '', hasSep: false };
-                }
-
-                function fmBadgeLabel(parsed, editable) {
-                    let base;
-                    if (parsed.kind === 'L') base = 'LỚN (L)';
-                    else if (parsed.kind === 'N') base = 'NHỎ (N)';
-                    else if (parsed.tgt) base = parsed.tgt;
-                    else base = '—';
-                    return editable ? (base + ' ⇄') : base;
-                }
-
-                function fmShowNotice(text) {
-                    if (fmNoticeTimer) clearTimeout(fmNoticeTimer);
-                    fmNotice.textContent = text;
-                    fmNotice.hidden = !text;
-                    if (text) {
-                        fmNoticeTimer = setTimeout(function () {
-                            fmNotice.hidden = true;
-                        }, 3200);
-                    }
-                }
-
-                // ----- Tự cập nhật công thức chẵn / lẻ cho bảng đã lưu từ bản trước -----
-                // Bảng công thức được lưu trên máy (localStorage) và đồng bộ qua Firebase, kèm dấu "parity" cho biết
-                // bảng đã qua bước cập nhật nào:
-                //   • chưa có dấu : bảng lưu từ trước khi có ký hiệu C / E → thêm EEE-L, CCC-L vào CUỐI bảng
-                //   • parity = 1  : bảng đã được thêm EEE-N, CCC-N (bản trước) → đổi hai công thức đó sang đánh LỚN
-                //   • parity = 2  : đã cập nhật xong. Từ đây người dùng tự sửa / xoá thì không bị đổi hay thêm lại nữa.
-                // Mỗi bước chỉ chạy đúng một lần cho mỗi bảng.
-                function fmPatKey(raw) {
-                    return String(fmParse(raw).pat || '').replace(/\s+/g, '').toUpperCase();
-                }
-
-                // Cập nhật danh sách từ bước fromVer lên FM_PARITY_VER. Trả về số dòng đã thêm / đã đổi.
-                function fmUpgradeParity(list, fromVer) {
-                    if (fromVer >= FM_PARITY_VER) return 0;
-                    const want = Object.create(null);
-                    for (let k = 0; k < FM_PARITY_ADD.length; k++) want[fmPatKey(FM_PARITY_ADD[k])] = true;
-                    const have = Object.create(null);
-                    let changed = 0;
-                    for (let i = 0; i < list.length; i++) {
-                        const key = fmPatKey(list[i]);
-                        have[key] = true;
-                        if (!want[key]) continue;
-                        // EEE-N / CCC-N của bản trước → đổi sang đánh LỚN
-                        const p = fmParse(list[i]);
-                        if (p.kind === 'N') {
-                            list[i] = p.pat + '-L';
-                            changed++;
-                        }
-                    }
-                    // Bảng chưa từng được bổ sung → thêm những công thức còn thiếu vào cuối
-                    if (fromVer < 1) {
-                        for (let k = 0; k < FM_PARITY_ADD.length; k++) {
-                            if (have[fmPatKey(FM_PARITY_ADD[k])]) continue;
-                            list.push(FM_PARITY_ADD[k]);
-                            changed++;
-                        }
-                    }
-                    return changed;
-                }
-
-                function fmCleanItems() {
-                    return fmItems.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
-                }
-
-                function fmStoreLocal() {
-                    const data = { items: fmCleanItems(), updatedAt: fmUpdatedAt };
-                    if (fmParityVer) data.parity = fmParityVer;
-                    try { localStorage.setItem(LS_FORMULAS, JSON.stringify(data)); } catch (e) {}
-                }
-
-                function fmLoad() {
-                    try {
-                        const raw = JSON.parse(localStorage.getItem(LS_FORMULAS) || 'null');
-                        if (raw && Array.isArray(raw.items)) {
-                            fmItems = raw.items.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
-                            fmUpdatedAt = Number(raw.updatedAt || 0) || 0;
-                            if (!fmItems.length && !fmUpdatedAt) fmItems = FM_DEFAULT.slice();
-                            fmParityVer = Number(raw.parity || 0) || 0;
-                            // Bảng lưu từ bản trước: cập nhật ngay trong bộ nhớ để dùng được liền. Chưa ghi lại và chưa đổi
-                            // mốc thời gian, để nếu Firebase đang giữ bảng mới hơn thì bảng đó vẫn được lấy về.
-                            fmParityPending = fmUpgradeParity(fmItems, fmParityVer);
-                            return;
-                        }
-                    } catch (e) {}
-                    fmItems = FM_DEFAULT.slice();
-                    fmUpdatedAt = 0;
-                    fmParityVer = 0;
-                    fmParityPending = 0;
-                }
-
-                function fmSyncFirebaseNow() {
-                    if (!fbDB || applyingRemote) return;
-                    const payload = { items: fmCleanItems(), updatedAt: fmUpdatedAt || Date.now() };
-                    if (fmParityVer) payload.parity = fmParityVer;
-                    fbDB.collection(FB_COLLECTION).doc(FB_DOC).set({ formulasV2: payload }, { merge: true }).catch(function () {});
-                }
-
-                // Đẩy bảng đã cập nhật lên Firebase. Giới hạn số lần để không lặp vô hạn nếu Firebase từ chối ghi.
-                function fmPushParity() {
-                    const now = Date.now();
-                    if (fmParityPushes >= 3 || now - fmParityPushAt < 5000) return;
-                    fmParityPushes++;
-                    fmParityPushAt = now;
-                    if (fmSyncTimer) clearTimeout(fmSyncTimer);
-                    fmSyncTimer = setTimeout(fmSyncFirebaseNow, 700);
-                }
-
-                function fmSave(syncImmediate) {
-                    fmUpdatedAt = Date.now();
-                    // Người dùng vừa tự chỉnh bảng → coi như đã cập nhật xong, không tự đổi / thêm lại công thức chẵn / lẻ nữa
-                    fmParityVer = FM_PARITY_VER;
-                    fmParityPending = 0;
-                    try { scRender(); if (pdReady) pdRender(); } catch (e) {}
-                    fmCount.textContent = String(fmItems.filter(function (x) { return String(x || '').trim(); }).length);
-                    fmStoreLocal();
-                    if (fmSyncTimer) clearTimeout(fmSyncTimer);
-                    if (syncImmediate) fmSyncFirebaseNow();
-                    else fmSyncTimer = setTimeout(fmSyncFirebaseNow, 700);
-                }
-
-                function fmApplyRemote(remoteFormulas) {
-                    if (!remoteFormulas || !Array.isArray(remoteFormulas.items)) return;
-                    const remoteAt = Number(remoteFormulas.updatedAt || 0) || 0;
-                    const remoteVer = Number(remoteFormulas.parity || 0) || 0;
-                    const remoteDone = remoteVer >= FM_PARITY_VER;
-                    const localDone = fmParityVer >= FM_PARITY_VER;
-                    // Lấy bảng trên Firebase khi nó mới hơn bảng trên máy; hoặc khi cả hai là cùng một lần lưu
-                    // mà bảng trên máy này chưa cập nhật xong (lấy lại để theo đúng bảng chung).
-                    const takeRemote = !(remoteAt && remoteAt <= fmUpdatedAt) || (remoteAt === fmUpdatedAt && !localDone);
-                    if (!takeRemote && localDone) {
-                        // Bảng trên máy này đang là bản mới nhất. Firebase chưa có bản đã cập nhật thì đẩy lên.
-                        if (!remoteDone && !fmUnlocked) fmPushParity();
-                        return;
-                    }
-                    if (fmUnlocked) return;
-
-                    let changed = 0;
-                    if (takeRemote) {
-                        fmItems = remoteFormulas.items.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
-                        fmUpdatedAt = remoteAt || Date.now();
-                        changed = fmUpgradeParity(fmItems, remoteVer);
-                    } else {
-                        // Bảng trên máy mới hơn Firebase; đã được cập nhật lúc tải (fmLoad) nhưng chưa ghi lại
-                        changed = fmParityPending;
-                    }
-                    fmParityPending = 0;
-                    fmParityVer = FM_PARITY_VER;
-                    if (changed) fmUpdatedAt = Date.now();  // có thay đổi → các máy khác sẽ lấy bảng này về
-                    fmStoreLocal();
-                    if (changed || !remoteDone) fmPushParity();
-                    fmRender();
-                }
-
-                function fmUpdateBadgeEl(el, raw, editable) {
-                    const p = fmParse(raw);
-                    if (p.kind) el.setAttribute('data-kind', p.kind);
-                    else el.removeAttribute('data-kind');
-                    el.textContent = fmBadgeLabel(p, editable);
-                }
-
-                function fmRender(focusIdx) {
-                    const u = fmUnlocked;
-                    fmCount.textContent = String(fmItems.filter(function (x) { return String(x || '').trim(); }).length);
-                    try { scRender(); if (pdReady) pdRender(); } catch (e) {}
-                    fmPanel.setAttribute('data-unlocked', u ? 'true' : 'false');
-                    fmLockTag.setAttribute('data-unlocked', u ? 'true' : 'false');
-                    fmLockTag.textContent = u ? '🔓 Đang mở sửa' : '🔒 Đã khoá';
-                    fmBtnUnlock.hidden = u;
-                    fmBtnSaveLock.hidden = !u;
-                    fmHeadAct.hidden = !u;
-                    fmEditBar.hidden = !u;
-                    fmBtnReset.textContent = (Date.now() < fmResetArmedUntil) ? 'Bấm lần nữa để khôi phục' : '↺ Mặc định';
-                    fmBtnReset.classList.toggle('armed', Date.now() < fmResetArmedUntil);
-
-                    fmBody.textContent = '';
-                    if (!fmItems.length) {
-                        const tr = document.createElement('tr');
-                        const td = document.createElement('td');
-                        td.colSpan = u ? 4 : 3;
-                        td.className = 'fm-empty';
-                        td.textContent = u ? 'Chưa có công thức. Bấm “＋ Thêm công thức” để tạo mới.' : 'Chưa có công thức nào.';
-                        tr.appendChild(td);
-                        fmBody.appendChild(tr);
-                        return;
-                    }
-
-                    const frag = document.createDocumentFragment();
-                    let toFocus = null;
-
-                    for (let i = 0; i < fmItems.length; i++) {
-                        (function (idx) {
-                            const raw = fmItems[idx];
-                            const tr = document.createElement('tr');
-
-                            const tdIdx = document.createElement('td');
-                            tdIdx.className = 'fm-col-idx';
-                            tdIdx.textContent = String(idx + 1);
-                            tr.appendChild(tdIdx);
-
-                            const tdCode = document.createElement('td');
-                            tdCode.className = 'fm-col-code';
-
-                            const tdSide = document.createElement('td');
-                            tdSide.className = 'fm-col-side';
-
-                            if (u) {
-                                const inp = document.createElement('input');
-                                inp.type = 'text';
-                                inp.className = 'fm-input';
-                                inp.value = raw;
-                                inp.autocomplete = 'off';
-                                inp.spellcheck = false;
-                                inp.placeholder = 'VD: LBB-L, LBBN-L';
-                                inp.setAttribute('aria-label', 'Công thức dòng ' + (idx + 1));
-
-                                const badgeBtn = document.createElement('button');
-                                badgeBtn.type = 'button';
-                                badgeBtn.className = 'fm-badge fm-badge-btn';
-                                badgeBtn.title = 'Bấm để đổi nhanh LỚN (L) / NHỎ (N)';
-                                fmUpdateBadgeEl(badgeBtn, raw, true);
-
-                                inp.addEventListener('input', function () {
-                                    fmItems[idx] = inp.value;
-                                    fmUpdateBadgeEl(badgeBtn, inp.value, true);
-                                    fmSave(false);
-                                });
-                                inp.addEventListener('keydown', function (ev) {
-                                    const sinceUnlock = Date.now() - fmUnlockedAt;
-                                    if (ev.key === 'Enter') {
-                                        ev.preventDefault();
-                                        // Bỏ qua Enter còn thừa từ lúc nhập mật khẩu (giữ phím / bấm theo thói quen) để không khoá lại ngay
-                                        if (ev.repeat || sinceUnlock < FM_STRAY_KEY_MS) return;
-                                        fmLockAndSave();
-                                        return;
-                                    }
-                                    // Vừa mở khoá xong: ký tự gõ lố tay hoặc phím còn đang giữ không được lọt vào ô công thức
-                                    if (ev.key && ev.key.length === 1 && !ev.ctrlKey && !ev.metaKey && !ev.altKey
-                                            && (sinceUnlock < FM_STRAY_KEY_MS || (ev.repeat && sinceUnlock < 3000))) {
-                                        ev.preventDefault();
-                                    }
-                                });
-                                inp.addEventListener('beforeinput', function (ev) {
-                                    if (ev.cancelable && Date.now() - fmUnlockedAt < FM_STRAY_KEY_MS
-                                            && String(ev.inputType || '').indexOf('insert') === 0) ev.preventDefault();
-                                });
-                                badgeBtn.addEventListener('click', function () {
-                                    const p = fmParse(fmItems[idx]);
-                                    const basePat = p.pat || 'CT' + (idx + 1);
-                                    const nextSide = p.kind === 'L' ? 'N' : 'L';
-                                    fmItems[idx] = basePat + '-' + nextSide;
-                                    inp.value = fmItems[idx];
-                                    fmUpdateBadgeEl(badgeBtn, fmItems[idx], true);
-                                    fmSave(false);
-                                    inp.focus();
-                                });
-
-                                tdCode.appendChild(inp);
-                                tdSide.appendChild(badgeBtn);
-                                if (focusIdx === idx) toFocus = inp;
-                            } else {
-                                const p = fmParse(raw);
-                                const wrap = document.createElement('span');
-                                wrap.className = 'fm-code-text';
-                                if (p.hasSep) {
-                                    const bPat = document.createElement('span');
-                                    bPat.textContent = p.pat;
-                                    const sep = document.createElement('span');
-                                    sep.className = 'fm-code-sep';
-                                    sep.textContent = '-';
-                                    const bTgt = document.createElement('span');
-                                    bTgt.className = 'fm-code-tgt';
-                                    if (p.kind) bTgt.setAttribute('data-kind', p.kind);
-                                    bTgt.textContent = p.tgt;
-                                    wrap.appendChild(bPat);
-                                    wrap.appendChild(sep);
-                                    wrap.appendChild(bTgt);
-                                } else {
-                                    wrap.textContent = p.full;
-                                }
-                                tdCode.appendChild(wrap);
-
-                                const badge = document.createElement('span');
-                                badge.className = 'fm-badge';
-                                fmUpdateBadgeEl(badge, raw, false);
-                                tdSide.appendChild(badge);
-
-                                tr.title = 'Đang khoá · Bấm nút “🔑 Sửa” và nhập mật khẩu để chỉnh sửa';
-                                tr.addEventListener('click', function () {
-                                    fmBtnUnlock.classList.remove('fm-pulse');
-                                    void fmBtnUnlock.offsetWidth;
-                                    fmBtnUnlock.classList.add('fm-pulse');
-                                    setTimeout(function () { fmBtnUnlock.classList.remove('fm-pulse'); }, 650);
-                                });
-                            }
-
-                            tr.appendChild(tdCode);
-                            tr.appendChild(tdSide);
-
-                            if (u) {
-                                const tdAct = document.createElement('td');
-                                tdAct.className = 'fm-col-act';
-                                const delBtn = document.createElement('button');
-                                delBtn.type = 'button';
-                                delBtn.className = 'fm-del-btn';
-                                delBtn.textContent = '✕';
-                                delBtn.title = 'Xoá dòng ' + (idx + 1);
-                                delBtn.setAttribute('aria-label', 'Xoá dòng ' + (idx + 1));
-                                delBtn.addEventListener('click', function () {
-                                    fmItems.splice(idx, 1);
-                                    fmSave(true);
-                                    fmRender();
-                                });
-                                tdAct.appendChild(delBtn);
-                                tr.appendChild(tdAct);
-                            }
-
-                            frag.appendChild(tr);
-                        })(i);
-                    }
-
-                    fmBody.appendChild(frag);
-                    if (toFocus) {
-                        setTimeout(function () {
-                            toFocus.focus();
-                            const len = toFocus.value.length;
-                            try { toFocus.setSelectionRange(len, len); } catch (e) {}
-                        }, 0);
-                    }
-                }
-
-                // ---------------------------------------------------------------------
-                // Ô nhập mật khẩu KHÔNG dùng type="password".
-                // Chrome coi mọi ô đang là (hoặc đã từng là) type="password" là "ô mật khẩu" và sẽ bật
-                // Trình quản lý mật khẩu của Google: hỏi "Lưu mật khẩu?", gợi ý mật khẩu đã lưu,
-                // cảnh báo "mật khẩu vừa dùng đã bị lộ"… Vì vậy ô này luôn là type="text", ký tự được
-                // che bằng CSS (-webkit-text-security) và nút Hiện/Ẩn chỉ bật/tắt lớp CSS .fm-masked.
-                // ---------------------------------------------------------------------
-                const fmMaskCssOk = (function () {
-                    try {
-                        if (window.CSS && CSS.supports && CSS.supports('-webkit-text-security', 'disc')) return true;
-                    } catch (e) {}
-                    try {
-                        return 'webkitTextSecurity' in document.documentElement.style;
-                    } catch (e) {}
-                    return false;
-                })();
-                let fmPwMasked = true;
-                let fmPwDownOnBackdrop = false;
-                let fmUnlockedAt = 0;
-                const FM_STRAY_KEY_MS = 1000;   // sau khi mở khoá, bỏ qua phím gõ vào ô công thức trong khoảng này
-
-                function fmPwIsOpen() {
-                    return fmPwDialog.classList.contains('open');
-                }
-
-                function fmSetPwMasked(masked) {
-                    fmPwMasked = !!masked;
-                    fmPwInput.classList.toggle('fm-masked', fmPwMasked);
-                    if (!fmMaskCssOk) {
-                        // Chỉ trình duyệt rất cũ (không che được bằng CSS) mới phải dùng tạm type="password"
-                        try { fmPwInput.type = fmPwMasked ? 'password' : 'text'; } catch (e) {}
-                    }
-                    fmPwToggle.textContent = fmPwMasked ? 'Hiện' : 'Ẩn';
-                    fmPwToggle.setAttribute('aria-pressed', fmPwMasked ? 'false' : 'true');
-                }
-
-                function openFmPwDialog() {
-                    if (fmPwIsOpen()) return;
-                    fmSetPwMasked(true);
-                    fmPwInput.value = '';
-                    // Đổi tên ô ngẫu nhiên mỗi lần mở để trình duyệt không gợi ý lại nội dung đã gõ
-                    fmPwInput.name = 'fm_' + Math.random().toString(36).slice(2, 10);
-                    fmPwError.textContent = '';
-                    fmPwCard.classList.remove('fm-shake');
-                    fmPwDownOnBackdrop = false;
-                    dlgShow(fmPwDialog);
-                    // Focus ngay trong thao tác bấm để bàn phím điện thoại bật lên luôn
-                    try { fmPwInput.focus(); } catch (e) {}
-                    setTimeout(function () {
-                        if (fmPwIsOpen() && document.activeElement !== fmPwInput) {
-                            try { fmPwInput.focus(); } catch (e) {}
-                        }
-                    }, 80);
-                }
-
-                function closeFmPwDialog(restoreFocus) {
-                    if (!fmPwIsOpen()) return;
-                    fmPwInput.value = '';
-                    fmSetPwMasked(true);
-                    dlgHide(fmPwDialog);
-                    if (restoreFocus === true && !fmBtnUnlock.hidden) {
-                        try { fmBtnUnlock.focus({ preventScroll: true }); } catch (e) {}
-                    }
-                }
-
-                function submitFmPw() {
-                    if (!fmPwIsOpen()) return;
-                    const entered = String(fmPwInput.value || '').trim();
-                    if (entered === FM_PASSWORD) {
-                        closeFmPwDialog();
-                        fmUnlocked = true;
-                        fmUnlockedAt = Date.now();
-                        fmResetArmedUntil = 0;
-                        fmShowNotice('');
-                        fmApplyCollapsed(false);
-                        fmRender(0);
-                    } else {
-                        fmPwError.textContent = entered ? 'Mật khẩu không đúng! Vui lòng kiểm tra lại.' : 'Vui lòng nhập mật khẩu.';
-                        fmPwCard.classList.remove('fm-shake');
-                        void fmPwCard.offsetWidth;
-                        fmPwCard.classList.add('fm-shake');
-                        fmPwInput.focus();
-                        fmPwInput.select();
-                    }
-                }
-
-                function fmLockAndSave() {
-                    fmItems = fmItems.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
-                    fmUnlocked = false;
-                    fmResetArmedUntil = 0;
-                    fmSave(true);
-                    fmRender();
-                    fmShowNotice('✓ Đã lưu & khoá bảng công thức.');
-                }
-
-                // =====================================================================
-                // DÒ CÔNG THỨC TỰ ĐỘNG THEO ĐỘ DÀI MẪU:
-                //   • Công thức có bao nhiêu ký tự phần MẪU thì tự lấy bấy nhiêu ô cuối của bảng 100 kỳ
-                //     (VD: LBB-L → xét 3 ô cuối; LBBN-L → xét 4 ô cuối; LLBBN-N → xét 5 ô cuối)
-                //   • Ký hiệu trong MẪU (đọc từ trái → phải = ô cũ → ô mới nhất):
-                //       N = Nhỏ (0–4) · L = Lớn (5–9) · 0–9 = đúng con số đó
-                //       C = số Chẵn (0, 2, 4, 6, 8) · E = số lẺ (1, 3, 5, 7, 9)
-                //         Các ô C trong cùng một công thức phải là những số KHÁC NHAU từng đôi; các ô E cũng vậy.
-                //         (VD: EEE-L → 3 ô cuối hàng 10 là 3 số lẻ đôi một khác nhau thì đánh Lớn: 1·3·5 tính,
-                //              1·1·3 và 5·5·5 không tính; CCC-L → 3 số chẵn đôi một khác nhau thì đánh Lớn)
-                //       BB / BBB = các vị trí B mang cùng một con số giống nhau (VD: 255 → NBB, 7552 → LBBN)
-                //       X / ? / * = ô bất kỳ
-                //   • Khi nhiều công thức cùng khớp: công thức ghi nhiều con số cụ thể hơn được ưu tiên, dùng thay cho
-                //     công thức chung hơn (VD: 393-N, 791-N thay cho EEE-L; 088-L thay cho NBB-N) — xem scDecide.
-                // =====================================================================
-                function scKind(d) { return d >= 5 ? 'L' : 'N'; }
-
-                function scMatchPattern(pat, slice) {
-                    const len = pat ? pat.length : 0;
-                    if (!len || !slice || slice.length !== len) return false;
-                    for (let j = 0; j < len; j++) {
-                        const c = String(pat[j]).toUpperCase();
-                        const d = slice[j].d;
-                        if (c === 'N') {
-                            if (!(d <= 4)) return false;
-                        } else if (c === 'L') {
-                            if (!(d >= 5)) return false;
-                        } else if (c === 'C') {
-                            if (d % 2 !== 0) return false;      // C = số chẵn
-                        } else if (c === 'E') {
-                            if (d % 2 !== 1) return false;      // E = số lẻ
-                        } else if (/^[0-9]$/.test(c)) {
-                            if (d !== Number(c)) return false;
-                        } else if (c === 'B' || c === 'X' || c === '?' || c === '*') {
-                            // kiểm tra nhóm B bên dưới
-                        } else {
-                            return false;
-                        }
-                    }
-
-                    // Các ô ký hiệu C (chẵn) trong một công thức phải là những số KHÁC NHAU từng đôi; các ô E (lẻ) cũng vậy.
-                    // VD: EEE khớp 1·3·5, 7·9·1 nhưng KHÔNG khớp 1·1·3 (trùng 2 trong 3) hay 5·5·5 (trùng cả 3).
-                    // (Số chẵn không thể trùng số lẻ nên dùng chung một bảng đánh dấu cho cả C và E.)
-                    const seenParity = {};
-                    for (let j = 0; j < len; j++) {
-                        const c = String(pat[j]).toUpperCase();
-                        if (c !== 'C' && c !== 'E') continue;
-                        const d = slice[j].d;
-                        if (seenParity[d]) return false;
-                        seenParity[d] = true;
-                    }
-
-                    // Gom các cụm B liền nhau (VD: LBBN -> [[1,2]], BBNBB -> [[0,1],[3,4]])
-                    // và các chữ B đứng cách nhau (VD: BNB -> [0,2])
-                    const bRuns = [];
-                    const singleBs = [];
-                    let r = 0;
-                    while (r < len) {
-                        if (String(pat[r]).toUpperCase() === 'B') {
-                            const run = [r];
-                            r++;
-                            while (r < len && String(pat[r]).toUpperCase() === 'B') {
-                                run.push(r);
-                                r++;
-                            }
-                            if (run.length >= 2) bRuns.push(run);
-                            else singleBs.push(run[0]);
-                        } else {
-                            r++;
-                        }
-                    }
-                    if (singleBs.length === 1 && bRuns.length === 0) return false;
-                    if (singleBs.length === 1 && bRuns.length > 0) bRuns[0].push(singleBs[0]);
-                    else if (singleBs.length >= 2) bRuns.push(singleBs);
-
-                    for (let g = 0; g < bRuns.length; g++) {
-                        const grp = bRuns[g];
-                        const sameDigit = slice[grp[0]].d;
-                        for (let m = 1; m < grp.length; m++) {
-                            if (slice[grp[m]].d !== sameDigit) return false;
-                        }
-                    }
-                    return true;
-                }
-
-                function scTokenLabel(ch) {
-                    const tok = String(ch).toUpperCase();
-                    if (tok === 'C') return 'CHẴN';
-                    if (tok === 'E') return 'LẺ';
-                    return tok;
-                }
-
-                // Độ "cụ thể" của một mẫu = số vị trí ghi hẳn con số (0–9).
-                // VD: 393 → 3 · N02 → 2 · NN4 → 1 · EEE, CCC, NBB, LBB → 0
-                function scSpecificity(pat) {
-                    const s = String(pat || '');
-                    let n = 0;
-                    for (let j = 0; j < s.length; j++) {
-                        const code = s.charCodeAt(j);
-                        if (code >= 48 && code <= 57) n++;
-                    }
-                    return n;
-                }
-
-                // Chọn bên đánh từ các công thức đang khớp (hits xếp theo thứ tự trong bảng công thức):
-                //   1) ƯU TIÊN CÔNG THỨC CỤ THỂ: chỉ tính những công thức ghi nhiều con số cụ thể nhất. Công thức chung hơn
-                //      thì "nhường" (h.yields = true), không tính phiếu.
-                //      VD: bảng có 393-N thì 3·9·3 dùng 393-N; có 791-N thì 7·9·1 dùng 791-N thay cho EEE-L;
-                //          0·8·8 dùng 088-L thay cho NBB-N.
-                //   2) Trong các công thức được tính: bên nào nhiều công thức hơn thì thắng; bằng nhau thì theo công thức
-                //      đứng trên trong bảng (như trước đây).
-                function scDecide(hits) {
-                    const valid = hits.filter(function (h) { return h.p.kind === 'L' || h.p.kind === 'N'; });
-                    let top = 0;
-                    valid.forEach(function (h) {
-                        h.spec = scSpecificity(h.pat);
-                        if (h.spec > top) top = h.spec;
-                    });
-                    const used = [];
-                    const yielded = [];
-                    valid.forEach(function (h) {
-                        h.yields = h.spec < top;
-                        (h.yields ? yielded : used).push(h);
-                    });
-                    const hitsL = used.filter(function (h) { return h.p.kind === 'L'; });
-                    const hitsN = used.filter(function (h) { return h.p.kind === 'N'; });
-                    let side = '';
-                    let list = [];
-                    if (hitsL.length > hitsN.length) {
-                        side = 'B';
-                        list = hitsL;
-                    } else if (hitsN.length > hitsL.length) {
-                        side = 'S';
-                        list = hitsN;
-                    } else if (used.length) {
-                        side = used[0].p.kind === 'L' ? 'B' : 'S';
-                        list = used[0].p.kind === 'L' ? hitsL : hitsN;
-                    }
-                    return { used: used, yielded: yielded, cntL: hitsL.length, cntN: hitsN.length, side: side, list: list };
-                }
-
-                function scAllDigits() {
+                // Loại của 4 ô cuối bảng theo thứ tự cũ → mới: 'B' = LỚN (5–9), 'S' = NHỎ (0–4), '' = ô chưa có số.
+                function scLastFourKinds() {
                     const out = [];
-                    for (let i = 0; i < cells.length; i++) {
-                        const v = String(cells[i].value == null ? '' : cells[i].value);
-                        if (/^[0-9]$/.test(v)) out.push({ i: i, d: Number(v) });
-                    }
+                    for (let i = TOTAL - 4; i < TOTAL; i++) out.push(pdKind(cells[i] ? cells[i].value : ''));
                     return out;
                 }
 
-                function scMakeBall(d, small) {
-                    const b = document.createElement('span');
-                    b.className = 'sc-ball' + (small ? ' sm' : '');
-                    b.setAttribute('data-kind', scKind(d));
-                    b.textContent = String(d);
-                    return b;
-                }
-
-                function scRenderHeaderBalls(list) {
-                    scLast3.textContent = '';
-                    const show = list.length > 6 ? list.slice(list.length - 6) : list;
-                    show.forEach(function (it, k) {
-                        if (k) {
-                            const a = document.createElement('span');
-                            a.className = 'sc-arrow';
-                            a.textContent = '›';
-                            scLast3.appendChild(a);
-                        }
-                        scLast3.appendChild(scMakeBall(it.d, false));
-                    });
+                // Đủ điều kiện cược: 2 ô trước cùng loại VÀ 2 ô sau cùng loại (NNLL, LLNN, NNNN, LLLL).
+                function scIsTwoPairs(kinds) {
+                    return !!kinds[0] && !!kinds[2] && kinds[0] === kinds[1] && kinds[2] === kinds[3];
                 }
 
                 function scRender() {
-                    scSignal = null;
-                    if (!scBody || !cells || !cells.length) return;
-                    const all = scAllDigits();
+                    const kinds = scLastFourKinds();
+                    const full = kinds.every(Boolean);                       // cả 4 ô đều có số
+                    const kind = scIsTwoPairs(kinds) ? kinds[3] : '';        // cược theo cặp sau (2 ô cuối cùng)
+                    scSignal = kind ? { choice: kind } : null;
 
-                    for (let i = 0; i < cells.length; i++) {
-                        const box = cells[i].valEl && cells[i].valEl.parentElement;
-                        if (box) box.classList.remove('scan-hl');
-                    }
-
-                    scBody.textContent = '';
-                    scSummary.textContent = '';
-
-                    // Xác định độ dài mẫu của từng công thức trong bảng
-                    const parsedFormulas = [];
-                    let minLen = Infinity;
-                    let maxLen = 0;
-                    for (let k = 0; k < fmItems.length; k++) {
-                        const p = fmParse(fmItems[k]);
-                        if (!p.full) continue;
-                        const pat = String(p.pat || '').replace(/\s+/g, '').toUpperCase();
-                        if (!pat.length) continue;
-                        parsedFormulas.push({ idx: k, p: p, pat: pat, len: pat.length });
-                        if (pat.length < minLen) minLen = pat.length;
-                        if (pat.length > maxLen) maxLen = pat.length;
-                    }
-                    if (!parsedFormulas.length) {
-                        minLen = 3;
-                        maxLen = 3;
-                    }
-
-                    if (!all.length || all.length < minLen) {
-                        scRenderHeaderBalls(all);
-                        scPanel.setAttribute('data-state', 'empty');
-                        scSub.textContent = 'Cần ít nhất ' + minLen + ' ô kết quả để bắt đầu dò';
-                        const tr = document.createElement('tr');
-                        const td = document.createElement('td');
-                        td.colSpan = 4;
-                        td.className = 'sc-empty';
-                        td.textContent = 'Bảng chưa đủ dữ liệu (đang có ' + all.length + '/' + minLen + ' ô). Hãy nạp kết quả vào bảng 100 kỳ.';
-                        tr.appendChild(td);
-                        scBody.appendChild(tr);
-                        return;
-                    }
-
-                    // Kiểm tra từng công thức với đúng số ô cuối tương ứng độ dài công thức đó
-                    const hits = [];
-                    for (let k = 0; k < parsedFormulas.length; k++) {
-                        const item = parsedFormulas[k];
-                        if (all.length < item.len) continue;
-                        const slice = all.slice(all.length - item.len);
-                        if (scMatchPattern(item.pat, slice)) {
-                            hits.push({ idx: item.idx, p: item.p, pat: item.pat, len: item.len, slice: slice });
+                    scLast.textContent = '';
+                    kinds.forEach(function (k, idx) {
+                        if (idx === 2) {
+                            const arrow = document.createElement('span');
+                            arrow.className = 'sc-arrow';
+                            arrow.textContent = '›';
+                            scLast.appendChild(arrow);
                         }
+                        const ball = document.createElement('span');
+                        ball.className = 'sc-ball';
+                        if (k) ball.setAttribute('data-kind', k === 'B' ? 'L' : 'N');
+                        ball.textContent = k ? String(cells[TOTAL - 4 + idx].value) : '–';
+                        scLast.appendChild(ball);
+                    });
+
+                    const letters = kinds.map(function (k) { return k === 'B' ? 'L' : 'N'; });
+                    pdText(scSub, full ? (letters[0] + letters[1] + ' · ' + letters[2] + letters[3]) : 'chưa đủ 4 ô');
+                    pdAttr(scPanel, 'data-state', kind ? 'hit' : (full ? 'miss' : 'empty'));
+                    if (kind) {
+                        pdAttr(scHint, 'data-kind', kind === 'B' ? 'L' : 'N');
+                        pdText(scHint, kind === 'B' ? 'CƯỢC LỚN' : 'CƯỢC NHỎ');
+                    } else {
+                        scHint.removeAttribute('data-kind');
+                        pdText(scHint, 'KHÔNG CƯỢC');
                     }
-
-                    if (!hits.length) {
-                        const watchN = Math.min(all.length, maxLen);
-                        const tail = all.slice(all.length - watchN);
-                        tail.forEach(function (it) {
-                            const box = cells[it.i].valEl && cells[it.i].valEl.parentElement;
-                            if (box) box.classList.add('scan-hl');
-                        });
-                        scRenderHeaderBalls(tail);
-                        scPanel.setAttribute('data-state', 'miss');
-                        const rangeLabel = (minLen === maxLen)
-                            ? (maxLen + ' ô cuối')
-                            : (minLen + '–' + maxLen + ' ô cuối');
-                        const lnStr = tail.map(function (it) { return scKind(it.d); }).join('');
-                        scSub.textContent = 'Xét ' + rangeLabel + ': ' + tail.map(function (it) { return it.d; }).join(' · ') + ' (' + lnStr + ')';
-
-                        const tr = document.createElement('tr');
-                        const td = document.createElement('td');
-                        td.colSpan = 4;
-                        td.className = 'sc-empty';
-                        td.textContent = 'Chưa có công thức nào khớp với ' + rangeLabel + ' (' + tail.map(function (it) { return it.d; }).join('-') + '). Chờ kỳ tiếp theo…';
-                        tr.appendChild(td);
-                        scBody.appendChild(tr);
-                        return;
-                    }
-
-                    // Có công thức khớp: tô sáng đúng các ô đang tham gia khớp trên bảng 100 kỳ
-                    let hitMinLen = Infinity;
-                    let hitMaxLen = 0;
-                    hits.forEach(function (h) {
-                        if (h.len < hitMinLen) hitMinLen = h.len;
-                        if (h.len > hitMaxLen) hitMaxLen = h.len;
-                        h.slice.forEach(function (it) {
-                            const box = cells[it.i].valEl && cells[it.i].valEl.parentElement;
-                            if (box) box.classList.add('scan-hl');
-                        });
-                    });
-                    const hitTail = all.slice(all.length - hitMaxLen);
-                    scRenderHeaderBalls(hitTail);
-                    const hitRangeLabel = (hitMinLen === hitMaxLen)
-                        ? (hitMaxLen + ' ô cuối')
-                        : (hitMinLen + '–' + hitMaxLen + ' ô cuối');
-                    scSub.textContent = 'Khớp trên ' + hitRangeLabel + ': ' + hitTail.map(function (it) { return it.d; }).join(' · ');
-
-                    scPanel.setAttribute('data-state', 'hit');
-                    const frag = document.createDocumentFragment();
-                    // Công thức ghi số cụ thể hơn được ưu tiên; công thức chung hơn thì "nhường" (xem scDecide)
-                    const dec = scDecide(hits);
-                    const cntL = dec.cntL, cntN = dec.cntN;
-                    const prioNames = dec.used.map(function (h) { return h.p.full.toUpperCase(); });
-                    const prioLabel = prioNames.slice(0, 2).join(', ') + (prioNames.length > 2 ? '…' : '');
-
-                    hits.forEach(function (h) {
-                        const tr = document.createElement('tr');
-                        tr.className = h.yields ? 'sc-row sc-row-yield' : 'sc-row';
-                        if (h.yields) {
-                            tr.setAttribute('data-yield', 'true');
-                            tr.title = 'Không tính: nhường công thức ghi số cụ thể hơn (' + prioLabel + ')';
-                        }
-
-                        const tdIdx = document.createElement('td');
-                        tdIdx.className = 'sc-col-idx';
-                        tdIdx.textContent = String(h.idx + 1);
-
-                        const tdCode = document.createElement('td');
-                        tdCode.className = 'sc-col-code';
-                        const wrap = document.createElement('span');
-                        wrap.className = 'fm-code-text';
-                        const sPat = document.createElement('span');
-                        sPat.textContent = h.p.pat;
-                        const sep = document.createElement('span');
-                        sep.className = 'fm-code-sep';
-                        sep.textContent = '-';
-                        const tgt = document.createElement('span');
-                        tgt.className = 'fm-code-tgt';
-                        if (h.p.kind) tgt.setAttribute('data-kind', h.p.kind);
-                        tgt.textContent = h.p.tgt;
-                        wrap.appendChild(sPat); wrap.appendChild(sep); wrap.appendChild(tgt);
-                        tdCode.appendChild(wrap);
-
-                        const tdCells = document.createElement('td');
-                        tdCells.className = 'sc-col-cells';
-                        const cw = document.createElement('span');
-                        cw.className = 'sc-cells';
-                        if (h.len >= 4) cw.setAttribute('data-many', 'true');
-                        for (let j = 0; j < h.len; j++) {
-                            const c = document.createElement('span');
-                            c.className = 'sc-cell';
-                            const tag = document.createElement('span');
-                            tag.className = 'sc-cell-tag';
-                            const tok = String(h.pat[j]).toUpperCase();
-                            tag.setAttribute('data-tok', tok);
-                            if (tok === 'B') tag.title = 'BB: các số giống nhau';
-                            else if (tok === 'C') tag.title = 'C: số chẵn (0, 2, 4, 6, 8)';
-                            else if (tok === 'E') tag.title = 'E: số lẻ (1, 3, 5, 7, 9)';
-                            // Mẫu dài (từ 4 ô): chỉ ghi chữ C / E cho gọn; mẫu ngắn ghi rõ CHẴN / LẺ
-                            tag.textContent = (h.len >= 4) ? tok : scTokenLabel(tok);
-                            c.appendChild(tag);
-                            c.appendChild(scMakeBall(h.slice[j].d, true));
-                            cw.appendChild(c);
-                        }
-                        tdCells.appendChild(cw);
-
-                        const tdSide = document.createElement('td');
-                        tdSide.className = 'sc-col-side';
-                        const hint = document.createElement('span');
-                        hint.className = 'sc-hint';
-                        if (h.p.kind) hint.setAttribute('data-kind', h.p.kind);
-                        hint.textContent = h.p.kind === 'L' ? 'LỚN (L)' : (h.p.kind === 'N' ? 'NHỎ (N)' : (h.p.tgt || '—'));
-                        tdSide.appendChild(hint);
-                        if (h.yields) {
-                            const note = document.createElement('span');
-                            note.className = 'sc-yield-note';
-                            note.textContent = 'nhường ' + prioNames[0] + (prioNames.length > 1 ? '…' : '');
-                            tdSide.appendChild(note);
-                        }
-
-                        tr.appendChild(tdIdx);
-                        tr.appendChild(tdCode);
-                        tr.appendChild(tdCells);
-                        tr.appendChild(tdSide);
-                        frag.appendChild(tr);
-                    });
-                    scBody.appendChild(frag);
-
-                    if (dec.side) {
-                        scSignal = {
-                            choice: dec.side,
-                            fm: dec.list.map(function (h) { return h.p.full.toUpperCase(); }).join(', ')
-                        };
-                    }
-
-                    const pill = function (text, kind, cls) {
-                        const s = document.createElement('span');
-                        s.className = 'sc-pill' + (cls ? ' ' + cls : '');
-                        if (kind) s.setAttribute('data-kind', kind);
-                        s.textContent = text;
-                        scSummary.appendChild(s);
-                    };
-                    pill('Khớp ' + hits.length + ' công thức');
-                    if (dec.yielded.length) pill('★ Ưu tiên ' + prioLabel, '', 'prio');
-                    if (cntL) pill('LỚN × ' + cntL, 'L');
-                    if (cntN) pill('NHỎ × ' + cntN, 'N');
-                    if (cntL && cntN) pill('⚠ Mâu thuẫn LỚN / NHỎ', '', 'warn');
-                }
-
-                function fmApplyCollapsed(collapsed) {
-                    fmPanel.setAttribute('data-collapsed', collapsed ? 'true' : 'false');
-                    fmBtnCollapse.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-                    try { localStorage.setItem(LS_FM_COLLAPSED, collapsed ? '1' : '0'); } catch (e) {}
-                }
-
-                function fmInitCollapse() {
-                    // Bình thường thu gọn bảng công thức (nằm dưới khung "Kỳ đang chạy")
-                    let collapsed = true;
-                    try {
-                        const v = localStorage.getItem(LS_FM_COLLAPSED);
-                        collapsed = (v === null) ? true : (v === '1');
-                    } catch (e) {}
-                    fmApplyCollapsed(collapsed);
-                    // Bấm vào "Bảng công thức": chỉ mở ra xem / thu gọn lại, KHÔNG hỏi mật khẩu.
-                    // Muốn sửa thì bấm nút "🔑 Sửa" (chỉ nút đó mới hỏi mật khẩu).
-                    fmBtnCollapse.addEventListener('click', function () {
-                        fmApplyCollapsed(fmPanel.getAttribute('data-collapsed') !== 'true');
-                    });
-                    // Đang khoá (chỉ xem): bấm vào chỗ trống trên thanh tiêu đề cũng mở ra / thu gọn
-                    const fmHeadEl = fmPanel.querySelector('.fm-head');
-                    if (fmHeadEl) {
-                        fmHeadEl.addEventListener('click', function (ev) {
-                            if (fmUnlocked) return;
-                            if (ev.target && ev.target.closest && ev.target.closest('button')) return;
-                            fmApplyCollapsed(fmPanel.getAttribute('data-collapsed') !== 'true');
-                        });
-                    }
-                    // Bấm ra ngoài khung: tự lưu, khoá lại và thu gọn như cũ
-                    document.addEventListener('pointerdown', function (ev) {
-                        if (!fmUnlocked) return;
-                        if (fmPwDialog && fmPwDialog.classList.contains('open')) return;
-                        // Chạm vào popup (kể cả lúc popup đang mờ dần để đóng) không tính là bấm ra ngoài
-                        if (ev.target && ev.target.closest && ev.target.closest('.dialog-backdrop')) return;
-                        if (fmPanel.contains(ev.target)) return;
-                        fmLockAndSave();
-                        fmApplyCollapsed(true);
-                    });
-                }
-
-                function fmInit() {
-                    fmInitCollapse();
-                    fmLoad();
-                    fmRender();
-
-                    fmBtnUnlock.addEventListener('click', openFmPwDialog);
-                    fmBtnSaveLock.addEventListener('click', fmLockAndSave);
-                    // Mật khẩu toàn chữ số thì bật bàn phím số, ngược lại dùng bàn phím chữ
-                    fmPwInput.setAttribute('inputmode', /^[0-9]+$/.test(FM_PASSWORD) ? 'numeric' : 'text');
-                    fmPwCancel.addEventListener('click', function (ev) {
-                        closeFmPwDialog(!!ev && ev.detail === 0);
-                    });
-                    fmPwSubmit.addEventListener('click', submitFmPw);
-                    // Bấm nút Hiện/Ẩn không làm ô nhập mất con trỏ (bàn phím điện thoại không bị tụt xuống)
-                    fmPwToggle.addEventListener('mousedown', function (ev) { ev.preventDefault(); });
-                    fmPwToggle.addEventListener('click', function () {
-                        if (!fmPwIsOpen()) return;
-                        fmSetPwMasked(!fmPwMasked);
-                        fmPwInput.focus();
-                    });
-                    fmPwInput.addEventListener('keydown', function (ev) {
-                        if (ev.key === 'Enter' && !ev.isComposing) {
-                            ev.preventDefault();
-                            submitFmPw();
-                        }
-                    });
-                    // Gõ đủ mật khẩu là tự kiểm tra, không cần bấm "Mở khoá":
-                    //   • đúng → đóng popup và vào thẳng chế độ sửa
-                    //   • đủ số ký tự mà sai → báo lỗi ngay
-                    function fmPwAutoCheck(composing) {
-                        if (!fmPwIsOpen()) return;
-                        const typed = String(fmPwInput.value || '').trim();
-                        if (typed === FM_PASSWORD || (!composing && typed.length === FM_PASSWORD.length)) submitFmPw();
-                    }
-                    fmPwInput.addEventListener('input', function (ev) {
-                        if (fmPwError.textContent) fmPwError.textContent = '';
-                        fmPwAutoCheck(!!(ev && ev.isComposing));
-                    });
-                    fmPwInput.addEventListener('compositionend', function () { fmPwAutoCheck(false); });
-                    // Đang che ký tự thì không cho sao chép / cắt / kéo nội dung ra ngoài (giống ô mật khẩu thật)
-                    ['copy', 'cut', 'dragstart'].forEach(function (type) {
-                        fmPwInput.addEventListener(type, function (ev) {
-                            if (fmPwMasked) ev.preventDefault();
-                        });
-                    });
-                    // Bấm ra vùng nền mờ để đóng — chỉ khi cả lúc nhấn lẫn lúc thả đều nằm trên nền
-                    // (kéo bôi đen chữ trong ô rồi thả chuột ra ngoài sẽ không làm đóng popup)
-                    ['pointerdown', 'mousedown', 'touchstart'].forEach(function (type) {
-                        fmPwDialog.addEventListener(type, function (ev) {
-                            fmPwDownOnBackdrop = (ev.target === fmPwDialog);
-                        }, { passive: true });
-                    });
-                    fmPwDialog.addEventListener('click', function (ev) {
-                        const onBackdrop = (ev.target === fmPwDialog) && fmPwDownOnBackdrop;
-                        fmPwDownOnBackdrop = false;
-                        if (onBackdrop) closeFmPwDialog();
-                    });
-                    document.addEventListener('keydown', function (ev) {
-                        if (ev.key === 'Escape' && fmPwIsOpen()) closeFmPwDialog(true);
-                    });
-
-                    fmBtnAdd.addEventListener('click', function () {
-                        if (!fmUnlocked) return;
-                        fmItems.push('');
-                        fmRender(fmItems.length - 1);
-                    });
-
-                    fmBtnReset.addEventListener('click', function () {
-                        if (!fmUnlocked) return;
-                        const now = Date.now();
-                        if (now < fmResetArmedUntil) {
-                            fmItems = FM_DEFAULT.slice();
-                            fmResetArmedUntil = 0;
-                            fmSave(true);
-                            fmRender();
-                            fmShowNotice('↺ Đã khôi phục ' + FM_DEFAULT.length + ' công thức mặc định.');
-                        } else {
-                            fmResetArmedUntil = now + 3000;
-                            fmBtnReset.textContent = 'Bấm lần nữa để khôi phục';
-                            fmBtnReset.classList.add('armed');
-                            setTimeout(function () {
-                                if (fmUnlocked && Date.now() >= fmResetArmedUntil) {
-                                    fmBtnReset.textContent = '↺ Mặc định';
-                                    fmBtnReset.classList.remove('armed');
-                                }
-                            }, 3050);
-                        }
-                    });
-
-                    window.addEventListener('storage', function (ev) {
-                        if (ev.key !== LS_FORMULAS || fmUnlocked) return;
-                        fmLoad();
-                        fmRender();
-                    });
                 }
 
                 initGrid();
                 loadToken();
                 const hasLocalBoard = loadBoardLocal();
-                fmInit();
                 pdInit();
                 startRealtimeSync();
                 if (hasLocalBoard) setStatus('Đã mở bảng đã lưu · đang kiểm tra kết quả mới…');
@@ -4446,6 +2964,6 @@
                 }, 30000);
             })();
         </script>
-    </body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a59edd85a9d48b32',t:'MTc5NDU4NDMyNg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a59edd85a9d48b32',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
