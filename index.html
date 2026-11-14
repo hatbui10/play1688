@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-        <title>Play 1688</title>
+        <title>Bảng 100 kỳ — Tô màu Lớn/Nhỏ</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@600;700;800;900&family=Kanit:wght@700;800;900&display=swap" media="print" onload="this.media='all'">
@@ -297,6 +297,41 @@
                 font-size: 11px;
             }
             .dialog textarea:focus { border-color: #60a5fa; }
+            .copy-row {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                margin: 8px 0;
+            }
+            .copy-row label {
+                flex: 0 0 78px;
+                font-size: 11px;
+                color: #a8b4c7;
+            }
+            .copy-row input {
+                flex: 1;
+                min-width: 0;
+                font-size: 12px;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                background: #0f172a;
+                border: 1px solid #334155;
+                color: #e2e8f0;
+                border-radius: 6px;
+                padding: 6px 8px;
+            }
+            .copy-btn {
+                flex: 0 0 auto;
+                min-height: 30px;
+                padding: 0 10px;
+                font-size: 11px;
+                background: #3b82f6;
+                color: #fff;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+            }
+            .copy-btn:hover { background: #2563eb; }
+            .copy-note { margin: 0 0 10px; font-size: 11px; color: #a8b4c7; }
             .dialog-actions {
                 display: flex;
                 justify-content: flex-end;
@@ -849,8 +884,8 @@
             .real-panel[data-on="true"] .rb-title small { color: #86efac; }
             .real-panel[data-on="true"] .rb-title small[data-kind="err"] { color: #fda4af; }
             .rb-issue-row {
-                display: grid;
-                grid-template-columns: minmax(0, 1fr) auto auto;
+                display: flex;
+                flex-wrap: wrap;
                 align-items: center;
                 gap: 6px;
                 margin-bottom: 10px;
@@ -861,7 +896,8 @@
             }
             .rb-issue { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
             .rb-clock,
-            .rb-token {
+            .rb-token,
+            .rb-copytoken {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
@@ -870,6 +906,14 @@
                 border-radius: 999px;
                 font-size: 13px;
                 white-space: nowrap;
+            }
+            .rb-copytoken {
+                background: #3b82f6;
+                border-color: #3b82f6;
+                color: #fff;
+            }
+            .rb-copytoken:hover {
+                background: #2563eb;
             }
             .rb-clock {
                 min-width: 92px;
@@ -1481,6 +1525,8 @@
                         <span class="rb-issue" id="rbIssue">Kỳ: --</span>
                         <span class="rb-clock" id="rbClock" data-kind="syncing">⏳ Chờ kỳ</span>
                         <button type="button" class="rb-token" id="rbBtnToken" data-kind="err" title="Chạm để dán / đổi token game">🔑 Nhập token</button>
+                        <button type="button" class="rb-copytoken" id="rbBtnCopyToken" title="Lấy token từ trò chơi">📋 Lấy token</button>
+                        <button type="button" class="rb-copytoken" id="rbBtnOpenGame" title="Mở trò chơi 383.vn">🎮 Mở trò chơi</button>
                     </div>
                     <div class="rb-chips" id="rbChips" role="group" aria-label="Các mức cược"></div>
                     <div class="rb-msg" id="rbMsg" role="status" aria-live="polite"></div>
@@ -1580,13 +1626,21 @@
                 <h2 id="tokenDialogTitle">Kết nối API · token game</h2>
                 <p>Dán access token hoặc toàn bộ JSON gồm token, refreshToken và tokenHeader. Token dùng để đọc kết quả; khi bạn bật CƯỢC THẬT, trang dùng chính token này để đặt cược bằng tiền thật trên tài khoản đó.</p>
                 <textarea id="tokenInput" autocomplete="off" spellcheck="false" placeholder="eyJ... hoặc {&quot;token&quot;:&quot;...&quot;,&quot;refreshToken&quot;:&quot;...&quot;}"></textarea>
+
+                <div id="tokenSavedFrame" style="margin:10px 0; padding:8px; background:#16213a; border:1px solid #374151; border-radius:6px;">
+                    <div style="font-size:11px; color:#94a3b8; margin-bottom:6px;">Nội dung token (1 dãy)</div>
+                    <textarea id="tokenDisplay" readonly spellcheck="false" style="width:100%; min-height:90px; background:#0f172a; color:#e2e8f0; border:1px solid #374151; border-radius:4px; padding:6px; font-family:monospace; font-size:12px; resize:vertical;"></textarea>
+                    <div style="font-size:11px; color:#64748b; margin-top:6px;">Bấm «Dán» để lấy từ bộ nhớ tạm, hoặc tự dán vào ô trên rồi bấm «Dán» để lưu.</div>
+                </div>
+
                 <div class="dialog-actions">
+                    <button type="button" class="dialog-btn" id="btnPasteToken">📋 Dán</button>
                     <button type="button" class="dialog-btn danger" id="btnClearToken">Xoá token</button>
-                    <button type="button" class="dialog-btn" id="btnCloseToken">Đóng</button>
-                    <button type="button" class="dialog-btn primary" id="btnSaveToken">Lưu &amp; nạp bảng</button>
                 </div>
             </section>
         </div>
+
+
 
         <script>
             (function () {
@@ -1599,6 +1653,22 @@
                 const LS_REFRESH_TOKEN = 'vn168_refresh_token';
                 const LS_TOKEN_HEADER = 'vn168_token_header';
                 const LS_TOKEN_AT = 'vn168_token_at';
+
+// Nhận token từ URL hash (do bookmarklet trên trang game gửi về)
+(function () {
+    var hash = location.hash || '';
+    var m = hash.match(/[?&]token=([^&]*)/);
+    var rToken = hash.match(/[?&]refreshToken=([^&]*)/);
+    var hToken = hash.match(/[?&]tokenHeader=([^&]*)/);
+    if (m && m[1]) {
+        try { localStorage.setItem('vn168_token', decodeURIComponent(m[1])); } catch (e) {}
+        try { localStorage.setItem(LS_REFRESH_TOKEN, rToken ? decodeURIComponent(rToken[1]) : ''); } catch (e) {}
+        try { localStorage.setItem(LS_TOKEN_HEADER, hToken ? decodeURIComponent(hToken[1]) : 'Bearer '); } catch (e) {}
+        window.__tokenFromHash = true;
+        try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    }
+})();
+
                 const FB_COLLECTION = 'vn168';
                 const FB_DOC = 'data';
             
@@ -1625,7 +1695,35 @@
                 const refreshBtn = document.getElementById('btnRefresh');
                 const tokenDialog = document.getElementById('tokenDialog');
                 const tokenInput = document.getElementById('tokenInput');
-            
+
+                // Dán tự động nhận token + refresh token
+                tokenInput.addEventListener('paste', function () {
+                    setTimeout(function () {
+                        let bundle = parseAuthBundle(tokenInput.value);
+                        if (!bundle.token) {
+                            const plain = extractToken(tokenInput.value.trim());
+                            if (plain && !/\s/.test(plain)) bundle = { token: plain, refreshToken: '', tokenHeader: '' };
+                        }
+                        if (!bundle.token) {
+                            rbFlash('Không tìm thấy token hợp lệ trong nội dung đã dán.', 'warn');
+                            return;
+                        }
+                        storeAuthBundle(bundle, { store: true });
+                        rbTokenChanged();
+                        const hadRef = Boolean(bundle.refreshToken);
+                        rbFlash('Đã nhận token' + (hadRef ? ' + refresh token' : '') + '.', 'ok');
+                        try {
+                            document.getElementById('tokenDisplay').value = tokenInput.value;
+                        } catch (e) {}
+                        try {
+                            const tk = document.getElementById('rbBtnToken');
+                            if (tk) tk.textContent = getToken() ? '🔑 Token OK' : '🔑 Nhập token';
+                        } catch (e) {}
+                        closeTokenDialog();
+                        tokenInput.value = '';
+                    }, 0);
+                });
+
                 let cells = [];
                 let boardCount = 0;
                 let lastInsertedIssue = null;
@@ -2853,8 +2951,27 @@
                     }
                 });
 
-                function openTokenDialog() {
+                
+
+
+async function rbCopyText(text) {
+    if (!text) { rbFlash('Không có gì để sao chép.', 'warn'); return; }
+    try { await navigator.clipboard.writeText(text); rbFlash('Đã sao chép vào bộ nhớ tạm.'); return; } catch (e) {}
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    rbFlash(ok ? 'Đã sao chép vào bộ nhớ tạm.' : 'Không sao chép được.', ok ? '' : 'warn');
+}
+
+function openTokenDialog() {
                     tokenInput.value = currentToken || '';
+                    try {
+                        document.getElementById('tokenDisplay').value = localStorage.getItem('vn168_token') || '';
+                        var empty = !localStorage.getItem('vn168_token') && !localStorage.getItem(LS_REFRESH_TOKEN);
+                        document.getElementById('tokenSavedFrame').style.display = empty ? 'none' : 'block';
+                    } catch (e) {}
                     dlgShow(tokenDialog);
                     setTimeout(function () { tokenInput.focus(); tokenInput.select(); }, 0);
                 }
@@ -2864,26 +2981,13 @@
                 }
             
                 document.getElementById('btnToken').addEventListener('click', openTokenDialog);
-                document.getElementById('btnCloseToken').addEventListener('click', closeTokenDialog);
                 tokenDialog.addEventListener('click', function (event) {
                     if (event.target === tokenDialog) closeTokenDialog();
                 });
                 document.addEventListener('keydown', function (event) {
                     if (event.key === 'Escape' && tokenDialog.classList.contains('open')) closeTokenDialog();
                 });
-                document.getElementById('btnSaveToken').addEventListener('click', async function () {
-                    const bundle = parseAuthBundle(tokenInput.value);
-                    if (!bundle.token) {
-                        setStatus('Không tìm thấy token hợp lệ trong nội dung đã dán.', 'error');
-                        return;
-                    }
-                    storeAuthBundle(bundle, { store: true });
-                    closeTokenDialog();
-                    await syncAuthBundleToFirebase();
-                    setStatus('Đã lưu token. Đang nạp bảng…', 'ok');
-                    refreshResults(true, true);
-                    rbTokenChanged();
-                });
+                
                 document.getElementById('btnClearToken').addEventListener('click', function () {
                     clearToken();
                     rbTokenCleared();
@@ -4443,6 +4547,9 @@
                     rbBalanceErr = '';
                     if (getToken()) rbBalanceSoon(600);
                     rbRender();
+                    if (window.__tokenFromHash) {
+                        window.__tokenFromHash = false;
+                    }
                 }
 
                 function rbTokenCleared() {
@@ -5159,7 +5266,7 @@
                 }
 
                 function rbInit() {
-                    ['Panel', 'Balance', 'Sum', 'State', 'Issue', 'Clock', 'BtnToken', 'Chips', 'Msg', 'Run', 'Body', 'FoldNote', 'Levels',
+                    ['Panel', 'Balance', 'Sum', 'State', 'Issue', 'Clock', 'BtnToken', 'BtnOpenGame', 'Chips', 'Msg', 'Run', 'Body', 'FoldNote', 'Levels',
                         'Preview', 'Save', 'Token', 'LogFold', 'LogNote', 'Log', 'PopBack', 'Pop', 'PopTitle', 'PopDetail'].forEach(function (name) {
                         rbEl[name] = document.getElementById('rb' + name);
                     });
@@ -5196,6 +5303,30 @@
                     });
                     rbEl.Run.addEventListener('click', rbRunClicked);
                     rbEl.BtnToken.addEventListener('click', openTokenDialog);
+
+                    // Lấy token từ trò chơi: hiện popup 1 khung text lớn (giống ảnh)
+                    document.getElementById('rbBtnCopyToken').addEventListener('click', function () {
+                        openTokenDialog();
+                    });
+                    document.getElementById('rbBtnOpenGame').addEventListener('click', function () {
+                        window.open('https://383.vn', '_blank');
+                    });
+                    
+
+                    // Dán từ clipboard vào ô nhập token, tự động lưu + hiển thị 3 ô + đóng
+                    document.getElementById('btnPasteToken').addEventListener('click', async function () {
+                        try {
+                            const text = await navigator.clipboard.readText();
+                            if (!text) { rbFlash('Không có gì trong bộ nhớ tạm.', 'warn'); return; }
+                            tokenInput.value = text;
+                            tokenInput.dispatchEvent(new Event('paste', { bubbles: true }));
+                        } catch (e) {
+                            rbFlash('Không đọc được bộ nhớ tạm.', 'warn');
+                        }
+                        closeTokenDialog();
+                    });
+
+                    // dán vào ô token đã tự lưu và hiển thị 3 ô trên; không cần nút sao chép riêng
                     rbEl.Balance.addEventListener('click', function () {
                         if (!getToken()) {
                             rbFlash('Chưa có token — bấm «🔑 Nhập token».', 'err');
@@ -5331,6 +5462,6 @@
                 }, 30000);
             })();
         </script>
-    </body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5a703131d81b6a7',t:'MTc5NDY2OTc1MA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5a703131d81b6a7',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
