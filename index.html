@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-        <title>Bảng 100 kỳ — Tô màu Lớn/Nhỏ</title>
+        <title>Play 1688</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@600;700;800;900&family=Kanit:wght@700;800;900&display=swap" media="print" onload="this.media='all'">
@@ -151,7 +151,7 @@
             /* Bo tròn hai đầu mỗi nhóm / mỗi cặp: hai nhóm cùng màu đứng sát nhau (VD: NN rồi LL) vẫn tách bạch */
             .grid-cell.run-first { border-top-left-radius: 11px; border-bottom-left-radius: 11px; }
             .grid-cell.run-last { border-top-right-radius: 11px; border-bottom-right-radius: 11px; }
-            /* 4 ô cuối khi đủ điều kiện cược (2 cặp cùng loại): phát sáng — ô NHỎ tím (màu nút NHỎ), ô LỚN vàng */
+            /* 6 ô cuối khi đủ điều kiện cược: phát sáng — ô NHỎ tím (màu nút NHỎ), ô LỚN vàng */
             .grid-cell.bet-n,
             .grid-cell.bet-l { position: relative; z-index: 1; border-color: #fff !important; }
             .grid-cell.bet-n {
@@ -778,7 +778,7 @@
             .pd-mini:hover { filter: brightness(1.18); }
             .pd-mini:active { transform: translateY(1px); }
             .pd-mini.armed { border-color: #b91c1c; background: #7f1d1d; color: #fff; }
-            /* ===== Khung CƯỢC THẬT tự động (nằm giữa dải "4 ô cuối" và khung "Kỳ đang chạy") =====
+            /* ===== Khung CƯỢC THẬT tự động (nằm giữa dải "6 ô cuối" và khung "Kỳ đang chạy") =====
                Kiểu dáng làm theo khung đặt cược của trang WinGo: thẻ viền tím, viên "Số dư" vàng, chip mức cược nổi 3D,
                dòng trạng thái ở giữa và nút tự chạy lớn (xanh = bật · đỏ = đang chạy, bấm để dừng). */
             .real-panel {
@@ -1332,7 +1332,7 @@
                 .rb-chip { font-size: 14px; }
                 .rb-chip.long { font-size: 11px; }
             }
-            /* ===== Khung tín hiệu cược: 4 ô cuối của bảng ===== */
+            /* ===== Khung tín hiệu cược: 6 ô cuối của bảng ===== */
             .scan-panel {
                 width: 0;
                 min-width: 100%;
@@ -1501,16 +1501,16 @@
         <main class="board-panel" aria-label="Bảng kết quả 100 kỳ">
             <div id="gridContainer" class="grid-table" role="grid" aria-label="Bảng 10 dòng và 10 cột"></div>
 
-            <section class="scan-panel" id="scPanel" data-state="empty" aria-label="Tín hiệu cược theo 4 ô cuối của bảng">
+            <section class="scan-panel" id="scPanel" data-state="empty" aria-label="Tín hiệu cược theo 6 ô cuối của bảng">
                 <div class="sc-head">
                     <div class="sc-title-wrap">
                         <div class="sc-line">
-                            <span class="sc-title">4 ô cuối</span>
-                            <span class="sc-sub" id="scSub">chưa đủ 4 ô</span>
+                            <span class="sc-title">6 ô cuối</span>
+                            <span class="sc-sub" id="scSub">chưa đủ 6 ô</span>
                         </div>
                         <div class="sc-last" id="scLast" aria-hidden="true"></div>
                     </div>
-                    <span class="sc-hint" id="scHint" role="status" aria-live="polite" title="4 ô cuối là 2 cặp cùng loại (NNLL · LLNN · NNNN · LLLL) → cược theo cặp sau · vừa thắng thì đánh tiếp cửa đó (THEO) · còn lại không cược">KHÔNG CƯỢC</span>
+                    <span class="sc-hint" id="scHint" role="status" aria-live="polite" title="6 ô cuối (cũ → mới): NN-LLNN → LỚN · LL-NNLL → NHỎ · NL-LLNN &amp; LN-LLNN → NHỎ · NL-NNLL &amp; LN-NNLL → LỚN · khác thì không cược">KHÔNG CƯỢC</span>
                 </div>
             </section>
 
@@ -1520,7 +1520,7 @@
                     <span class="rb-count" id="rbSum">ĐANG TẮT</span>
                 </div>
                 <div class="rb-card">
-                    <div class="rb-title"><span>🎯 Cược thật tự động</span><small id="rbState">Tự đặt theo 4 ô cuối</small></div>
+                    <div class="rb-title"><span>🎯 Cược thật tự động</span><small id="rbState">Tự đặt theo 6 ô cuối</small></div>
                     <div class="rb-issue-row">
                         <span class="rb-issue" id="rbIssue">Kỳ: --</span>
                         <span class="rb-clock" id="rbClock" data-kind="syncing">⏳ Chờ kỳ</span>
@@ -1539,7 +1539,7 @@
                         <div class="rb-actions">
                             <button type="button" class="rb-save" id="rbSave">Lưu &amp; thu gọn</button>
                         </div>
-                        <p class="rb-rule">4 ô cuối là NNLL · LLNN · NNNN · LLLL → đặt theo cặp sau. <b>Thắng</b>: về mức 1 và đặt tiếp cửa vừa thắng cho tới khi thua. <b>Thua</b>: chờ 4 ô cuối đủ điều kiện rồi đặt mức kế tiếp. Thua ở mức cuối → tự tắt.</p>
+                        <p class="rb-rule">6 ô cuối (cũ → mới): NN-LLNN → LỚN · LL-NNLL → NHỎ · NL-LLNN &amp; LN-LLNN → NHỎ · NL-NNLL &amp; LN-NNLL → LỚN. <b>Thắng</b>: về mức 1 và đặt tiếp cửa vừa thắng cho tới khi thua. <b>Thua</b>: chờ 6 ô cuối đủ điều kiện rồi đặt mức kế tiếp. Thua ở mức cuối → tự tắt.</p>
                         <div class="rb-tokeninfo" id="rbToken">Chưa có token</div>
                     </div>
                 </details>
@@ -1599,6 +1599,7 @@
                     <div><b id="pdRate">–</b><span>Tỉ lệ</span></div>
                     <div><b id="pdStreak">–</b><span>Chuỗi</span></div>
                 </div>
+
                 <div class="pd-history" id="pdHistory" role="list" aria-label="Các dự đoán gần đây"></div>
 
                 <div class="pd-foot">
@@ -1822,8 +1823,8 @@
                 //       hai đầu → TÍM (màu nút NHỎ) · các NN / LL nằm giữa → VÀNG · ô đứng lẻ để nguyên.
                 //   • Thiếu một trong các điều kiện trên → không tô gì.
                 //   • Gặp ô chưa có số thì dừng dò. Ô đầu / ô cuối mỗi nhóm được bo tròn (run-first / run-last).
-                // (2) 4 ô cuối đủ điều kiện cược (2 cặp cùng loại — xem scRender): 4 ô đó phát sáng,
-                //     ô NHỎ tím (bet-n), ô LỚN vàng (bet-l), đè lên màu ở (1); mỗi cặp bo tròn hai đầu.
+                // (2) 6 ô cuối đủ điều kiện cược (xem scIsSixPattern): 6 ô đó phát sáng,
+                //     ô NHỎ tím (bet-n), ô LỚN vàng (bet-l), đè lên màu ở (1); mỗi cặp 2 ô bo tròn hai đầu.
                 function applyRunHighlight() {
                     const color = new Array(TOTAL).fill('');
                     const first = new Array(TOTAL).fill(false);
@@ -1855,13 +1856,12 @@
                         });
                     }
 
-                    // (2) 4 ô cuối đủ điều kiện cược
-                    const kinds = scLastFourKinds();
-                    const betFrom = TOTAL - 4;
-                    if (scIsTwoPairs(kinds)) {
-                        if (color[betFrom - 1] && !last[betFrom - 1]) last[betFrom - 1] = true;   // nhóm bị 4 ô cuối che mất phần đuôi
+                    // (2) 6 ô cuối đủ điều kiện cược
+                    const betFrom = TOTAL - SC_N;
+                    if (scIsSixPattern(scLastSixKinds())) {
+                        if (color[betFrom - 1] && !last[betFrom - 1]) last[betFrom - 1] = true;   // nhóm bị 6 ô cuối che mất phần đuôi
                         for (let k = betFrom; k < TOTAL; k++) {
-                            color[k] = kinds[k - betFrom] === 'B' ? 'bet-l' : 'bet-n';
+                            color[k] = pdKind(cells[k].value) === 'B' ? 'bet-l' : 'bet-n';
                             first[k] = (k - betFrom) % 2 === 0;
                             last[k] = (k - betFrom) % 2 === 1;
                         }
@@ -3002,7 +3002,7 @@ function openTokenDialog() {
                 //    có nút −1s / +1s để chỉnh tay nếu thấy lệch so với game.
                 //  • Còn PD_LOCK_SEC giây cuối kỳ thì khoá chọn (giống game).
                 //  • Dự đoán gắn với kỳ đang chạy; kết quả kỳ đó về bảng → chấm ĐÚNG / SAI, lưu thống kê trên máy.
-                //  • Tự bấm theo pdStrategy: 4 ô cuối đủ điều kiện → bấm theo cặp sau; lần tự bấm vừa ĐÚNG → kỳ sau bấm tiếp cửa đó.
+                //  • Tự bấm theo pdStrategy: 6 ô cuối khớp mẫu → bấm theo bảng luật; lần tự bấm vừa ĐÚNG → kỳ sau bấm tiếp cửa đó.
                 //  • Đang bật CƯỢC THẬT (khung phía trên) thì không tự bấm thử: nút chỉ sáng khi lệnh thật đã vào (rbTick).
                 // =====================================================================
                 const PD_ROUND_SEC = ({ 1: 60, 2: 180, 3: 300, 4: 600, 30: 30 })[CFG.payload.typeId] || 30;
@@ -3018,6 +3018,7 @@ function openTokenDialog() {
                 ['Panel', 'Issue', 'Time', 'ClockLabel', 'Bar', 'Buttons', 'BtnBig', 'BtnSmall', 'Status', 'Result', 'Ball',
                     'ResultMain', 'ResultSub', 'Verdict', 'Win', 'Lose', 'Rate', 'Streak', 'History', 'Sync', 'AdjMinus',
                     'AdjPlus', 'Reset'].forEach(function (name) { pdEl[name] = document.getElementById('pd' + name); });
+
             
                 // pending: các dự đoán chưa có kết quả · history: các dự đoán đã chấm · adj: số ms chỉnh tay đồng hồ.
                 let pdState = { pending: [], history: [], win: 0, lose: 0, streak: 0, adj: 0 };
@@ -3038,7 +3039,7 @@ function openTokenDialog() {
                 let pdHistoryDirty = true;
                 let pdBannerKey = '';
                 let pdResetArmedUntil = 0;
-                let scSignal = null;                    // tín hiệu cược theo 4 ô cuối của bảng: { choice: 'B' | 'S' } · null = không cược
+                let scSignal = null;                    // tín hiệu cược theo 6 ô cuối của bảng: { choice: 'B' | 'S' } · null = không cược
                 let pdManualRoundEnd = 0;               // mốc endAt của kỳ mà người chơi chủ động bấm tay
                 let pdLastResolvedEndAt = 0;            // mốc endAt của kỳ vừa được chấm xong
                 let rb = rbBlank();                     // trạng thái cược thật tự động — xem phần CƯỢC THẬT TỰ ĐỘNG phía dưới
@@ -3268,7 +3269,7 @@ function openTokenDialog() {
 
                 // Cửa mà luật muốn đánh cho kỳ đang mở (null = không đánh):
                 //   1) kỳ vừa xong có lệnh tự động và THẮNG → đánh tiếp đúng cửa đó (follow), cho tới khi thua;
-                //   2) không thì theo tín hiệu 4 ô cuối (cùng luật với dải "4 ô cuối": scIsTwoPairs).
+                //   2) không thì theo tín hiệu 6 ô cuối (cùng luật với dải "6 ô cuối": scSixChoice).
                 // Đang bật cược thật thì "thắng" phải là lệnh thật (rb.last); chưa bật thì là lần tự bấm trong khung này.
                 function pdStrategy(newest) {
                     let follow = '';
@@ -3284,13 +3285,13 @@ function openTokenDialog() {
                         }
                     }
                     if (follow) return { c: follow, follow: true };
-                    const kinds = scLastFourKinds();                 // đọc thẳng 4 ô cuối đang có trong bảng
-                    if (scIsTwoPairs(kinds)) return { c: kinds[3], follow: false };
+                    const six = scSixChoice();                       // đọc thẳng 6 ô cuối đang có trong bảng
+                    if (six) return { c: six, follow: false };
                     return null;
                 }
 
                 // Chưa bật cược thật: tự động bấm nút LỚN / NHỎ cho kỳ đang mở theo pdStrategy (chỉ là dự đoán, không đặt tiền);
-                // luật không còn muốn đánh (4 ô cuối hết đủ điều kiện) thì bỏ lựa chọn tự động đó.
+                // luật không còn muốn đánh (6 ô cuối hết đủ điều kiện) thì bỏ lựa chọn tự động đó.
                 // Đang bật cược thật: không bấm thử — nút chỉ sáng khi lệnh thật đã vào (rbTick → pdAddRealPick).
                 function pdMaybeAutoPick(now, round, newest, canPick) {
                     if (rb.on) return;
@@ -3485,7 +3486,7 @@ function openTokenDialog() {
                     rbTick(now, round, newest, synced);
                     // Chưa bật cược thật: tự bấm chọn LỚN / NHỎ theo cùng luật (chỉ dự đoán, không đặt tiền)
                     pdMaybeAutoPick(now, round, newest, canPick);
-                    // Dải "4 ô cuối": 4 ô không đủ điều kiện nhưng kỳ trước vừa thắng → hiện "THEO LỚN / THEO NHỎ"
+                    // Dải "6 ô cuối": 6 ô không đủ điều kiện nhưng kỳ trước vừa thắng → hiện "THEO LỚN / THEO NHỎ"
                     const plan = newest ? pdStrategy(newest) : null;
                     scSetFollow(plan && plan.follow ? plan.c : '');
 
@@ -3599,6 +3600,7 @@ function openTokenDialog() {
                     pdText(pdEl.Rate, total ? Math.round(pdState.win * 100 / total) + '%' : '–');
                     pdText(pdEl.Streak, streak > 0 ? streak + ' ✓' : (streak < 0 ? (-streak) + ' ✗' : '–'));
                     pdAttr(pdEl.Streak, 'data-kind', streak > 0 ? 'ok' : (streak < 0 ? 'no' : ''));
+
                     if (pdHistoryDirty) { pdHistoryDirty = false; pdRenderHistory(); }
             
                     // --- Chân khung: giờ hiện tại + chỉnh đồng hồ ---
@@ -3625,6 +3627,7 @@ function openTokenDialog() {
             
                 function pdInit() {
                     pdLoad();
+                    pdSave();                                   // ghi lại state gọn (bỏ khoá cũ không còn dùng)
                     pdSeenNewest = pdNewestIssue();
                     pdNewestSeenAt = 0;
                     pdReady = true;
@@ -3665,13 +3668,13 @@ function openTokenDialog() {
                 }
             
                 // =====================================================================
-                // CƯỢC THẬT TỰ ĐỘNG — khung "CƯỢC THẬT" (giữa dải "4 ô cuối" và khung "Kỳ đang chạy")
+                // CƯỢC THẬT TỰ ĐỘNG — khung "CƯỢC THẬT" (giữa dải "6 ô cuối" và khung "Kỳ đang chạy")
                 // Cách gọi API lấy theo file đặt cược gốc: GetGameIssue → GameBetting (amount = 1.000đ, betCount = mức cược
                 // tính theo nghìn đồng, gameType 2, selectType 13 = LỚN · 14 = NHỎ) · GetBalance · GetMyEmerdList.
                 // Luật (cửa đánh do pdStrategy quyết định, dùng chung với khung dự đoán):
-                //   • 4 ô cuối là 2 cặp cùng loại (NNLL · LLNN · NNNN · LLLL) → đặt theo cặp sau, ở mức đang tới lượt.
+                //   • 6 ô cuối khớp mẫu (NN-LLNN · LL-NNLL · NL/LN-LLNN · NL/LN-NNLL) → đặt cửa theo luật, ở mức đang tới lượt.
                 //   • THẮNG → quay về mức 1 và kỳ kế tiếp đặt tiếp đúng cửa vừa thắng, cho tới khi thua.
-                //   • THUA → dừng, chờ tới khi 4 ô cuối lại đủ điều kiện rồi đặt mức kế tiếp.
+                //   • THUA → dừng, chờ tới khi 6 ô cuối lại đủ điều kiện rồi đặt mức kế tiếp.
                 //   • THUA ở mức cuối cùng → tự tắt (bấm BẬT lại thì bắt đầu từ mức 1).
                 // An toàn:
                 //   • Mỗi kỳ gửi tối đa 1 lệnh: dấu "đã gửi" được ghi xuống máy TRƯỚC khi gửi; còn lệnh chưa rõ kết quả thì không gửi lệnh mới.
@@ -3679,7 +3682,7 @@ function openTokenDialog() {
                 //   • Máy chủ từ chối lệnh / token hỏng / thiếu số dư / không xác nhận được lệnh đã vào hay chưa → tự tắt.
                 //   • Mở nhiều tab: chỉ 1 tab được đặt lệnh (Web Locks). Trang ngừng chạy quá RB_IDLE_OFF_MS → tự tắt.
                 //   • Đang BẬT thì bảng chỉ lấy từ API game bằng token của máy này (không nhận bảng máy khác ghi lên Firebase);
-                //     vừa bật / vừa mở lại trang: đối chiếu 4 ô cuối với API rồi mới đặt lệnh.
+                //     vừa bật / vừa mở lại trang: đối chiếu 6 ô cuối với API rồi mới đặt lệnh.
                 // =====================================================================
                 const LS_REALBET = 'vn168_realbet_v1';
                 const LS_REALBET_HB = 'vn168_realbet_hb';
@@ -3745,7 +3748,7 @@ function openTokenDialog() {
                 let rbBalancePromise = null;
                 let rbVerifyBusy = false;
                 let rbMissingSince = 0;
-                let rbTailSig = '';                     // 4 ô cuối (số kỳ:số) lúc khớp với kết quả API gần nhất · '' = chưa khớp
+                let rbTailSig = '';                     // 6 ô cuối (số kỳ:số) lúc khớp với kết quả API gần nhất · '' = chưa khớp
                 let rbBoardAskAt = 0;
                 let rbAheadSince = 0;                   // từ lúc nào bảng có kỳ mới hơn kỳ mới nhất của API
                 let rbTokenBadSince = 0;
@@ -4314,15 +4317,15 @@ function openTokenDialog() {
                 // ----- Chỉ đặt tiền theo dữ liệu của API game -----
                 // Bình thường bảng còn nhận dữ liệu do máy khác ghi lên Firebase. Đặt tiền thật thì không dựa vào đó:
                 //   • đang BẬT (hoặc còn lệnh chờ chấm): applyRemoteData bỏ qua bảng từ Firebase;
-                //   • mỗi lần lấy được kết quả từ API (refreshResults), 4 ô cuối của bảng được đối chiếu với đúng 4 kỳ mới nhất API trả về;
-                //     chỉ đặt lệnh khi 4 ô cuối đang hiện đúng là 4 ô đã khớp ở lần đối chiếu gần nhất.
+                //   • mỗi lần lấy được kết quả từ API (refreshResults), 6 ô cuối của bảng được đối chiếu với đúng 6 kỳ mới nhất API trả về;
+                //     chỉ đặt lệnh khi 6 ô cuối đang hiện đúng là 6 ô đã khớp ở lần đối chiếu gần nhất.
                 function rbLocksBoard() {
                     return rb.on || !!rb.bet;
                 }
 
                 function rbTailNow() {
                     let out = '';
-                    for (let i = TOTAL - 4; i < TOTAL; i++) out += String(cells[i].sttFull || '') + ':' + String(cells[i].value) + ',';
+                    for (let i = TOTAL - 6; i < TOTAL; i++) out += String(cells[i].sttFull || '') + ':' + String(cells[i].value) + ',';
                     return out;
                 }
 
@@ -4330,13 +4333,13 @@ function openTokenDialog() {
                     return rbTailSig !== '' && rbTailSig === rbTailNow();
                 }
 
-                // 4 ô cuối = 4 kỳ liền nhau, kỳ cuối là kỳ mới nhất của API, số từng ô đúng như API.
+                // 6 ô cuối = 6 kỳ liền nhau, kỳ cuối là kỳ mới nhất của API, số từng ô đúng như API.
                 function rbTailMatches(api, newest) {
                     if (!newest || String(cells[TOTAL - 1].sttFull || '') !== newest) return false;
-                    for (let i = TOTAL - 4; i < TOTAL; i++) {
+                    for (let i = TOTAL - 6; i < TOTAL; i++) {
                         const issue = String(cells[i].sttFull || '');
                         if (!issue || !Object.prototype.hasOwnProperty.call(api, issue) || api[issue] !== String(cells[i].value)) return false;
-                        if (i > TOTAL - 4 && pdNextIssue(String(cells[i - 1].sttFull || '')) !== issue) return false;
+                        if (i > TOTAL - 6 && pdNextIssue(String(cells[i - 1].sttFull || '')) !== issue) return false;
                     }
                     return true;
                 }
@@ -4874,8 +4877,13 @@ function openTokenDialog() {
                     pdState.history.push({ issue: issue, c: b.c, d: digit, ok: ok, at: now, auto: true, real: true, n: b.n });
                     if (pdState.history.length > PD_HISTORY_MAX) pdState.history = pdState.history.slice(-PD_HISTORY_MAX);
                     if (b.endAt > pdLastResolvedEndAt) pdLastResolvedEndAt = b.endAt;
-                    if (ok) { pdState.win++; pdState.streak = pdState.streak > 0 ? pdState.streak + 1 : 1; }
-                    else { pdState.lose++; pdState.streak = pdState.streak < 0 ? pdState.streak - 1 : -1; }
+                    if (ok) {
+                        pdState.win++;
+                        pdState.streak = pdState.streak > 0 ? pdState.streak + 1 : 1;
+                    } else {
+                        pdState.lose++;
+                        pdState.streak = pdState.streak < 0 ? pdState.streak - 1 : -1;
+                    }
                     pdHistoryDirty = true;
                     pdSave();
 
@@ -4916,7 +4924,7 @@ function openTokenDialog() {
                     if (rbRunner) {
                         rbTokenGuard(now);
                         if (rb.on && !rbBoardOk() && !fetchInProgress && getToken() && Math.abs(now - rbBoardAskAt) >= 2500) {
-                            rbBoardAskAt = now;                             // 4 ô cuối chưa được đối chiếu với API → hỏi API ngay
+                            rbBoardAskAt = now;                             // 6 ô cuối chưa được đối chiếu với API → hỏi API ngay
                             refreshResults(false, false);
                         }
                         if (rb.bet && rb.bet.st === 'sending' && !rbBusy) {
@@ -4956,7 +4964,7 @@ function openTokenDialog() {
                     const level = 'mức ' + (rb.lvl + 1) + '/' + rb.levels.length + ' · ' + rbFmtK(rb.levels[rb.lvl]);
                     const want = pdStrategy(newest);
                     if (want) return 'Sắp đặt ' + pdKindName(want.c) + ' · ' + level + ' cho kỳ ' + curShort;
-                    return 'Cược thật đang BẬT · chờ 4 ô cuối đủ điều kiện · ' + level;
+                    return 'Cược thật đang BẬT · chờ 6 ô cuối đủ điều kiện · ' + level;
                 }
 
                 // ----- Vẽ khung -----
@@ -5154,7 +5162,7 @@ function openTokenDialog() {
                         + (rbBalanceErr ? ' · lỗi: ' + rbBalanceErr : ''));
                     pdText(rbEl.Sum, on ? 'Thắng ' + rb.win + ' · Thua ' + rb.lose : 'ĐANG TẮT');
                     // Chữ nhỏ cạnh tiêu đề: đang chạy thì hiện lãi / lỗ so với số dư lúc bật
-                    let side = 'Tự đặt theo 4 ô cuối';
+                    let side = 'Tự đặt theo 6 ô cuối';
                     let sideKind = '';
                     if (on) {
                         side = 'Đang chạy';
@@ -5369,34 +5377,55 @@ function openTokenDialog() {
                 }
 
                 // =====================================================================
-                // TÍN HIỆU CƯỢC THEO 4 Ô CUỐI CỦA BẢNG (4 kỳ mới nhất; ô cuối cùng là kỳ mới nhất)
-                //   • 2 ô trước cùng loại (NN hoặc LL) VÀ 2 ô sau cùng loại (NN hoặc LL) thì mới cược,
-                //     cược theo loại của 2 ô sau:  NNLL, LLLL → cược LỚN  ·  LLNN, NNNN → cược NHỎ
-                //   • Mọi trường hợp còn lại, hoặc chưa đủ 4 ô có số → KHÔNG cược
+                // TÍN HIỆU CƯỢC THEO 6 Ô CUỐI CỦA BẢNG (6 kỳ mới nhất; ô cuối cùng là kỳ mới nhất)
+                //   Viết theo thứ tự cũ → mới, L = LỚN (5–9), N = NHỎ (0–4):
+                //     NN-LLNN → cược LỚN          LL-NNLL → cược NHỎ
+                //     NL-LLNN → cược NHỎ           LN-LLNN → cược NHỎ
+                //     NL-NNLL → cược LỚN           LN-NNLL → cược LỚN
+                //   • Mọi trường hợp còn lại, hoặc chưa đủ 6 ô có số → KHÔNG cược
                 // Kết quả ghi vào scSignal; khung "Kỳ đang chạy" đọc scSignal để tự bấm LỚN / NHỎ (pdMaybeAutoPick).
-                // Khi đủ điều kiện cược, 4 ô đó phát sáng trên bảng — xem applyRunHighlight().
-                // 4 ô không đủ điều kiện nhưng kỳ trước vừa thắng (đánh tiếp cửa đó) → nhãn ghi "THEO LỚN / THEO NHỎ" (scFollow).
+                // Khi đủ điều kiện cược, 6 ô đó phát sáng trên bảng — xem applyRunHighlight().
+                // 6 ô không đủ điều kiện nhưng kỳ trước vừa thắng (đánh tiếp cửa đó) → nhãn ghi "THEO LỚN / THEO NHỎ" (scFollow).
                 // =====================================================================
                 const scPanel = document.getElementById('scPanel');
                 const scSub = document.getElementById('scSub');
                 const scLast = document.getElementById('scLast');
                 const scHint = document.getElementById('scHint');
 
-                // Loại của 4 ô cuối bảng theo thứ tự cũ → mới: 'B' = LỚN (5–9), 'S' = NHỎ (0–4), '' = ô chưa có số.
-                function scLastFourKinds() {
+                const SC_N = 6;                         // số ô cuối bảng dùng để xét luật
+
+                // Loại của 6 ô cuối bảng theo thứ tự cũ → mới: 'B' = LỚN (5–9), 'S' = NHỎ (0–4), '' = ô chưa có số.
+                function scLastSixKinds() {
                     const out = [];
-                    for (let i = TOTAL - 4; i < TOTAL; i++) out.push(pdKind(cells[i] ? cells[i].value : ''));
+                    for (let i = TOTAL - SC_N; i < TOTAL; i++) out.push(pdKind(cells[i] ? cells[i].value : ''));
                     return out;
                 }
 
-                // Đủ điều kiện cược: 2 ô trước cùng loại VÀ 2 ô sau cùng loại (NNLL, LLNN, NNNN, LLLL).
-                function scIsTwoPairs(kinds) {
-                    return !!kinds[0] && !!kinds[2] && kinds[0] === kinds[1] && kinds[2] === kinds[3];
+                // Luật 6 ô: trả về 'B' (LỚN) / 'S' (NHỎ) / '' (không cược).
+                //   NN-LLNN → L · LL-NNLL → N · NL-LLNN & LN-LLNN → N · NL-NNLL & LN-NNLL → L
+                //   (4 ô cuối phải là LLNN / NNLL, và nếu 2 ô đầu giống nhau thì phải trùng cặp cuối)
+                function scSixChoice() {
+                    const k = scLastSixKinds();
+                    if (k.length !== SC_N || !k.every(Boolean)) return '';
+                    if (k[2] !== k[3] || k[4] !== k[5] || k[2] === k[4]) return '';    // 4 ô cuối: LLNN hoặc NNLL
+                    if (k[0] === k[1]) {
+                        if (k[0] !== k[4]) return '';                                  // NN-LLNN / LL-NNLL
+                        return k[2] === 'B' ? 'B' : 'S';                                // NN-LLNN → LỚN · LL-NNLL → NHỎ
+                    }
+                    return k[2] === 'B' ? 'S' : 'B';                                   // NL/LN-LLNN → NHỎ · NL/LN-NNLL → LỚN
+                }
+
+                // Có đủ điều kiện cược theo luật 6 ô hay không (dùng để tô sáng 6 ô trên bảng).
+                function scIsSixPattern(kinds) {
+                    if (!kinds || kinds.length !== SC_N || !kinds.every(Boolean)) return false;
+                    if (kinds[2] !== kinds[3] || kinds[4] !== kinds[5] || kinds[2] === kinds[4]) return false;
+                    if (kinds[0] === kinds[1]) return kinds[0] === kinds[4];
+                    return true;
                 }
 
                 let scFollow = '';                      // '' | 'B' | 'S': kỳ trước vừa thắng → đang đánh tiếp cửa này (pdRender cập nhật)
 
-                // Nhãn bên phải dải "4 ô cuối": CƯỢC LỚN / CƯỢC NHỎ (4 ô đủ điều kiện) · THEO LỚN / THEO NHỎ (đánh tiếp cửa vừa thắng) · KHÔNG CƯỢC
+                // Nhãn bên phải dải "6 ô cuối": CƯỢC LỚN / CƯỢC NHỎ (6 ô đủ điều kiện) · THEO LỚN / THEO NHỎ (đánh tiếp cửa vừa thắng) · KHÔNG CƯỢC
                 function scRenderHint() {
                     const kind = scSignal ? scSignal.choice : '';
                     if (kind || scFollow) {
@@ -5405,7 +5434,7 @@ function openTokenDialog() {
                         pdAttr(scHint, 'data-kind', side === 'B' ? 'L' : 'N');
                         pdText(scHint, (kind ? 'CƯỢC ' : 'THEO ') + (side === 'B' ? 'LỚN' : 'NHỎ'));
                     } else {
-                        pdAttr(scPanel, 'data-state', scLastFourKinds().every(Boolean) ? 'miss' : 'empty');
+                        pdAttr(scPanel, 'data-state', scLastSixKinds().every(Boolean) ? 'miss' : 'empty');
                         if (scHint.hasAttribute('data-kind')) scHint.removeAttribute('data-kind');
                         pdText(scHint, 'KHÔNG CƯỢC');
                     }
@@ -5418,14 +5447,14 @@ function openTokenDialog() {
                 }
 
                 function scRender() {
-                    const kinds = scLastFourKinds();
-                    const full = kinds.every(Boolean);                       // cả 4 ô đều có số
-                    const kind = scIsTwoPairs(kinds) ? kinds[3] : '';        // cược theo cặp sau (2 ô cuối cùng)
+                    const kinds = scLastSixKinds();
+                    const full = kinds.every(Boolean);                       // cả 6 ô đều có số
+                    const kind = scSixChoice();                              // cửa cược theo luật 6 ô ('' = không cược)
                     scSignal = kind ? { choice: kind } : null;
 
                     scLast.textContent = '';
                     kinds.forEach(function (k, idx) {
-                        if (idx === 2) {
+                        if (idx === 2 || idx === 4) {
                             const arrow = document.createElement('span');
                             arrow.className = 'sc-arrow';
                             arrow.textContent = '›';
@@ -5434,12 +5463,14 @@ function openTokenDialog() {
                         const ball = document.createElement('span');
                         ball.className = 'sc-ball';
                         if (k) ball.setAttribute('data-kind', k === 'B' ? 'L' : 'N');
-                        ball.textContent = k ? String(cells[TOTAL - 4 + idx].value) : '–';
+                        ball.textContent = k ? String(cells[TOTAL - SC_N + idx].value) : '–';
                         scLast.appendChild(ball);
                     });
 
                     const letters = kinds.map(function (k) { return k === 'B' ? 'L' : 'N'; });
-                    pdText(scSub, full ? (letters[0] + letters[1] + ' · ' + letters[2] + letters[3]) : 'chưa đủ 4 ô');
+                    pdText(scSub, full
+                        ? (letters[0] + letters[1] + '-' + letters[2] + letters[3] + letters[4] + letters[5])
+                        : 'chưa đủ 6 ô');
                     scRenderHint();
                 }
 
@@ -5462,6 +5493,6 @@ function openTokenDialog() {
                 }, 30000);
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5a7233d4e8f84e4',t:'MTc5NDY3MTA2Nw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5a7233d4e8f84e4',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5a7a8f10d8777c5',t:'MTc5NDY3NjU0NA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5a7a8f10d8777c5',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
