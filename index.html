@@ -1524,9 +1524,7 @@
                     <div class="rb-issue-row">
                         <span class="rb-issue" id="rbIssue">Kỳ: --</span>
                         <span class="rb-clock" id="rbClock" data-kind="syncing">⏳ Chờ kỳ</span>
-                        <button type="button" class="rb-token" id="rbBtnToken" data-kind="err" title="Chạm để dán / đổi token game">🔑 Nhập token</button>
-                        <button type="button" class="rb-copytoken" id="rbBtnCopyToken" title="Lấy token từ trò chơi">📋 Lấy token</button>
-                        <button type="button" class="rb-copytoken" id="rbBtnOpenGame" title="Mở trò chơi 383.vn">🎮 Mở trò chơi</button>
+                        <button type="button" class="rb-token" id="rbBtnGetToken" title="Mở trò chơi và lấy token">🎮 Lấy token</button>
                     </div>
                     <div class="rb-chips" id="rbChips" role="group" aria-label="Các mức cược"></div>
                     <div class="rb-msg" id="rbMsg" role="status" aria-live="polite"></div>
@@ -1716,8 +1714,8 @@
                             document.getElementById('tokenDisplay').value = tokenInput.value;
                         } catch (e) {}
                         try {
-                            const tk = document.getElementById('rbBtnToken');
-                            if (tk) tk.textContent = getToken() ? '🔑 Token OK' : '🔑 Nhập token';
+                            const tk = document.getElementById('rbBtnGetToken');
+                            if (tk) tk.textContent = getToken() ? '🔑 Token OK' : '🎮 Lấy token';
                         } catch (e) {}
                         closeTokenDialog();
                         tokenInput.value = '';
@@ -5190,9 +5188,9 @@ function openTokenDialog() {
                         rbTokenViewAt = now;
                     }
                     const tk = rbTokenView;
-                    pdText(rbEl.BtnToken, !token ? '🔑 Nhập token' : (tk.kind === 'ok' ? '🔑 Token OK' : (tk.kind === 'warn' ? '🔑 Gia hạn…' : '🔑 Đổi token')));
-                    pdAttr(rbEl.BtnToken, 'data-kind', tk.kind);
-                    pdAttr(rbEl.BtnToken, 'title', tk.text + ' · chạm để dán / đổi token');
+                    pdText(rbEl.BtnGetToken, !token ? '🎮 Lấy token' : (tk.kind === 'ok' ? '🔑 Token OK' : (tk.kind === 'warn' ? '🔑 Gia hạn…' : '🔑 Đổi token')));
+                    pdAttr(rbEl.BtnGetToken, 'data-kind', tk.kind);
+                    pdAttr(rbEl.BtnGetToken, 'title', tk.text + ' · chạm để lấy token');
 
                     // --- Chip mức cược ---
                     rbRenderChips(on);
@@ -5266,7 +5264,7 @@ function openTokenDialog() {
                 }
 
                 function rbInit() {
-                    ['Panel', 'Balance', 'Sum', 'State', 'Issue', 'Clock', 'BtnToken', 'BtnOpenGame', 'Chips', 'Msg', 'Run', 'Body', 'FoldNote', 'Levels',
+                    ['Panel', 'Balance', 'Sum', 'State', 'Issue', 'Clock', 'BtnGetToken', 'Chips', 'Msg', 'Run', 'Body', 'FoldNote', 'Levels',
                         'Preview', 'Save', 'Token', 'LogFold', 'LogNote', 'Log', 'PopBack', 'Pop', 'PopTitle', 'PopDetail'].forEach(function (name) {
                         rbEl[name] = document.getElementById('rb' + name);
                     });
@@ -5302,15 +5300,17 @@ function openTokenDialog() {
                         }
                     });
                     rbEl.Run.addEventListener('click', rbRunClicked);
-                    rbEl.BtnToken.addEventListener('click', openTokenDialog);
-
-                    // Lấy token từ trò chơi: hiện popup 1 khung text lớn (giống ảnh)
-                    document.getElementById('rbBtnCopyToken').addEventListener('click', function () {
+                    rbEl.BtnGetToken.addEventListener('click', function () {
+                        window.open('https://383vn.com/#/', '_blank');
                         openTokenDialog();
                     });
-                    document.getElementById('rbBtnOpenGame').addEventListener('click', function () {
-                        window.open('https://383.vn', '_blank');
+
+                    // Lấy token từ trò chơi: hiện popup 1 khung text lớn (giống ảnh)
+                    document.getElementById('rbBtnGetToken').addEventListener('click', function () {
+                        window.open('https://383vn.com/#/', '_blank');
+                        openTokenDialog();
                     });
+
                     
 
                     // Dán từ clipboard vào ô nhập token, tự động lưu + hiển thị 3 ô + đóng
@@ -5462,6 +5462,6 @@ function openTokenDialog() {
                 }, 30000);
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5a703131d81b6a7',t:'MTc5NDY2OTc1MA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5a703131d81b6a7',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5a7233d4e8f84e4',t:'MTc5NDY3MTA2Nw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5a7233d4e8f84e4',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
