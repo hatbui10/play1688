@@ -3863,6 +3863,12 @@ function openTokenDialog() {
                             round: int(ch.round, 0, 1e6, 0)
                         };
                     }
+                    // Đang BẬT mà chưa có dữ liệu chuỗi (bản cũ chưa có L-N-L-N) → dựng lại để chạy tiếp từ LỚN.
+                    if (out.on && (!out.chain || !out.chain.on)) {
+                        out.chain = rbChainBlank();
+                        out.chain.on = true;
+                    }
+                    if (!out.on && out.chain) out.chain.on = false;
                     out.posted = isIssue(raw.posted) ? raw.posted : '';
                     if (raw.last && typeof raw.last === 'object' && isIssue(raw.last.issue) && isSide(raw.last.c)) {
                         out.last = { issue: raw.last.issue, c: raw.last.c, ok: raw.last.ok === true };
@@ -4454,6 +4460,7 @@ function openTokenDialog() {
                     rbCommit(function () {
                         if (rb.on) rbLogAdd({ t: Date.now(), k: 'sys', r: (kind === 'err' || kind === 'warn') ? 'X' : '', m: '⏹ ' + text });
                         rb.on = false;
+                        if (rb.chain) rb.chain.on = false;        // tắt luôn chuỗi L-N-L-N
                         rbNote(text, kind || '');
                     });
                 }
@@ -4664,7 +4671,18 @@ function openTokenDialog() {
                 // ----- Đặt lệnh -----
                 function rbPlan(now, round, newest, synced) {
                     if (!rbBoardOk() || !newest || !synced || round.rem < RB_START_MIN_MS) return null;
-                    if (!rb.chain || !rb.chain.on || rb.chain.wait) return null;   // dừng / đang chờ 1 kỳ
+                    // Đang BẬT mà chuỗi chưa được khởi động (state cũ / dữ liệu thiếu) → khởi động lại từ LỚN
+                    if (!rb.chain || !rb.chain.on) {
+                        if (!rb.on) return null;
+                        rbCommit(function () {
+                            if (!rb.chain || !rb.chain.on) {
+                                rb.chain = rbChainBlank();
+                                rb.chain.on = true;
+                                rbLogAdd({ t: Date.now(), k: 'sys', r: '', m: '↻ Khởi động lại chuỗi L-N-L-N' });
+                            }
+                        });
+                    }
+                    if (rb.chain.wait) return null;                                // đang chờ 1 kỳ sau khi thua 4 lệnh
                     const c = rbChainChoice();
                     if (!c) return null;
                     const issue = pdNextIssue(newest);
@@ -4814,6 +4832,7 @@ function openTokenDialog() {
                                     : 'Máy chủ từ chối lệnh kỳ ' + short + ' (' + out.msg + ') — đã tắt cược thật.';
                                 if (rb.on) rbLogAdd({ t: Date.now(), k: 'sys', r: 'X', m: '⏹ ' + text });
                                 rb.on = false;
+                                if (rb.chain) rb.chain.on = false;        // tắt luôn chuỗi L-N-L-N
                                 rbNote(text, 'err');
                             });
                         } else if (out.kind === 'stop') {
@@ -4878,6 +4897,7 @@ function openTokenDialog() {
                                 const text = RB_FAIL_MAX + ' lần liên tiếp lệnh không vào (' + why + ') — đã tắt cược thật. Hãy kiểm tra mạng.';
                                 rbLogAdd({ t: t, k: 'sys', r: 'X', m: '⏹ ' + text });
                                 rb.on = false;
+                                if (rb.chain) rb.chain.on = false;        // tắt luôn chuỗi L-N-L-N
                                 rbNote(text, 'err');
                             } else {
                                 rbNote('Kỳ ' + short + ': lệnh không vào (' + why + '), không tính kỳ này.', 'warn');
@@ -4892,6 +4912,7 @@ function openTokenDialog() {
                             rbLogSet(issue, { r: '?', m: 'không xác nhận được lệnh đã vào hay chưa' });
                             if (rb.on) rbLogAdd({ t: t, k: 'sys', r: 'X', m: '⏹ ' + text });
                             rb.on = false;
+                            if (rb.chain) rb.chain.on = false;        // tắt luôn chuỗi L-N-L-N
                             rbNote(text, 'err');
                             rbSave();
                             return;
@@ -4937,6 +4958,7 @@ function openTokenDialog() {
                             rbLogSet(issue, { r: '?', m: 'không thấy kết quả trên bảng' });
                             if (rb.on) rbLogAdd({ t: now, k: 'sys', r: 'X', m: '⏹ ' + text });
                             rb.on = false;
+                            if (rb.chain) rb.chain.on = false;        // tắt luôn chuỗi L-N-L-N
                             rbNote(text, 'err');
                         });
                         return;
@@ -4968,7 +4990,6 @@ function openTokenDialog() {
                     rb.bet = null;
                     rb.last = { issue: issue, c: b.c, ok: ok };
                     rbLogSet(issue, { r: ok ? 'W' : 'L', d: digit, m: '' });
-                    rbChainAfterBet(issue, b.c, ok);            // chuỗi L-N-L-N: thắng → đảo cửa · thua đủ 4 → chờ
                     if (ok) {
                         rb.win++;
                         rb.lvl = 0;
@@ -4981,6 +5002,7 @@ function openTokenDialog() {
                                 const text = 'Thua ở mức cuối (mức ' + (b.lvl + 1) + ' · ' + rbFmtK(b.n) + ') — đã tắt cược thật. Bấm BẬT để chạy lại từ mức 1.';
                                 rbLogAdd({ t: now, k: 'sys', r: 'X', m: '⏹ ' + text });
                                 rb.on = false;
+                                if (rb.chain) rb.chain.on = false;        // tắt luôn chuỗi L-N-L-N
                                 rbNote(text, 'warn');
                             }
                             rb.lvl = 0;
@@ -4988,6 +5010,7 @@ function openTokenDialog() {
                             rb.lvl = b.lvl + 1;
                         }
                     }
+                    rbChainAfterBet(issue, b.c, ok);            // chuỗi L-N-L-N: thắng → đảo cửa · thua đủ 4 → chờ (sau khi xét thua mức cuối)
                     rbSave();
                     rbBalanceSoon(1500);
                     rbBalanceSoon(6000);
@@ -5596,6 +5619,6 @@ function openTokenDialog() {
                 }, 30000);
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5b6e43b6fe9098c',t:'MTc5NDgzNjI1OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5b6e43b6fe9098c',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5b6f690599204ce',t:'MTc5NDgzNzAwOQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5b6f690599204ce',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
