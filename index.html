@@ -136,7 +136,7 @@
             /* Tô màu bảng — xem applyRunHighlight():
                · Ô đang đánh (ô 10 của hàng đang dùng) nhấp nháy vàng.
                · Ô đã đánh trong lượt chạy này: thắng → xanh lá · thua → đỏ · đang chờ kết quả → viền vàng. */
-            /* Ô ĐỐI CHIẾU: ô STT−40 dùng để tra cửa cho các kỳ tận cùng 1 / 3 / 8 — nền XANH TƯƠI, đứng yên */
+            /* (Luật STT−40 đã bỏ — khối CSS dưới đây chỉ còn để tham khảo, không dùng) */
             .grid-cell.chain-ref {
                 background: linear-gradient(180deg, #60a5fa 0%, #2563eb 55%, #1d4ed8 100%) !important;
                 border-color: #bfdbfe !important;
@@ -1343,8 +1343,13 @@
                 position: relative;
                 display: block;
                 width: 100%;
-                margin-top: 6px;
+                margin-top: 7px;
                 height: calc(var(--cell) + 4px);
+                border-radius: 9px;
+                background:
+                    repeating-linear-gradient(90deg, rgba(96, 165, 250, .06) 0 1px, transparent 1px 28px),
+                    linear-gradient(180deg, #20263a 0%, #171b28 100%);
+                box-shadow: inset 0 0 0 1px rgba(96, 165, 250, .22), inset 0 2px 10px rgba(0, 0, 0, .55);
             }
             .srb {
                 position: absolute;
@@ -1365,11 +1370,28 @@
                 overflow: hidden;
                 user-select: none;
             }
-            .srb-n { color: #b8b5a6; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: .02em; }
-            .srb-v { font-size: 15px; font-weight: 800; line-height: .95; letter-spacing: .02em; color: #64748b; }
+            .srb-n { color: #8b93a7; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: .02em; }
+            .srb-v { font-size: 21px; font-weight: 900; line-height: .92; letter-spacing: 0; color: #e2e8f0; }
+            /* dải rotor: nền riêng, tách hẳn khỏi bảng */
+            .sc-row[data-wrap="1"] { }
+            .rot-cfg { margin-top: 8px; border-top: 1px dashed #3a3550; padding-top: 6px; }
+            .rot-cfg > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; list-style: none;
+                color: #cbd5e1; font-size: 11px; font-weight: 800; letter-spacing: .04em; }
+            .rot-cfg > summary::-webkit-details-marker { display: none; }
+            .rot-cfg > summary small { color: #8b93a7; font-weight: 700; }
+            .rot-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 7px; }
+            @media (min-width: 560px) { .rot-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+            .rot-cell { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+            .rot-cell span { color: #8b93a7; font-size: 9px; font-weight: 800; letter-spacing: .04em; }
+            .rot-cell input { width: 100%; min-width: 0; padding: 6px 7px; border-radius: 6px; border: 1px solid #454b60;
+                background: #171a26; color: #e8edf7; font-size: 12px; font-weight: 800; letter-spacing: .06em; }
+            .rot-cell input:focus { outline: none; border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96, 165, 250, .3); }
+            .rot-cell input[data-filled="1"] { border-color: #2563eb; background: #14213a; }
+            .rot-note { margin: 7px 0 0; color: #8b93a7; font-size: 10px; font-weight: 600; line-height: 1.45; }
+            .rot-note b { color: #dbe3f2; }
             .srb[data-kind="B"] .srb-v { color: #fbbf24; }
             .srb[data-kind="S"] .srb-v { color: #a5b4fc; }
-            /* kỳ tận cùng 1 / 3 / 8 (phải tra ô STT−40): nền XANH TƯƠI, cùng màu với ô trong bảng */
+            /* (cũ) kỳ tận cùng 1 / 3 / 8 — không còn dùng với rotor */
             .srb[data-sub="1"] {
                 border-color: #bfdbfe;
                 background: linear-gradient(180deg, #60a5fa 0%, #2563eb 55%, #1d4ed8 100%);
@@ -1583,13 +1605,18 @@
         <main class="board-panel" aria-label="Bảng kết quả 100 kỳ">
             <div id="gridContainer" class="grid-table" role="grid" aria-label="Bảng 10 dòng và 10 cột"></div>
 
-            <section class="scan-panel" id="scPanel" data-state="empty" aria-label="Dãy 10 ô tín hiệu">
+            <section class="scan-panel" id="scPanel" data-state="empty" aria-label="Dãy 10 rotor tín hiệu">
                 <div class="sc-head">
-                    <span class="sc-title">Dãy tín hiệu</span>
-                    <span class="sc-hint" id="scHint" role="status" aria-live="polite" title="Mỗi ô là 1 kỳ sắp đánh, dóng thẳng cột với hàng 10 của bảng. Tận cùng 0-4-6-9 → LỚN · 2-5-7 → NHỎ · 1-3-8 → tra ô STT−40, thua thì lần sau đánh ngược ô đó.">CHƯA CHẠY</span>
+                    <span class="sc-title">Dãy tín hiệu · 10 rotor</span>
+                    <span class="sc-hint" id="scHint" role="status" aria-live="polite" title="10 rotor. Mỗi ô hiện số đang hiện trên rotor đó; số nhỏ phía trên là số thứ tự rotor. Rotor đang đánh phát sáng vàng. Mỗi kỳ có kết quả, mọi rotor nhảy sang số kế tiếp.">CHƯA CHẠY</span>
                 </div>
-                <span class="sc-sub-line" id="scSub">10 kỳ sắp đánh</span>
+                <span class="sc-sub-line" id="scSub">10 rotor · chưa chạy</span>
                 <div class="sc-row" id="scLast" aria-hidden="false"></div>
+                <details class="rot-cfg" id="scCfg">
+                    <summary><span>⚙️ Dãy số 10 rotor</span><small id="scCfgNote">chưa nhập</small></summary>
+                    <div class="rot-grid" id="scCfgGrid"></div>
+                    <p class="rot-note">Mỗi ô là 1 rotor: nhập dãy số của riêng nó, cách nhau bằng dấu cách hoặc dấu phẩy (vd <b>1 3 8 0 4</b>) — nhập liền <b>13804</b> cũng được. Số phần tử tuỳ ý. Rotor đang đánh lấy số ở ô 1: <b>0–4 → NHỎ</b>, <b>5–9 → LỚN</b>. Thua → sang rotor kế, thắng → về rotor 1.</p>
+                </details>
             </section>
 
             <section class="real-panel" id="rbPanel" data-on="false" data-open="true" aria-label="Cược thật tự động">
@@ -1598,7 +1625,7 @@
                     <span class="rb-count" id="rbSum">ĐANG TẮT</span>
                 </div>
                 <div class="rb-card">
-                    <div class="rb-title"><span>🎯 Cược thật tự động</span><small id="rbState">Đánh theo STT của kỳ</small></div>
+                    <div class="rb-title"><span>🎯 Cược thật tự động</span><small id="rbState">Đánh theo rotor tín hiệu</small></div>
                     <div class="rb-issue-row">
                         <span class="rb-issue" id="rbIssue">Kỳ: --</span>
                         <span class="rb-clock" id="rbClock" data-kind="syncing">⏳ Chờ kỳ</span>
@@ -1609,7 +1636,7 @@
                     </div>
                     <div class="rb-chips" id="rbChips" role="group" aria-label="Các mức cược"></div>
                     <div class="rb-msg" id="rbMsg" role="status" aria-live="polite"></div>
-                    <button type="button" class="rb-run" id="rbRun" aria-pressed="false">▶ BẬT TỰ ĐỘNG CƯỢC THẬT</button>
+                    <button type="button" class="rb-run" id="rbRun" aria-pressed="false">▶ CHẠY TỰ ĐỘNG</button>
                 </div>
                 <details class="rb-fold" id="rbBody" open>
                     <summary><span>✏️ Mức cược</span><small id="rbFoldNote">Chưa cài</small></summary>
@@ -1620,7 +1647,8 @@
                         <div class="rb-actions">
                             <button type="button" class="rb-save" id="rbSave">Lưu &amp; thu gọn</button>
                         </div>
-                        <p class="rb-rule">Bấm BẬT là đánh theo <b>STT của kỳ</b>: tận cùng <b>0-4-6-9</b> → cược <b>LỚN</b> · tận cùng <b>2-5-7</b> → cược <b>NHỎ</b> · tận cùng <b>1-3-8</b> → lấy ô có STT <b>−40</b> (ô cùng cột, hàng trên): ô đó ra LỚN/NHỎ thì đánh đúng như vậy (thuận). Ô 1-3-8 mà <b>thua</b> thì lần sau đánh <b>ngược</b> ô STT−40; đánh ngược mà thua nữa thì lại đảo lại (thuận → ngược → thuận…). <b>Thắng thì giữ nguyên</b> nhịp đang có. Tiền cược theo thang: thua lên mức kế, thắng về mức 1.</p>
+                        <p class="rb-rule">Bấm CHẠY là đánh theo <b>rotor</b>: ô cần đánh là <b>rotor 1</b> — số đang hiện <b>0–4 → cược NHỎ</b>, <b>5–9 → cược LỚN</b>. Cứ mỗi kỳ game có kết quả, cả 10 rotor nhảy sang số kế tiếp trong dãy bạn đã nhập. <b>Thua → sang rotor kế</b> (đánh theo số của rotor đó), <b>thắng → về rotor 1</b>. Thua ở rotor cuối → tự tắt. Tiền cược theo thang: thua lên mức kế, thắng về mức 1.</p>
+
                         <div class="rb-tokeninfo" id="rbToken">Chưa có token</div>
                     </div>
                 </details>
@@ -1905,42 +1933,15 @@
                 }
             
                 // ===== TÔ MÀU BẢNG =====
-                //  · Ô STT−40 dùng để chọn cửa cho kỳ sắp đánh → nhấp nháy vàng.
+                //  · Luật STT−40 đã bỏ: bảng không còn tô ô đối chiếu.
                 //  · Ô đã dùng trong lượt chạy này: thắng → xanh · thua → đỏ · đang chờ kết quả → viền vàng.
                 //  (Đã bỏ hẳn cách tô NNN / LLL ở hai đầu và NN / LL ở giữa.)
                 function applyRunHighlight() {
-                    const st = (rb.chain && typeof rb.chain === 'object') ? rb.chain : { on: false, marks: {} };
-                    let nextIdx = -1;
-                    const refSet = new Set();               // các ô STT−40 phải tô để đối chiếu
-                    // Luôn tô ô đối chiếu cho mọi kỳ tận cùng 1 / 3 / 8 trong dãy 10 kỳ sắp đánh
-                    // — kể cả khi CHƯA BẬT và CHƯA có token, để còn nhìn bảng mà đối chiếu.
-                    const seqAll = rbRowSeq();
-                    for (let j = 0; j < seqAll.length; j++) {
-                        const e = seqAll[j];
-                        if (!e.issue) continue;
-                        const t = ((Math.round(e.n) % 10) + 10) % 10;
-                        if (t !== 1 && t !== 3 && t !== 8) continue;
-                        const ref = rbCellOfN(e.n - 40);
-                        if (ref) refSet.add(cells.indexOf(ref));
-                    }
-                    if (st.on) {
-                        const issue = rbCurrentIssue();
-                        // chỉ kỳ tận cùng 1 / 3 / 8 mới tra ô STT−40 → chỉ khi đó mới có "ô đang dùng" trong bảng
-                        const nNow = issue ? rbN(issue) : NaN;
-                        const tNow = Number.isFinite(nNow) ? ((Math.round(nNow) % 10) + 10) % 10 : NaN;
-                        const src = (tNow === 1 || tNow === 3 || tNow === 8) ? rbCellOfN(nNow - 40) : null;
-                        if (src) nextIdx = cells.indexOf(src);
-                    }
+                    // Bảng KHÔNG còn tô ô STT−40 (luật STT đã bỏ). Chỉ giữ chỗ cho các dấu W/L nếu có.
                     for (let k = 0; k < TOTAL; k++) {
                         const list = cells[k].valEl.parentElement.classList;
-                        const sttKey = String(Number(String(cells[k].sttFull || '').slice(-3)) || '');
-                        const at = (st.marks && sttKey && st.marks[sttKey]) ? st.marks[sttKey] : null;
-                        const mark = at ? at.r : '';
-                        list.toggle('chain-next', k === nextIdx);
-                        list.toggle('chain-ref', k !== nextIdx && refSet.has(k));
-                        list.toggle('chain-win', mark === 'W');
-                        list.toggle('chain-lose', mark === 'L');
-                        list.toggle('chain-wait', mark === '?');
+                        list.remove('chain-next');
+                        list.remove('chain-ref');
                     }
                 }
 
@@ -3122,7 +3123,7 @@ function openTokenDialog() {
                 let pdHistoryDirty = true;
                 let pdBannerKey = '';
                 let pdResetArmedUntil = 0;
-                let scSignal = null;                    // không còn dùng (dải "Ô đang đánh" tự đọc rb.chain)
+                let scSignal = null;                    // không còn dùng (dải ô đang đánh tự đọc rb.rotor)
                 let pdManualRoundEnd = 0;               // mốc endAt của kỳ mà người chơi chủ động bấm tay
                 let pdLastResolvedEndAt = 0;            // mốc endAt của kỳ vừa được chấm xong
                 let rb = rbBlank();                     // trạng thái cược thật tự động — xem phần CƯỢC THẬT TỰ ĐỘNG phía dưới
@@ -3351,89 +3352,152 @@ function openTokenDialog() {
                 }
 
                 // =====================================================================
-                // TÍN HIỆU THEO SỐ KỲ (STT) — chỉ dùng cho CƯỢC THẬT ở khung trên
-                //   Lấy 3 chữ số cuối của STT kỳ sắp đánh (gọi là n) và chữ số tận cùng (t = n % 10):
-                //   • t = 0 · 4 · 6 · 9        → LUÔN đánh LỚN (thuận)
-                //   • t = 2 · 5 · 7            → LUÔN đánh NHỎ (thuận)
-                //   • t = 1 · 3 · 8            → lấy ô có STT = n − 40 (ô ở hàng trên, cùng cột):
-                //         ô đó là LỚN → đánh LỚN · ô đó là NHỎ → đánh NHỎ (thuận)
-                //     Nhịp THUẬN / NGƯỢC chạy theo THỨ TỰ THUA, không theo thời gian:
-                //         ô 1 đánh THUẬN mà thua → ô 3 đánh NGƯỢC → thua tiếp → ô 8 đánh THUẬN
-                //         → thua nữa → ô 1 NGƯỢC → ô 3 THUẬN → ô 8 NGƯỢC … (mỗi lần thua là đảo)
-                //     THẮNG ở bất kỳ ô nào → giữ nguyên nhịp đang có, không đảo.
-                //     Lưu ý: ô 8 phải tra ngược xuống ô 8 của hàng dưới (vì ô 8 − 40 = ô 8 hàng trên
-                //     không tồn tại) → tra theo chuỗi 1 · 3 · 8 lặp lại.
-                //   • Ô cần tra chưa có số trên bảng → không đặt lệnh kỳ đó (chờ đủ số).
-                //   • Tiền cược theo thang cược: thua lên mức kế, thắng về mức 1.
+                // ROTOR TÍN HIỆU — thay cho luật STT cũ
+                //   • Dãy tín hiệu = 10 rotor. Mỗi rotor chứa MỘT DÃY SỐ do người dùng tự nhập
+                //     (mỗi ô một dãy riêng, số phần tử tuỳ ý — không mặc định 10).
+                //   • Mỗi khi game ra kết quả (bảng có kỳ mới), MỌI rotor nhảy sang số kế tiếp,
+                //     quay vòng về đầu khi hết dãy.
+                //   • Ô cần đánh = rotor ĐẦU TIÊN (cột 1). Số đang hiện trên rotor đó:
+                //         0 · 1 · 2 · 3 · 4 → cược NHỎ  ·  5 · 6 · 7 · 8 · 9 → cược LỚN
+                //     (số nào không phải chữ số 0–9 → không cược kỳ đó)
+                //   • THUA → nhảy sang rotor kế tiếp; THẮNG → quay về rotor đầu.
+                //   • Hết rotor cuối (hoặc thua ở mức cược cuối) → tự tắt cược thật.
                 // =====================================================================
-                const RB_CHAIN = [1, 3, 8];             // nhóm tra ô STT−40, theo đúng thứ tự 1 · 3 · 8
+                const LS_ROTOR = 'vn168_rotor_v1';
+                const ROTOR_MAX_LEN = 60;               // số phần tử tối đa của 1 rotor
+                const ROTOR_DEFAULT_N = 10;
+                // Số kỳ mới đã nhận kể từ lúc bấm CHẠY. Ghi thẳng vào rb.rotor.pos để không mất khi trạng thái được nạp lại.
+                function rotorAtGet() { return (rb.rotor && Number(rb.rotor.pos)) || 0; }
+                function rotorAtSet(v) { if (rb.rotor) rb.rotor.pos = Math.max(0, Math.round(Number(v) || 0)); }
+                let rotorSeen = '';                     // kỳ mới nhất đã xử lý (chống đếm trùng)
+                let rotorDirty = false;                 // cần vẽ lại dãy
 
-                // n = 3 chữ số cuối của STT kỳ
+                // Chưa nhập gì → rotor để TRỐNG (không tự sinh số).
+                function rotorDefaultOrder() { return []; }
+
+                // Tách ô nhập của người dùng thành dãy số: "1 3 8 0 4" · "1,3,8" · "13804" (chuỗi nhiều chữ số → tách từng chữ số)
+                function rotorParse(text) {
+                    const raw = String(text == null ? '' : text);
+                    const tout = raw.split(/[^0-9]+/).filter(Boolean);        // nhóm toàn số
+                    if (!tout.length) return [];
+                    const out = [];
+                    for (let i = 0; i < tout.length; i++) {
+                        const part = tout[i];
+                        if (part.length === 1) { out.push(part); continue; }
+                        for (let j = 0; j < part.length; j++) out.push(part.charAt(j));   // "13804" → 1,3,8,0,4
+                    }
+                    return out.slice(0, ROTOR_MAX_LEN);
+                }
+
+                function rotorBlank() {
+                    const list = [];
+                    for (let k = 0; k < 10; k++) list.push('');
+                    return { on: false, row: 1, marks: {}, list: list, pos: 0, col: 0, mark: '' };
+                }
+
+                function rotorNormalizeList(raw) {
+                    const out = [];
+                    const src = Array.isArray(raw) ? raw : [];
+                    for (let k = 0; k < 10; k++) {
+                        const t = src[k];
+                        out.push(typeof t === 'string' ? t.slice(0, ROTOR_MAX_LEN * 4) : '');
+                    }
+                    return out;
+                }
+
+                // Dãy số đang dùng của 1 rotor (chưa nhập → rỗng, ô hiện dấu ·)
+                function rotorOrder(i) {
+                    const st = rb.rotor;
+                    const text = st && st.list ? st.list[i] : '';
+                    return rotorParse(text);
+                }
+
+                function rotorListLen() {
+                    const st = rb.rotor || rotorBlank();
+                    return Array.isArray(st.list) ? st.list.length : 10;
+                }
+
+                // Số đang hiện trên rotor k (k = 0…n−1) theo số kỳ đã nhận
+                function rotorValueAt(k) {
+                    const st = rb.rotor || rotorBlank();
+                    const order = rotorOrder(k);
+                    if (!order.length) return '';
+                    const pos = ((Number(st.pos) || 0) % order.length + order.length) % order.length;
+                    return order[pos];
+                }
+
+                // 3 chữ số cuối của STT kỳ (chỉ dùng để hiển thị / dự đoán tay)
                 function rbN(issue) {
-                    const s = String(issue == null ? '' : issue).replace(/\\D/g, '');
-                    return s ? Number(s.slice(-3)) : NaN;
+                    const t = String(issue == null ? '' : issue).replace(/[^0-9]/g, '');
+                    return t ? Number(t.slice(-3)) : NaN;
                 }
 
-                // Cửa mặc định theo chữ số tận cùng: 'B' = LỚN · 'S' = NHỎ · '' = phải tra ô STT−40
-                function rbFixedSide(issue) {
-                    const n = rbN(issue);
-                    if (!Number.isFinite(n)) return '';
-                    const t = ((n % 10) + 10) % 10;
-                    if (t === 0 || t === 4 || t === 6 || t === 9) return 'B';
-                    if (t === 2 || t === 5 || t === 7) return 'S';
-                    return '';
-                }
-
-                function rbChainBlank() {
-                    return { on: false, row: 1, marks: {}, inv: false };
-                }
-
-                // Dãy 10 ô dóng với hàng 10 (mỗi ô = 1 kỳ sắp đánh, tính từ kỳ ngay sau kỳ mới nhất trên bảng)
+                // Dãy 10 ô sắp đánh: ô k = số hiện tại của rotor k (chỉ để hiển thị)
                 function rbRowSeq() {
                     const newest = pdNewestIssue();
                     const out = [];
                     let issue = newest ? pdNextIssue(newest) : '';
-                    for (let k = 0; k < 10; k++) {
-                        out.push(issue ? { issue: issue, n: rbN(issue) } : { issue: '', n: NaN });
+                    const n = rotorListLen();
+                    for (let k = 0; k < n; k++) {
+                        out.push(issue ? { issue: issue, n: rbN(issue), k: k } : { issue: '', n: NaN, k: k });
                         issue = issue ? pdNextIssue(issue) : '';
                     }
                     return out;
                 }
 
-                // Ô của bảng ứng với số kỳ n−40 (cùng cột, hàng trên) — tra trong 100 ô.
-                function rbCellOfN(n) {
-                    if (!Number.isFinite(n) || n < 0 || n > 999) return null;
-                    const want = String(Math.round(n)).padStart(3, '0');
-                    for (let i = TOTAL - 1; i >= 0; i--) {
-                        const stt = String(cells[i].sttFull || '');
-                        if (!stt) continue;
-                        if (stt.slice(-3) !== want) continue;
-                        return cells[i];
-                    }
-                    return null;
+                // Cửa cược theo 1 chữ số: 'B' = LỚN (5–9) · 'S' = NHỎ (0–4) · '' = không cược
+                function rotorSideOf(val) {
+                    const t = String(val == null ? '' : val);
+                    if (!/^[0-9]$/.test(t)) return '';
+                    return Number(t) >= 5 ? 'B' : 'S';
                 }
 
-                // Cửa đánh cho 1 kỳ. Trả về: 'B' · 'S' · '' (không xác định được)
-                function rbSideFor(issue) {
-                    const st = rb.chain || rbChainBlank();
-                    const fixed = rbFixedSide(issue);
-                    if (fixed) return fixed;                          // tận cùng 0-4-6-9 → L · 2-5-7 → N
-                    const n = rbN(issue);
-                    if (!Number.isFinite(n)) return '';
-                    const cell = rbCellOfN(n - 40);
-                    const kind = cell ? pdKind(cell.value) : '';
-                    if (!kind) return '';                             // ô STT−40 chưa có số
-                    const base = (kind === 'B') ? 'B' : 'S';
-                    const inv = st.inv === true;
-                    return inv ? (base === 'B' ? 'S' : 'B') : base;
-                }
-
-                // Cửa của lệnh sắp tới (kỳ ngay sau kỳ mới nhất trên bảng)
-                function rbChainChoice() {
-                    const st = rb.chain;
+                // Rotor đang dùng để đánh = rotor đầu tiên (cột 1)
+                function rotorCurrentValue() {
+                    const st = rb.rotor;
                     if (!st || !st.on) return '';
-                    const issue = rbCurrentIssue();
-                    return issue ? rbSideFor(issue) : '';
+                    return rotorValueAt(0);
+                }
+
+                function rbChainChoice() {
+                    return rotorSideOf(rotorCurrentValue());
+                }
+
+                // Dãy 10 ô hiển thị: mỗi ô = { issue, n, val, side }
+                function rbSeqPlan() {
+                    const seq = rbRowSeq();
+                    const out = [];
+                    for (let k = 0; k < seq.length; k++) {
+                        const e = seq[k];
+                        const val = rotorValueAt(k);
+                        out.push({ issue: e.issue, n: e.n, k: k, val: val, side: rotorSideOf(val) });
+                    }
+                    return out;
+                }
+
+                // Cửa cho 1 kỳ cụ thể — chỉ áp dụng cho kỳ sắp đánh (dùng cho khung dự đoán tay)
+                function rbSideFor(issue) {
+                    const now = rbCurrentIssue();
+                    if (!now || String(issue) !== String(now)) return '';
+                    return rbChainChoice();
+                }
+
+                // Rotor quay: mỗi kỳ mới trên bảng thì +1 nhịp cho MỌI rotor
+                function rotorAdvance() {
+                    const newest = pdNewestIssue();
+                    if (!newest) return false;
+                    if (!rb.rotor || typeof rb.rotor !== 'object') rb.rotor = rotorBlank();
+                    if (rotorSeen === newest) return false;
+                    if (!rotorSeen) {
+                        rotorSeen = newest;
+                        return false;                                   // lần đầu thấy bảng: chỉ ghi mốc, chưa quay
+                    }
+                    rotorSeen = newest;
+                    if (!rb.rotor.on) return false;                     // chưa CHẠY thì rotor đứng im
+                    rotorAtSet(rotorAtGet() + 1);
+                    rbSave();
+                    rotorDirty = true;
+                    return true;
                 }
 
                 function rbCurrentIssue() {
@@ -3441,35 +3505,24 @@ function openTokenDialog() {
                     return newest ? pdNextIssue(newest) : '';
                 }
 
-                // Chấm 1 lệnh. Đã nằm trong rbCommit (không tự đọc/ghi bộ nhớ).
-                //  • thắng → giữ nguyên nhịp (không đảo ô nào)
-                //  • thua  → đảo đúng ô đang đánh: ô 1 ⇄ ô 3 ⇄ ô 8
+                // Chấm 1 lệnh: ghi dấu W/L lên ô đã đánh + nhảy sang rotor kế khi thua
                 function rbChainAfterBet(issue, c, ok) {
-                    const st = rb.chain;
+                    const st = rb.rotor;
                     if (!st || !st.on) return;
                     if (!st.marks || typeof st.marks !== 'object') st.marks = {};
                     for (const k in st.marks) {
                         const at = st.marks[k] || {};
                         if (at.i === issue && at.r === '?') delete st.marks[k];
                     }
-                    const n = rbN(issue);
-                    const t = ((n % 10) + 10) % 10;
-                    const isSub = (t === 1 || t === 3 || t === 8);
-                    const srcN = n - 40;
-                    const cell = rbCellOfN(srcN);
-                    const has = !!(cell && pdKind(cell.value));
-                    if (has) {
-                        const key = String(((srcN % 1000) + 1000) % 1000);   // dấu dính theo ô có STT này
-                        st.marks[key] = { i: issue, r: ok ? 'W' : 'L' };
-                        for (const k in st.marks) {
-                            const at = st.marks[k] || {};
-                            if (at.r === '?' && k !== key) delete st.marks[k];
-                        }
-                    }
-                    if (ok) return;                                       // thắng → giữ nguyên nhịp thuận/ngược
-                    if (isSub) st.inv = !st.inv;                          // thua ô 1/3/8 → lần sau đánh NGƯỢC ô STT−40
+                    const n = Array.isArray(st.list) ? st.list.length : 10;
+                    const col = Math.min(Math.max(Number(st.col) || 0, 0), n - 1);
+                    st.marks[String(col)] = { i: issue, r: ok ? 'W' : 'L' };
+                    if (ok) { st.col = 0; st.mark = 'W'; }                                       // thắng → về rotor đầu
+                    else if (col + 1 >= n) { st.col = 0; st.mark = 'L'; }                        // thua ở rotor cuối → dừng
+                    else { st.col = col + 1; st.mark = 'L'; }                                    // thua → sang rotor kế
                 }
 
+                
                 // Khung dự đoán KHÔNG còn tự bấm: mọi thứ chạy theo STT ở khung CƯỢC THẬT.
                 function pdMaybeAutoPick() { return; }
 
@@ -3849,7 +3902,8 @@ function openTokenDialog() {
                         bet: null,              // lệnh đã gửi, chưa có kết quả: { issue, base, c, n, lvl, fl, at, endAt, st, vAt, why }
                         posted: '',             // kỳ gần nhất đã gửi lệnh (mỗi kỳ chỉ gửi 1 lần)
                         last: null,             // lệnh thật vừa chấm xong: { issue, c, ok }
-                        chain: null,            // tín hiệu theo STT: { on, row, marks, inv }
+                        chain: null,            // (cũ, không dùng)
+                        rotor: null,            // 10 rotor tín hiệu: { on, row, marks, list[10], col, pos }
                         fail: 0,                // số lần liên tiếp lệnh không vào
                         win: 0,
                         lose: 0,
@@ -3941,30 +3995,33 @@ function openTokenDialog() {
                             why: typeof b.why === 'string' ? b.why.slice(0, 200) : ''
                         };
                     }
-                    if (raw.chain && typeof raw.chain === 'object') {
-                        const ch = raw.chain;
-                        const mk = (ch.marks && typeof ch.marks === 'object') ? ch.marks : {};
+                    if (raw.rotor && typeof raw.rotor === 'object') {
+                        const ro = raw.rotor;
+                        const mk = (ro.marks && typeof ro.marks === 'object') ? ro.marks : {};
                         const marks = {};
-                        for (const k in mk) {                                  // khoá = 3 số cuối STT của ô nguồn
-                            if (!/^\d{1,3}$/.test(k)) continue;
+                        for (const k in mk) {                                  // khoá = số thứ tự rotor (0…9)
+                            if (!/^\d{1,2}$/.test(k)) continue;
                             const at = mk[k];
                             if (!at || typeof at !== 'object') continue;
                             if (at.r !== 'W' && at.r !== 'L' && at.r !== '?') continue;
                             marks[String(Number(k))] = { i: isIssue(at.i) ? at.i : '', r: at.r };
                         }
-                        out.chain = {
-                            on: ch.on === true,
-                            row: int(ch.row, 1, ROWS, 1),
+                        out.rotor = {
+                            on: ro.on === true,
+                            row: int(ro.row, 1, ROWS, 1),
                             marks: marks,
-                            inv: ch.inv === true                  // đang đánh NGƯỢC ô STT−40
+                            list: rotorNormalizeList(ro.list),
+                            col: int(ro.col, 0, 9, 0),
+                            pos: int(ro.pos, 0, 1e9, 0),
+                            mark: (ro.mark === 'W' || ro.mark === 'L') ? ro.mark : ''
                         };
                     }
-                    // Đang BẬT mà chưa có dữ liệu tín hiệu (state của bản cũ) → dựng lại (mọi ô đánh thuận).
-                    if (out.on && (!out.chain || !out.chain.on)) {
-                        out.chain = rbChainBlank();
-                        out.chain.on = true;
+                    // Đang BẬT mà chưa có dữ liệu rotor (state của bản cũ) → dựng lại.
+                    if (out.on && (!out.rotor || !out.rotor.on)) {
+                        out.rotor = rotorBlank();
+                        out.rotor.on = true;
                     }
-                    if (!out.on && out.chain) out.chain.on = false;
+                    if (!out.on && out.rotor) out.rotor.on = false;
                     out.posted = isIssue(raw.posted) ? raw.posted : '';
                     if (raw.last && typeof raw.last === 'object' && isIssue(raw.last.issue) && isSide(raw.last.c)) {
                         out.last = { issue: raw.last.issue, c: raw.last.c, ok: raw.last.ok === true };
@@ -4556,7 +4613,7 @@ function openTokenDialog() {
                     rbCommit(function () {
                         if (rb.on) rbLogAdd({ t: Date.now(), k: 'sys', r: (kind === 'err' || kind === 'warn') ? 'X' : '', m: '⏹ ' + text });
                         rb.on = false;
-                        if (rb.chain) rb.chain.on = false;        // tắt luôn việc đánh theo ô
+                        if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
                         rb.note = String(text || '').slice(0, 400);
                         rb.noteKind = kind || '';
                         rb.noteAt = Date.now();
@@ -4570,8 +4627,16 @@ function openTokenDialog() {
                         // nhưng nó nằm ngoài thang cược mới: thua cũng không đẩy lượt này lên mức 2.
                         rb.lvl = 0;
                         rb.last = null;
-                        rb.chain = rbChainBlank();
-                        rb.chain.on = true;                     // bấm BẬT → đánh theo STT của từng kỳ
+                        // Bấm CHẠY: giữ nguyên dãy số đã nhập, đưa rotor về ô 1 và mốc kỳ hiện tại.
+                        const keptList = rotorNormalizeList(rb.rotor ? rb.rotor.list : null);
+                        rb.rotor = rotorBlank();
+                        rb.rotor.list = keptList;
+                        rb.rotor.on = true;
+                        rb.rotor.col = 0;
+                        rb.rotor.pos = 0;
+                        rb.rotor.marks = {};
+                        rotorSeen = pdNewestIssue();
+                        rotorDirty = true;
                         if (rb.bet) rb.bet.out = true;
                         rb.on = true;
                         rb.fail = 0;
@@ -4582,7 +4647,7 @@ function openTokenDialog() {
                         rb.note = '';
                         rb.noteKind = '';
                         rb.noteAt = 0;
-                        rbLogAdd({ t: now, k: 'sys', r: '', m: '▶ Bật · ' + rbLevelsText(rb.levels) + ' · đánh theo STT' });
+                        rbLogAdd({ t: now, k: 'sys', r: '', m: '▶ Bật · ' + rbLevelsText(rb.levels) + ' · đánh theo rotor' });
                     });
                     rbTry = { issue: '', n: 0, nextAt: 0, msg: '' };
                     rbBoardAskAt = 0;
@@ -4769,22 +4834,23 @@ function openTokenDialog() {
                 // ----- Đặt lệnh -----
                 function rbPlan(now, round, newest, synced) {
                     if (!rbBoardOk() || !newest || !synced || round.rem < RB_START_MIN_MS) return null;
-                    // Đang BẬT mà chưa có dữ liệu tín hiệu (state bản cũ / dữ liệu thiếu) → dựng lại, đánh thuận.
-                    if (!rb.chain || !rb.chain.on) {
+                    // Đang BẬT mà chưa có dữ liệu rotor (state bản cũ) → dựng lại.
+                    if (!rb.rotor || !rb.rotor.on) {
                         if (!rb.on) return null;
                         rbCommit(function () {
-                            if (!rb.chain || !rb.chain.on) {
-                                rb.chain = rbChainBlank();
-                                rb.chain.on = true;
-                                rbLogAdd({ t: Date.now(), k: 'sys', r: '', m: '↻ Khởi động lại: đánh theo STT' });
+                            if (!rb.rotor || !rb.rotor.on) {
+                                rb.rotor = rotorBlank();
+                                rb.rotor.on = true;
+                                rbLogAdd({ t: Date.now(), k: 'sys', r: '', m: '↻ Khởi động lại: đánh theo rotor' });
                             }
                         });
                     }
-                    const c = rbChainChoice();
+                    // Ô đang đánh = rotor đang dùng; số không phải chữ số 0–9 → kỳ này không cược.
+                    const col = Math.min(Math.max(Number(rb.rotor.col) || 0, 0), rotorListLen() - 1);
+                    const val = rotorValueAt(col);
+                    const c = rotorSideOf(val);
                     if (!c) {
-                        // Kỳ này phải tra ô STT−40 mà ô đó chưa có số trên bảng → chưa biết cược chiều nào.
-                        const t = rbN(pdNextIssue(newest)) % 10;
-                        rbTry.msg = 'phải tra ô STT−40 (tận cùng ' + t + ') mà ô đó chưa có số trên bảng';
+                        rbTry.msg = 'rotor ' + (col + 1) + ' đang là «' + (val || 'trống') + '» — không phải số 0–9 nên kỳ này không cược';
                         return null;
                     }
                     const issue = pdNextIssue(newest);
@@ -4795,17 +4861,13 @@ function openTokenDialog() {
                         rbStop('Mức cược không hợp lệ — đã tắt. Hãy nhập lại mức cược.', 'err');
                         return null;
                     }
-                    // Ghi dấu "đang chờ kết quả" cho ô STT−40 đã dùng để chọn cửa (viền vàng trên bảng)
-                    if (!rb.chain.marks || typeof rb.chain.marks !== 'object') rb.chain.marks = {};
-                    for (const k in rb.chain.marks) {
-                        if ((rb.chain.marks[k] || {}).r === '?') delete rb.chain.marks[k];
+                    // Ghi dấu "đang chờ kết quả" lên rotor đang đánh
+                    if (!rb.rotor.marks || typeof rb.rotor.marks !== 'object') rb.rotor.marks = {};
+                    for (const k in rb.rotor.marks) {
+                        if ((rb.rotor.marks[k] || {}).r === '?') delete rb.rotor.marks[k];
                     }
-                    const srcN = rbN(issue) - 40;
-                    const srcCell = rbCellOfN(srcN);
-                    if (srcCell && pdKind(srcCell.value)) {
-                        rb.chain.marks[String(((srcN % 1000) + 1000) % 1000)] = { i: issue, r: '?' };
-                    }
-                    return { issue: issue, base: newest, c: c, follow: false, lvl: rb.lvl, n: count };
+                    rb.rotor.marks[String(col)] = { i: issue, r: '?' };
+                    return { issue: issue, base: newest, c: c, follow: false, lvl: rb.lvl, n: count, col: col };
                 }
 
                 // Trong lúc chờ mạng mọi thứ còn đúng như lúc lập lệnh không? ('' = còn đúng)
@@ -4818,7 +4880,7 @@ function openTokenDialog() {
                     const newest = pdNewestIssue();
                     if (newest !== plan.base) return 'bảng vừa có kết quả mới';
                     const wantC = rbChainChoice();
-                    if (!wantC || wantC !== plan.c) return 'ô STT−40 vừa đổi số';
+                    if (!wantC || wantC !== plan.c) return 'rotor vừa đổi số';
                     if (!rbBoardOk()) return 'bảng vừa thay đổi';
                     return '';
                 }
@@ -4944,7 +5006,7 @@ function openTokenDialog() {
                                     : 'Máy chủ từ chối lệnh kỳ ' + short + ' (' + out.msg + ') — đã tắt cược thật.';
                                 if (rb.on) rbLogAdd({ t: Date.now(), k: 'sys', r: 'X', m: '⏹ ' + text });
                                 rb.on = false;
-                                if (rb.chain) rb.chain.on = false;        // tắt luôn việc đánh theo ô
+                                if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
                                 rbNote(text, 'err');
                             });
                         } else if (out.kind === 'stop') {
@@ -5009,7 +5071,7 @@ function openTokenDialog() {
                                 const text = RB_FAIL_MAX + ' lần liên tiếp lệnh không vào (' + why + ') — đã tắt cược thật. Hãy kiểm tra mạng.';
                                 rbLogAdd({ t: t, k: 'sys', r: 'X', m: '⏹ ' + text });
                                 rb.on = false;
-                                if (rb.chain) rb.chain.on = false;        // tắt luôn việc đánh theo ô
+                                if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
                                 rbNote(text, 'err');
                             } else {
                                 rbNote('Kỳ ' + short + ': lệnh không vào (' + why + '), không tính kỳ này.', 'warn');
@@ -5024,7 +5086,7 @@ function openTokenDialog() {
                             rbLogSet(issue, { r: '?', m: 'không xác nhận được lệnh đã vào hay chưa' });
                             if (rb.on) rbLogAdd({ t: t, k: 'sys', r: 'X', m: '⏹ ' + text });
                             rb.on = false;
-                            if (rb.chain) rb.chain.on = false;        // tắt luôn việc đánh theo ô
+                            if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
                             rbNote(text, 'err');
                             rbSave();
                             return;
@@ -5070,7 +5132,7 @@ function openTokenDialog() {
                             rbLogSet(issue, { r: '?', m: 'không thấy kết quả trên bảng' });
                             if (rb.on) rbLogAdd({ t: now, k: 'sys', r: 'X', m: '⏹ ' + text });
                             rb.on = false;
-                            if (rb.chain) rb.chain.on = false;        // tắt luôn việc đánh theo ô
+                            if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
                             rbNote(text, 'err');
                         });
                         return;
@@ -5114,7 +5176,7 @@ function openTokenDialog() {
                                 const text = 'Thua ở mức cuối (mức ' + (b.lvl + 1) + ' · ' + rbFmtK(b.n) + ') — đã tắt cược thật. Bấm BẬT để chạy lại từ mức 1.';
                                 rbLogAdd({ t: now, k: 'sys', r: 'X', m: '⏹ ' + text });
                                 rb.on = false;
-                                if (rb.chain) rb.chain.on = false;        // tắt luôn việc đánh theo ô
+                                if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
                                 rbNote(text, 'warn');
                             }
                             rb.lvl = 0;
@@ -5122,7 +5184,14 @@ function openTokenDialog() {
                             rb.lvl = b.lvl + 1;
                         }
                     }
-                    rbChainAfterBet(issue, b.c, ok);            // thắng → về ô 10 hàng 6 · thua → hàng kế · thua hàng 10 → tự dừng
+                    rbChainAfterBet(issue, b.c, ok);            // thắng → về rotor đầu · thua → rotor kế · thua ở rotor cuối → dừng
+                    if (!b.out && rb.rotor && rb.rotor.on && rb.rotor.mark === 'L' && (Number(rb.rotor.col) || 0) === 0 && rotorListLen() > 1) {
+                        const text = 'Thua ở rotor cuối — đã tắt cược thật. Bấm CHẠY TỰ ĐỘNG để quay lại từ rotor 1.';
+                        rbLogAdd({ t: now, k: 'sys', r: 'X', m: '⏹ ' + text });
+                        rb.on = false;
+                        rb.rotor.on = false;
+                        rbNote(text, 'warn');
+                    }
                     rbSave();
                     rbBalanceSoon(1500);
                     rbBalanceSoon(6000);
@@ -5132,6 +5201,10 @@ function openTokenDialog() {
                 // Gọi từ pdRender (10 lần/giây và mỗi khi bảng đổi).
                 function rbTick(now, round, newest, synced) {
                     if (!rbReady) return;
+                    // Rotor quay: mỗi kỳ mới trên bảng → mọi rotor +1 nhịp (chỉ khi đang CHẠY)
+                    try {
+                        if (rotorAdvance()) { scSeqKey = ''; scRender(); }
+                    } catch (e) {}
                     rbRunnerSync();
                     rbHeartbeat(now);
                     if (rbRunner) {
@@ -5175,13 +5248,13 @@ function openTokenDialog() {
                     if (!rbBoardOk()) return 'Cược thật đang BẬT · đang đối chiếu bảng với kết quả của game…';
                     const issue = pdNextIssue(newest);
                     const level = 'mức ' + (rb.lvl + 1) + '/' + rb.levels.length + ' · ' + rbFmtK(rb.levels[rb.lvl]);
-                    const n = rbN(issue);
-                    const t = Number.isFinite(n) ? ((n % 10) + 10) % 10 : NaN;
+                    const col = Math.min(Math.max(Number(rb.rotor && rb.rotor.col) || 0, 0), rotorListLen() - 1);
+                    const val = rotorValueAt(col);
+                    const want = rotorSideOf(val);
+                    const tail = 'rotor ' + (col + 1) + ' đang là ' + (val === '' ? 'trống' : '«' + val + '»') + ' · ' + level;
                     if (rb.posted === issue) return 'Kỳ ' + curShort + ': lệnh không vào — chờ kỳ sau · ' + level;
                     if (rbTry.issue === issue && rbTry.msg) return '⚠ Kỳ ' + curShort + ' chưa đặt được: ' + rbTry.msg;
-                    const want = rbSideFor(issue);
-                    const tail = 'tận cùng ' + t + ' → ' + (t === 1 || t === 3 || t === 8 ? 'tra ô STT−40' : 'cố định') + ' · ' + level;
-                    if (!want) return 'Kỳ ' + curShort + ': ' + tail.replace('tra ô STT−40', 'phải tra ô STT−40') + ' — ô đó chưa có số';
+                    if (!want) return 'Kỳ ' + curShort + ' · ' + tail + ' — số này không phải 0–9 nên không cược';
                     return 'Kỳ ' + curShort + ' · ' + tail + ' → sắp đặt ' + pdKindName(want);
                 }
 
@@ -5380,11 +5453,11 @@ function openTokenDialog() {
                         + (rbBalanceErr ? ' · lỗi: ' + rbBalanceErr : ''));
                     pdText(rbEl.Sum, on ? 'Thắng ' + rb.win + ' · Thua ' + rb.lose : 'ĐANG TẮT');
                     // Chữ nhỏ cạnh tiêu đề: đang chạy thì hiện lãi / lỗ so với số dư lúc bật
-                    let side = 'Đánh theo STT của kỳ';
+                    let side = 'Đánh theo rotor';
                     let sideKind = '';
                     if (on) {
-                        const _t = rbN(rbCurrentIssue()) % 10;
-                        side = 'Tận cùng ' + (Number.isFinite(_t) ? _t : '-') + (Number.isFinite(_t) && (_t === 1 || _t === 3 || _t === 8) ? ' · tra ô STT−40' : ' · cố định');
+                        const _c = Math.min(Math.max(Number(rb.rotor && rb.rotor.col) || 0, 0), rotorListLen() - 1);
+                        side = 'Rotor ' + (_c + 1) + ' · số «' + (rotorValueAt(_c) || '—') + '»';
                         if (rb.bal0 !== null && Number.isFinite(rbBalance)) {
                             const diff = rbBalance - rb.bal0;
                             side = 'Từ lúc bật: ' + rbFmtSigned(diff);
@@ -5464,9 +5537,9 @@ function openTokenDialog() {
 
                     // --- Nút tự chạy ---
                     pdText(rbEl.Run, on ? '⏹ DỪNG · MỨC ' + (lvl + 1) + '/' + count + ' · ' + rbFmtK(rb.levels[lvl])
-                        : '▶ BẬT TỰ ĐỘNG CƯỢC THẬT');
+                        : '▶ CHẠY TỰ ĐỘNG');
                     pdAttr(rbEl.Run, 'aria-pressed', on ? 'true' : 'false');
-                    pdAttr(rbEl.Run, 'title', on ? 'Dừng cược thật tự động' : 'Bật cược thật tự động (bấm 1 lần là chạy)');
+                    pdAttr(rbEl.Run, 'title', on ? 'Dừng cược thật tự động' : 'Chạy tự động theo rotor: thua sang rotor kế, thắng về rotor 1');
 
                     // --- Mục «Mức cược» và «Lịch sử cược thật» ---
                     let ladder = 'Chưa cài';
@@ -5662,63 +5735,165 @@ function openTokenDialog() {
                         ch.push(Math.round(r.height * 100) / 100);
                         cx.push(Math.round((r.left - base) * 100) / 100);
                     }
-                    scLast.style.height = ch[0] + 'px';
+                    const gap = 2;                                                       // khoảng cách giữa các ô trong bảng
+                    const extraH = 8;                                                    // ô rotor cao hơn ô bảng cho nổi
+                    const rows = Math.ceil(scLast.children.length / COLS) || 1;
+                    scLast.style.height = ((ch[0] + extraH) * rows + gap * (rows - 1)) + 'px';
+                    // Cột 10 lấy theo bảng; 9 cột đầu dóng đúng cột của bảng (cột cuối tự co để vừa khung)
                     const list = scLast.children;
+                    let maxRight = 0;
                     for (let k = 0; k < list.length; k++) {
                         const st = list[k].style;
-                        if (k < COLS) {
-                            st.width = cw[k] + 'px';
-                            st.height = ch[k] + 'px';
-                            st.left = cx[k] + 'px';
-                        } else {                                 // ô dư (nếu có) — ẩn, không chen vào hàng
-                            st.display = 'none';
+                        const c = k % COLS;
+                        const rIdx = Math.floor(k / COLS);
+                        st.display = '';
+                        st.width = cw[c] + 'px';
+                        st.height = (ch[c] + extraH) + 'px';
+                        st.left = cx[c] + 'px';
+                        st.top = ((ch[0] + gap) * rIdx) + 'px';
+                        maxRight = Math.max(maxRight, cx[c] + cw[c]);
+                    }
+                    // 10 rotor: chỉ thu nhỏ khi tràn THẬT (tránh lệch cột vì co đều từng ô)
+                    const box = scLast.getBoundingClientRect().width;
+                    if (maxRight > box + 2) {
+                        const k2 = box / maxRight;
+                        for (let k = 0; k < list.length; k++) {
+                            const c = k % COLS;
+                            list[k].style.width = (cw[c] * k2) + 'px';
+                            list[k].style.left = (cx[c] * k2) + 'px';
                         }
                     }
                 }
 
+                // ----- Panel nhập dãy số cho 10 rotor -----
+                const scCfg = document.getElementById('scCfg');
+                const scCfgGrid = document.getElementById('scCfgGrid');
+                const scCfgNote = document.getElementById('scCfgNote');
+                let scCfgInputs = [];
+
+                function rotorCfgRender() {
+                    if (!scCfgGrid) return;
+                    const st = rb.rotor || (rb.rotor = rotorBlank());
+                    if (!Array.isArray(st.list)) st.list = rotorNormalizeList(null);
+                    scCfgGrid.textContent = '';
+                    scCfgInputs = [];
+                    for (let k = 0; k < 10; k++) {
+                        const cell = document.createElement('label');
+                        cell.className = 'rot-cell';
+                        const cap = document.createElement('span');
+                        cap.textContent = 'Rotor ' + (k + 1);
+                        const inp = document.createElement('input');
+                        inp.type = 'text';
+                        inp.inputMode = 'numeric';
+                        inp.autocomplete = 'off';
+                        inp.spellcheck = false;
+                        inp.placeholder = 'vd 1 3 8 0 4';
+                        inp.value = String(st.list[k] || '');
+                        inp.setAttribute('data-filled', inp.value.trim() ? '1' : '0');
+                        inp.addEventListener('input', function () {
+                            const v = String(inp.value || '');
+                            inp.setAttribute('data-filled', v.trim() ? '1' : '0');
+                            if (!rb.rotor) rb.rotor = rotorBlank();
+                            rb.rotor.list[k] = v.slice(0, ROTOR_MAX_LEN * 4);
+                            scCfgNote.textContent = rotorCfgFilled();
+                            scSeqKey = '';
+                            try { scRender(); } catch (e) {}
+                            rotorCfgSave();
+                        });
+                        cell.appendChild(cap);
+                        cell.appendChild(inp);
+                        scCfgGrid.appendChild(cell);
+                        scCfgInputs.push(inp);
+                    }
+                    scCfgNote.textContent = rotorCfgFilled();
+                }
+
+                // "6/10 rotor có dãy số"
+                function rotorCfgFilled() {
+                    const st = rb.rotor || rotorBlank();
+                    let n = 0;
+                    for (let k = 0; k < 10; k++) if (rotorParse(st.list[k]).length) n++;
+                    return n ? (n + '/10 rotor có dãy số') : 'chưa nhập';
+                }
+
+                let rotorCfgTimer = 0;
+                function rotorCfgSave() {
+                    if (rotorCfgTimer) return;
+                    rotorCfgTimer = setTimeout(function () {
+                        rotorCfgTimer = 0;
+                        // Ghi thẳng trạng thái đang có (KHÔNG gọi rbCommit vì nó đọc lại bản cũ trong máy rồi mới ghi).
+                        if (!rb.rotor) rb.rotor = rotorBlank();
+                        try { rbSave(); } catch (e) {}
+                        try { localStorage.setItem(LS_ROTOR, JSON.stringify(rotorNormalizeList(rb.rotor.list))); } catch (e) {}
+                    }, 350);
+                }
+
+                // Mở trang: chưa có dãy số nào trong trạng thái → lấy bản dự phòng riêng
+                function rotorCfgLoad() {
+                    if (!rb.rotor) rb.rotor = rotorBlank();
+                    if (!Array.isArray(rb.rotor.list)) rb.rotor.list = rotorNormalizeList(null);
+                    const empty = !rb.rotor.list.some(function (t) { return rotorParse(t).length; });
+                    if (empty) {
+                        try {
+                            const got = JSON.parse(localStorage.getItem(LS_ROTOR) || 'null');
+                            if (Array.isArray(got)) rb.rotor.list = rotorNormalizeList(got);
+                        } catch (e) {}
+                    }
+                    rotorCfgRender();
+                    scSeqKey = '';
+                    try { scRender(); } catch (e) {}
+                }
+
+                // Vẽ dãy rotor: mỗi ô = 1 rotor (số đang hiện to) + 1 chấm báo đang đánh.
                 function scRender() {
-                    const seq = rbRowSeq();
-                    const key = seq.map(function (e) { return e.n + ':' + rbSideFor(e.issue); }).join(',');
-                    const on = !!(rb.chain && rb.chain.on);
+                    const st = rb.rotor || rotorBlank();
+                    const n = rotorListLen();
+                    const plan = rbSeqPlan();
+                    const on = st.on === true;
+                    const col = Math.min(Math.max(Number(st.col) || 0, 0), n - 1);
+                    // chữ ký: đổi số / đổi rotor đang đánh / đổi bật-tắt → vẽ lại
+                    const key = plan.map(function (e) { return e.val + ':' + e.side; }).join(',') + '|' + n + '|' + col + '|' + (on ? 1 : 0) + '|' + rotorAtGet();
                     if (key !== scSeqKey) {
                         scSeqKey = key;
                         scLast.textContent = '';
-                        for (let k = 0; k < seq.length; k++) {
-                            const e = seq[k];
+                        const nodes = [];
+                        for (let k = 0; k < n; k++) {
+                            const e = plan[k] || {};
                             const box = document.createElement('div');
                             box.className = 'srb';
-                            const side = e.issue ? rbSideFor(e.issue) : '';
+                            box.setAttribute('data-rotor', String(k));
                             const nb = document.createElement('span');
                             nb.className = 'srb-n';
-                            // chỉ ghi CHỮ SỐ CUỐI của STT (911 → 1)
-                            nb.textContent = Number.isFinite(e.n) ? String(((Math.round(e.n) % 10) + 10) % 10) : '-';
+                            nb.textContent = String(k + 1);                       // số thứ tự rotor
                             const vb = document.createElement('span');
                             vb.className = 'srb-v';
-                            vb.textContent = side === 'B' ? 'L' : (side === 'S' ? 'N' : '?');
-                            if (side) box.setAttribute('data-kind', side);
-                            const tl = Number.isFinite(e.n) ? ((Math.round(e.n) % 10) + 10) % 10 : NaN;
-                            if (tl === 1 || tl === 3 || tl === 8) box.setAttribute('data-sub', '1');   // kỳ phải tra ô STT−40
-                            box.title = e.issue
-                                ? ('Kỳ ' + e.issue + ' · tận cùng ' + (((Math.round(e.n) % 10) + 10) % 10) + ' → ' + (side === 'B' ? 'LỚN' : side === 'S' ? 'NHỎ' : 'chưa xác định'))
-                                : 'Chưa có kỳ';
+                            vb.textContent = (e.val === undefined || e.val === '') ? '·' : String(e.val);
+                            if (e.side) box.setAttribute('data-kind', e.side);
+                            box.title = 'Rotor ' + (k + 1) + ' · số đang hiện: ' + (e.val === '' ? 'trống' : e.val)
+                                + (e.side ? ' → ' + (e.side === 'B' ? 'LỚN' : 'NHỎ') : ' · không cược')
+                                + (e.issue ? ' · kỳ ' + e.issue : '');
                             box.appendChild(nb);
                             box.appendChild(vb);
+                            nodes.push(box);
                             scLast.appendChild(box);
                         }
+                        // dãy quá 10 rotor → xuống dòng (lưới), 10 rotor đầu vẫn dóng cột với bảng
+                        if (n > COLS) scLast.setAttribute('data-wrap', '1');
+                        else scLast.removeAttribute('data-wrap');
                     }
-                    // ô đang dùng để cược = ô đầu dãy (kỳ sắp đánh) — sáng đứng yên, không nhảy
-                    for (let k = 0; k < scLast.children.length; k++) {
-                        const box = scLast.children[k];
-                        if (on && k === 0) box.setAttribute('data-now', '1');
+                    const list = scLast.children;
+                    for (let k = 0; k < list.length; k++) {
+                        const box = list[k];
+                        const isCur = on && k === col;
+                        if (isCur) { if (!box.hasAttribute('data-now')) box.setAttribute('data-now', '1'); }
                         else if (box.hasAttribute('data-now')) box.removeAttribute('data-now');
                     }
                     scAlign();
 
-                    // câu trạng thái + nút bên phải
-                    const first = seq[0] || {};
-                    const side = first.issue ? rbSideFor(first.issue) : '';
-                    const t = Number.isFinite(first.n) ? ((first.n % 10) + 10) % 10 : NaN;
-                    if (!(rb.chain && rb.chain.on)) {
+                    // nhãn + câu phụ
+                    const cur = plan[col] || {};
+                    const side = rotorSideOf(cur.val);
+                    if (!on) {
                         pdAttr(scPanel, 'data-state', 'empty');
                         if (scHint.hasAttribute('data-kind')) scHint.removeAttribute('data-kind');
                         pdText(scHint, 'CHƯA CHẠY');
@@ -5732,14 +5907,12 @@ function openTokenDialog() {
                         pdText(scHint, 'CHỜ SỐ');
                     }
                     let sub;
-                    if (!first.issue) sub = 'chưa có kỳ — cần bảng có kết quả';
-                    else if (Number.isFinite(t) && (t === 1 || t === 3 || t === 8)) {
-                        const src = rbCellOfN(first.n - 40);
-                        sub = 'kỳ ' + String(first.n).padStart(3, '0') + ' · tận cùng ' + t
-                            + (src && pdKind(src.value) ? (' · ô STT−40 ra ' + String(src.value) + (rb.chain && rb.chain.inv ? ' → đảo' : ' → thuận')) : ' · chờ ô STT−40');
-                    } else if (Number.isFinite(t)) {
-                        sub = 'kỳ ' + String(first.n).padStart(3, '0') + ' · tận cùng ' + t + ' → cố định ' + (t === 0 || t === 4 || t === 6 || t === 9 ? 'LỚN' : 'NHỎ');
-                    } else sub = '10 kỳ sắp đánh';
+                    if (!cur.issue) sub = 'chưa có kỳ — cần bảng có kết quả';
+                    else {
+                        sub = 'kỳ ' + pdShort(cur.issue) + ' · rotor ' + (col + 1) + '/10 đang là '
+                            + (cur.val === '' ? 'trống' : '«' + cur.val + '»')
+                            + (side ? ' → ' + (side === 'B' ? 'LỚN' : 'NHỎ') : ' → không cược');
+                    }
                     pdText(scSub, sub);
                 }
 
@@ -5748,6 +5921,7 @@ function openTokenDialog() {
                 const hasLocalBoard = loadBoardLocal();
                 try { applyRunHighlight(); } catch (e) {}
                 rbInit();
+                try { rotorCfgLoad(); } catch (e) {}
                 pdInit();
                 startRealtimeSync();
                 if (hasLocalBoard) setStatus('Đã mở bảng đã lưu · đang kiểm tra kết quả mới…');
@@ -5765,6 +5939,6 @@ function openTokenDialog() {
                 }, 30000);
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c01243bc885158',t:'MTc5NDkzMjUxNg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c01243bc885158',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c0c0409b080953',t:'MTc5NDkzOTY0Mg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c0c0409b080953',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
