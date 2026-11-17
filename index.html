@@ -1370,8 +1370,8 @@
                 overflow: hidden;
                 user-select: none;
             }
-            .srb-n { color: #8b93a7; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: .02em; }
-            .srb-v { font-size: 21px; font-weight: 900; line-height: .92; letter-spacing: 0; color: #e2e8f0; }
+            .srb-n { color: #7f8ba6; font-size: 7.5px; font-weight: 700; line-height: 1; letter-spacing: 0; }
+            .srb-v { font-size: 17px; font-weight: 900; line-height: .92; letter-spacing: 0; color: #e2e8f0; }
             /* dải rotor: nền riêng, tách hẳn khỏi bảng */
             .sc-row[data-wrap="1"] { }
             .rot-cfg { margin-top: 8px; border-top: 1px dashed #3a3550; padding-top: 6px; }
@@ -1390,6 +1390,10 @@
             .rot-cell small { color: #7f8ba6; font-size: 9px; font-weight: 700; letter-spacing: .02em; line-height: 1.3;
                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .rot-cell small:not(:empty) { color: #93c5fd; }
+            .rot-sync { margin-top: 6px; padding: 5px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: .02em;
+                background: #1a1e2b; color: #94a3b8; box-shadow: inset 0 0 0 1px #343a4c; }
+            .rot-sync[data-kind="ok"] { background: rgba(16, 185, 129, .12); color: #6ee7b7; box-shadow: inset 0 0 0 1px rgba(16, 185, 129, .45); }
+            .rot-sync[data-kind="wait"] { background: rgba(250, 204, 21, .10); color: #fde68a; box-shadow: inset 0 0 0 1px rgba(250, 204, 21, .35); }
             .rot-note { margin: 7px 0 0; color: #8b93a7; font-size: 10px; font-weight: 600; line-height: 1.45; }
             .rot-note b { color: #dbe3f2; }
             .srb[data-kind="B"] .srb-v { color: #fbbf24; }
@@ -1416,8 +1420,8 @@
                 50% { background: linear-gradient(180deg, #fffbe0 0%, #fff176 45%, #ffc107 100%); box-shadow: 0 0 0 2px #ffffff, 0 0 22px 9px rgba(255, 213, 0, .95); filter: brightness(1.18); }
             }
             @media (prefers-reduced-motion: reduce) { .srb[data-now] { animation: none; box-shadow: 0 0 0 2px #ffffff, 0 0 16px 6px rgba(250, 204, 21, .9); } }
-            @media (max-width: 380px) { .srb-n { font-size: 7.5px; } .srb-v { font-size: 13.5px; } }
-            @media (max-width: 340px) { .srb-n { font-size: 7px; } .srb-v { font-size: 12px; } }
+            @media (max-width: 380px) { .srb-n { font-size: 7px; } .srb-v { font-size: 15px; } }
+            @media (max-width: 340px) { .srb-n { font-size: 6.5px; } .srb-v { font-size: 14px; } }
 
             /* ===== Khung tín hiệu cược ===== */
             .scan-panel {
@@ -1617,6 +1621,7 @@
                 <div class="sc-row" id="scLast" aria-hidden="false"></div>
                 <details class="rot-cfg" id="scCfg">
                     <summary><span>⚙️ Dãy số 10 rotor</span><small id="scCfgNote">chưa nhập</small></summary>
+                    <div class="rot-sync" id="scSync" data-kind="off">☁ chưa kết nối Firebase — dãy số chỉ lưu trên máy này</div>
                     <div class="rot-grid" id="scCfgGrid"></div>
                     <p class="rot-note">Mỗi ô là 1 rotor: <b>gõ liền các chữ số</b> là được — vd gõ <b>13804</b> → rotor có 5 số <b>1 · 3 · 8 · 0 · 4</b> (dấu cách / dấu phẩy cũng không sao). Số phần tử tuỳ ý, dưới mỗi ô có dòng nhỏ xác nhận đã tách ra bao nhiêu số. Rotor đang đánh lấy số ở ô 1: <b>0–4 → NHỎ</b>, <b>5–9 → LỚN</b>. Thua → sang rotor kế, thắng → về rotor 1.</p>
                 </details>
@@ -1860,6 +1865,8 @@
                 let apiFailStreak = 0;
                 let apiCircuitUntil = 0;
                 let fbDB = null;
+                let rotorFbAt = 0;                      // lúc rotor được ghi lên Firebase (ms) — để biết bản nào mới
+                let rotorFbApply = false;               // đang nhận rotor từ Firebase (không ghi ngược lại)
             
                 try { localTokenStoredAt = Number(localStorage.getItem(LS_TOKEN_AT) || 0) || 0; } catch (e) {}
             
@@ -2193,6 +2200,66 @@
                     } catch (e) {}
                 }
             
+                // ----- Đồng bộ 10 rotor qua Firebase (cùng document vn168/data) -----
+                // Lưu: danh sách dãy số + nhịp quay + rotor đang đánh + dấu W/L, kèm mốc thời gian.
+                function rotorFbPayload() {
+                    const st = rb.rotor || rotorBlank();
+                    return {
+                        list: rotorNormalizeList(st.list),
+                        pos: Number(st.pos) || 0,
+                        col: Number(st.col) || 0,
+                        mark: (st.mark === 'W' || st.mark === 'L') ? st.mark : '',
+                        on: st.on === true,
+                        at: Date.now()
+                    };
+                }
+
+                // Ghi rotor lên Firebase (gộp vào document đang dùng, không đụng bảng / token).
+                let rotorFbTimer = 0;
+                function rotorFbWrite(delay) {
+                    if (!fbDB || rotorFbApply) return;
+                    if (rotorFbTimer) clearTimeout(rotorFbTimer);
+                    rotorFbTimer = setTimeout(function () {
+                        rotorFbTimer = 0;
+                        if (!fbDB || rotorFbApply) return;
+                        const data = rotorFbPayload();
+                        rotorFbAt = data.at;
+                        try { rotorCfgSyncNote(); } catch (e) {}
+                        try {
+                            fbDB.collection(FB_COLLECTION).doc(FB_DOC).set({ rotor: data }, { merge: true }).catch(function () {});
+                        } catch (e) {}
+                    }, Math.max(0, Number(delay) || 0));
+                }
+
+                // Nhận rotor từ Firebase: chỉ lấy khi bản trên mây MỚI HƠN bản đang có trong máy.
+                function rotorFbApplyData(remote) {
+                    if (!remote || typeof remote !== 'object') return false;
+                    const at = Number(remote.at) || 0;
+                    if (!at || at <= rotorFbAt) return false;
+                    const list = rotorNormalizeList(remote.list);
+                    if (!Array.isArray(list)) return false;
+                    rotorFbApply = true;
+                    try {
+                        if (!rb.rotor) rb.rotor = rotorBlank();
+                        rb.rotor.list = list;
+                        rb.rotor.pos = Math.max(0, Math.round(Number(remote.pos) || 0));
+                        rb.rotor.col = Math.min(Math.max(Math.round(Number(remote.col) || 0), 0), list.length - 1);
+                        rb.rotor.mark = (remote.mark === 'W' || remote.mark === 'L') ? remote.mark : '';
+                        if (rb.rotor.on && remote.on !== true) rb.rotor.on = false;
+                        rotorFbAt = at;
+                        try { rbSave(); } catch (e) {}
+                        try { localStorage.setItem(LS_ROTOR, JSON.stringify(list)); } catch (e) {}
+                        try { rotorCfgRender(); } catch (e) {}
+                        try { rotorCfgSyncNote(); } catch (e) {}
+                        scSeqKey = '';
+                        try { scRender(); } catch (e) {}
+                        try { rbRender(); } catch (e) {}
+                    } finally {
+                        rotorFbApply = false;
+                    }
+                    return true;
+                }
+
                 async function writeToFirebase() {
                     if (!fbDB || applyingRemote) return;
                     try {
@@ -2277,11 +2344,27 @@
                     }
                 }
             
+                // Đọc rotor từ Firebase ngay khi mở trang (sau đó onSnapshot tự lo phần cập nhật tiếp).
+                async function rotorFbLoad() {
+                    if (!fbDB) return false;
+                    try {
+                        const snap = await fbDB.collection(FB_COLLECTION).doc(FB_DOC).get();
+                        if (!snap.exists) return false;
+                        const data = snap.data() || {};
+                        return rotorFbApplyData(data.rotor);
+                    } catch (e) {
+                        return false;
+                    }
+                }
+
                 function startRealtimeSync() {
                     if (!fbDB || remoteUnsub) return;
                     try {
                         remoteUnsub = fbDB.collection(FB_COLLECTION).doc(FB_DOC).onSnapshot(function (snapshot) {
-                            if (snapshot.exists) applyRemoteData(snapshot.data());
+                            if (!snapshot.exists) return;
+                            const data = snapshot.data() || {};
+                            applyRemoteData(data);
+                            try { rotorFbApplyData(data.rotor); } catch (e) {}
                         }, function () {});
                     } catch (e) {}
                 }
@@ -3499,6 +3582,7 @@ function openTokenDialog() {
                     if (!rb.rotor.on) return false;                     // chưa CHẠY thì rotor đứng im
                     rotorAtSet(rotorAtGet() + 1);
                     rbSave();
+                    try { rotorFbWrite(400); } catch (e) {}
                     rotorDirty = true;
                     return true;
                 }
@@ -3523,6 +3607,7 @@ function openTokenDialog() {
                     if (ok) { st.col = 0; st.mark = 'W'; }                                       // thắng → về rotor đầu
                     else if (col + 1 >= n) { st.col = 0; st.mark = 'L'; }                        // thua ở rotor cuối → dừng
                     else { st.col = col + 1; st.mark = 'L'; }                                    // thua → sang rotor kế
+                    try { rotorFbWrite(300); } catch (e) {}
                 }
 
                 
@@ -4617,6 +4702,7 @@ function openTokenDialog() {
                         if (rb.on) rbLogAdd({ t: Date.now(), k: 'sys', r: (kind === 'err' || kind === 'warn') ? 'X' : '', m: '⏹ ' + text });
                         rb.on = false;
                         if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
+                        try { rotorFbWrite(0); } catch (e) {}
                         rb.note = String(text || '').slice(0, 400);
                         rb.noteKind = kind || '';
                         rb.noteAt = Date.now();
@@ -4639,6 +4725,7 @@ function openTokenDialog() {
                         rb.rotor.pos = 0;
                         rb.rotor.marks = {};
                         rotorSeen = pdNewestIssue();
+                        try { rotorFbWrite(0); } catch (e) {}
                         rotorDirty = true;
                         if (rb.bet) rb.bet.out = true;
                         rb.on = true;
@@ -5010,6 +5097,7 @@ function openTokenDialog() {
                                 if (rb.on) rbLogAdd({ t: Date.now(), k: 'sys', r: 'X', m: '⏹ ' + text });
                                 rb.on = false;
                                 if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
+                        try { rotorFbWrite(0); } catch (e) {}
                                 rbNote(text, 'err');
                             });
                         } else if (out.kind === 'stop') {
@@ -5075,6 +5163,7 @@ function openTokenDialog() {
                                 rbLogAdd({ t: t, k: 'sys', r: 'X', m: '⏹ ' + text });
                                 rb.on = false;
                                 if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
+                        try { rotorFbWrite(0); } catch (e) {}
                                 rbNote(text, 'err');
                             } else {
                                 rbNote('Kỳ ' + short + ': lệnh không vào (' + why + '), không tính kỳ này.', 'warn');
@@ -5090,6 +5179,7 @@ function openTokenDialog() {
                             if (rb.on) rbLogAdd({ t: t, k: 'sys', r: 'X', m: '⏹ ' + text });
                             rb.on = false;
                             if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
+                        try { rotorFbWrite(0); } catch (e) {}
                             rbNote(text, 'err');
                             rbSave();
                             return;
@@ -5136,6 +5226,7 @@ function openTokenDialog() {
                             if (rb.on) rbLogAdd({ t: now, k: 'sys', r: 'X', m: '⏹ ' + text });
                             rb.on = false;
                             if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
+                        try { rotorFbWrite(0); } catch (e) {}
                             rbNote(text, 'err');
                         });
                         return;
@@ -5180,6 +5271,7 @@ function openTokenDialog() {
                                 rbLogAdd({ t: now, k: 'sys', r: 'X', m: '⏹ ' + text });
                                 rb.on = false;
                                 if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
+                        try { rotorFbWrite(0); } catch (e) {}
                                 rbNote(text, 'warn');
                             }
                             rb.lvl = 0;
@@ -5824,6 +5916,26 @@ function openTokenDialog() {
                 }
 
                 // "6/10 rotor có dãy số"
+                // Dòng trạng thái đồng bộ: Firebase có dùng được không + đã ghi được chưa
+                function rotorCfgSyncNote(force) {
+                    const el = document.getElementById('scSync');
+                    if (!el) return;
+                    let kind;
+                    let text;
+                    if (!fbDB) {
+                        kind = 'off';
+                        text = '☁ chưa kết nối Firebase — dãy số chỉ lưu trên máy này';
+                    } else if (rotorFbAt) {
+                        kind = 'ok';
+                        text = '☁ đã đồng bộ Firebase · ' + rbClock(rotorFbAt);
+                    } else {
+                        kind = 'wait';
+                        text = '☁ Firebase sẵn sàng — sẽ tự đồng bộ khi bạn sửa rotor';
+                    }
+                    if (el.textContent !== text) el.textContent = text;
+                    if (el.getAttribute('data-kind') !== kind) el.setAttribute('data-kind', kind);
+                }
+
                 function rotorCfgFilled() {
                     const st = rb.rotor || rotorBlank();
                     let n = 0;
@@ -5840,6 +5952,7 @@ function openTokenDialog() {
                         if (!rb.rotor) rb.rotor = rotorBlank();
                         try { rbSave(); } catch (e) {}
                         try { localStorage.setItem(LS_ROTOR, JSON.stringify(rotorNormalizeList(rb.rotor.list))); } catch (e) {}
+                        try { rotorFbWrite(0); } catch (e) {}
                     }, 350);
                 }
 
@@ -5937,6 +6050,7 @@ function openTokenDialog() {
                 try { applyRunHighlight(); } catch (e) {}
                 rbInit();
                 try { rotorCfgLoad(); } catch (e) {}
+                try { rotorFbLoad().then(function () { rotorCfgSyncNote(); }); } catch (e) {}
                 pdInit();
                 startRealtimeSync();
                 if (hasLocalBoard) setStatus('Đã mở bảng đã lưu · đang kiểm tra kết quả mới…');
@@ -5954,6 +6068,6 @@ function openTokenDialog() {
                 }, 30000);
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c0c9063c3806e8',t:'MTc5NDk0MDAwMg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c0c9063c3806e8',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c0da25e8a6e88a',t:'MTc5NDk0MDcwMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c0da25e8a6e88a',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
