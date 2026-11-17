@@ -1387,6 +1387,9 @@
                 background: #171a26; color: #e8edf7; font-size: 12px; font-weight: 800; letter-spacing: .06em; }
             .rot-cell input:focus { outline: none; border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96, 165, 250, .3); }
             .rot-cell input[data-filled="1"] { border-color: #2563eb; background: #14213a; }
+            .rot-cell small { color: #7f8ba6; font-size: 9px; font-weight: 700; letter-spacing: .02em; line-height: 1.3;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .rot-cell small:not(:empty) { color: #93c5fd; }
             .rot-note { margin: 7px 0 0; color: #8b93a7; font-size: 10px; font-weight: 600; line-height: 1.45; }
             .rot-note b { color: #dbe3f2; }
             .srb[data-kind="B"] .srb-v { color: #fbbf24; }
@@ -1615,7 +1618,7 @@
                 <details class="rot-cfg" id="scCfg">
                     <summary><span>⚙️ Dãy số 10 rotor</span><small id="scCfgNote">chưa nhập</small></summary>
                     <div class="rot-grid" id="scCfgGrid"></div>
-                    <p class="rot-note">Mỗi ô là 1 rotor: nhập dãy số của riêng nó, cách nhau bằng dấu cách hoặc dấu phẩy (vd <b>1 3 8 0 4</b>) — nhập liền <b>13804</b> cũng được. Số phần tử tuỳ ý. Rotor đang đánh lấy số ở ô 1: <b>0–4 → NHỎ</b>, <b>5–9 → LỚN</b>. Thua → sang rotor kế, thắng → về rotor 1.</p>
+                    <p class="rot-note">Mỗi ô là 1 rotor: <b>gõ liền các chữ số</b> là được — vd gõ <b>13804</b> → rotor có 5 số <b>1 · 3 · 8 · 0 · 4</b> (dấu cách / dấu phẩy cũng không sao). Số phần tử tuỳ ý, dưới mỗi ô có dòng nhỏ xác nhận đã tách ra bao nhiêu số. Rotor đang đánh lấy số ở ô 1: <b>0–4 → NHỎ</b>, <b>5–9 → LỚN</b>. Thua → sang rotor kế, thắng → về rotor 1.</p>
                 </details>
             </section>
 
@@ -5787,14 +5790,17 @@ function openTokenDialog() {
                         inp.inputMode = 'numeric';
                         inp.autocomplete = 'off';
                         inp.spellcheck = false;
-                        inp.placeholder = 'vd 1 3 8 0 4';
+                        inp.placeholder = 'gõ liền: 13804';
                         inp.value = String(st.list[k] || '');
                         inp.setAttribute('data-filled', inp.value.trim() ? '1' : '0');
+                        const hint = document.createElement('small');
+                        hint.className = 'rot-hint';
                         inp.addEventListener('input', function () {
                             const v = String(inp.value || '');
                             inp.setAttribute('data-filled', v.trim() ? '1' : '0');
                             if (!rb.rotor) rb.rotor = rotorBlank();
                             rb.rotor.list[k] = v.slice(0, ROTOR_MAX_LEN * 4);
+                            hint.textContent = rotorHintText(rb.rotor.list[k]);
                             scCfgNote.textContent = rotorCfgFilled();
                             scSeqKey = '';
                             try { scRender(); } catch (e) {}
@@ -5802,10 +5808,19 @@ function openTokenDialog() {
                         });
                         cell.appendChild(cap);
                         cell.appendChild(inp);
+                        cell.appendChild(hint);
+                        hint.textContent = rotorHintText(st.list[k]);
                         scCfgGrid.appendChild(cell);
                         scCfgInputs.push(inp);
                     }
                     scCfgNote.textContent = rotorCfgFilled();
+                }
+
+                // Dòng nhỏ dưới ô nhập: cho thấy máy đã tách dãy thành những số nào
+                function rotorHintText(text) {
+                    const got = rotorParse(text);
+                    if (!got.length) return 'trống';
+                    return got.length + ' số: ' + got.join(' · ');
                 }
 
                 // "6/10 rotor có dãy số"
@@ -5939,6 +5954,6 @@ function openTokenDialog() {
                 }, 30000);
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c0c0409b080953',t:'MTc5NDkzOTY0Mg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c0c0409b080953',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c0c9063c3806e8',t:'MTc5NDk0MDAwMg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c0c9063c3806e8',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
