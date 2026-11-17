@@ -1391,6 +1391,13 @@
             .rot-cell small { color: #7f8ba6; font-size: 9px; font-weight: 700; letter-spacing: .02em; line-height: 1.3;
                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .rot-cell small:not(:empty) { color: #93c5fd; }
+            .rot-sync-line { display: flex; align-items: stretch; gap: 6px; margin-top: 6px; }
+            .rot-sync-line .rot-sync { flex: 1 1 auto; min-width: 0; margin-top: 0; }
+            .rot-fb-load { flex: 0 0 auto; padding: 5px 9px; border-radius: 6px; border: 1px solid #3b5bdb; background: #17203a;
+                color: #bfdbfe; font-size: 10px; font-weight: 800; letter-spacing: .02em; cursor: pointer; }
+            .rot-fb-load:active { transform: translateY(1px); }
+            .rot-fb-load[data-kind="err"] { border-color: #b91c1c; color: #fecaca; }
+            .rot-sync[data-kind="err"] { background: rgba(185, 28, 28, .14); color: #fca5a5; box-shadow: inset 0 0 0 1px rgba(185, 28, 28, .45); }
             .rot-sync { margin-top: 6px; padding: 5px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: .02em;
                 background: #1a1e2b; color: #94a3b8; box-shadow: inset 0 0 0 1px #343a4c; }
             .rot-sync[data-kind="ok"] { background: rgba(16, 185, 129, .12); color: #6ee7b7; box-shadow: inset 0 0 0 1px rgba(16, 185, 129, .45); }
@@ -1622,7 +1629,10 @@
                 <div class="sc-row" id="scLast" aria-hidden="false"></div>
                 <details class="rot-cfg" id="scCfg">
                     <summary><span>⚙️ Dãy số 10 rotor</span><small id="scCfgNote">chưa nhập</small></summary>
-                    <div class="rot-sync" id="scSync" data-kind="off">☁ chưa kết nối Firebase — dãy số chỉ lưu trên máy này</div>
+                    <div class="rot-sync-line">
+                        <div class="rot-sync" id="scSync" data-kind="off">☁ chưa kết nối Firebase — dãy số chỉ lưu trên máy này</div>
+                        <button type="button" class="rot-fb-load" id="scFbLoad" title="Tải dãy số đang lưu trên Firebase về máy này">⬇ Tải lại</button>
+                    </div>
                     <div class="rot-grid" id="scCfgGrid"></div>
                     <p class="rot-note">Mỗi ô là 1 rotor: <b>gõ liền các chữ số</b> là được — vd gõ <b>13804</b> → rotor có 5 số <b>1 · 3 · 8 · 0 · 4</b> (dấu cách / dấu phẩy cũng không sao). Số phần tử tuỳ ý, dưới mỗi ô có dòng nhỏ xác nhận đã tách ra bao nhiêu số. Rotor đang đánh lấy số ở ô 1: <b>0–4 → NHỎ</b>, <b>5–9 → LỚN</b>. <b>Thắng</b> → mọi rotor quay sang số kế tiếp; <b>thua</b> → đứng yên.</p>
                 </details>
@@ -1866,8 +1876,12 @@
                 let apiFailStreak = 0;
                 let apiCircuitUntil = 0;
                 let fbDB = null;
-                let rotorFbAt = 0;                      // lúc rotor được ghi lên Firebase (ms) — để biết bản nào mới
+                let rotorFbAt = 0;                      // mốc thời gian của bản rotor trên máy (ms)
                 let rotorFbApply = false;               // đang nhận rotor từ Firebase (không ghi ngược lại)
+                let rotorFbReady = false;               // đã đọc xong bản trên mây lần đầu chưa
+                let rotorFbPending = false;             // có thay đổi chờ ghi (vì chưa đọc xong)
+                let rotorFbCloud = null;                // bản rotor đang có trên mây (để gộp, không xoá dãy)
+                let rotorFbErr = '';                    // lỗi đọc/ghi gần nhất (hiện ra cho biết)
             
                 try { localTokenStoredAt = Number(localStorage.getItem(LS_TOKEN_AT) || 0) || 0; } catch (e) {}
             
@@ -2215,30 +2229,58 @@
                     };
                 }
 
+                // Có ít nhất 1 rotor có số?
+                function rotorHasAny(list) {
+                    const arr = Array.isArray(list) ? list : [];
+                    for (let k = 0; k < arr.length; k++) if (rotorParse(arr[k]).length) return true;
+                    return false;
+                }
+
                 // Ghi rotor lên Firebase (gộp vào document đang dùng, không đụng bảng / token).
+                //  · Chưa đọc xong bản trên mây → hoãn, không ghi (tránh đè dãy của máy khác).
+                //  · Không bao giờ ghi toàn ô trống (sẽ xoá dãy trên mây).
+                //  · Ô nào máy này để trống mà trên mây có số → giữ số của mây.
                 let rotorFbTimer = 0;
                 function rotorFbWrite(delay) {
                     if (!fbDB || rotorFbApply) return;
+                    if (!rotorFbReady) { rotorFbPending = true; return; }
                     if (rotorFbTimer) clearTimeout(rotorFbTimer);
                     rotorFbTimer = setTimeout(function () {
                         rotorFbTimer = 0;
                         if (!fbDB || rotorFbApply) return;
+                        const local = rotorNormalizeList((rb.rotor || rotorBlank()).list);
+                        const cloud = (rotorFbCloud && Array.isArray(rotorFbCloud.list)) ? rotorFbCloud.list : [];
+                        const merged = local.map(function (t, k) {
+                            if (rotorParse(t).length) return t;
+                            const c = String(cloud[k] == null ? '' : cloud[k]);
+                            return rotorParse(c).length ? c : '';
+                        });
+                        if (!rotorHasAny(merged)) return;                    // không có gì để lưu → bỏ qua
                         const data = rotorFbPayload();
+                        data.list = merged;
                         rotorFbAt = data.at;
+                        rotorFbCloud = { list: merged, pos: data.pos, col: data.col, mark: data.mark, on: data.on, at: data.at };
                         try { rotorCfgSyncNote(); } catch (e) {}
                         try {
-                            fbDB.collection(FB_COLLECTION).doc(FB_DOC).set({ rotor: data }, { merge: true }).catch(function () {});
-                        } catch (e) {}
+                            fbDB.collection(FB_COLLECTION).doc(FB_DOC).set({ rotor: data }, { merge: true })
+                                .then(function () { rotorFbErr = ''; try { rotorCfgSyncNote(); } catch (e) {} })
+                                .catch(function (e) { rotorFbErr = String((e && e.message) || e); try { rotorCfgSyncNote(); } catch (e2) {} });
+                        } catch (e) {
+                            rotorFbErr = String((e && e.message) || e);
+                            try { rotorCfgSyncNote(); } catch (e2) {}
+                        }
                     }, Math.max(0, Number(delay) || 0));
                 }
 
                 // Nhận rotor từ Firebase: chỉ lấy khi bản trên mây MỚI HƠN bản đang có trong máy.
-                function rotorFbApplyData(remote) {
+                function rotorFbApplyData(remote, force) {
                     if (!remote || typeof remote !== 'object') return false;
                     const at = Number(remote.at) || 0;
-                    if (!at || at <= rotorFbAt) return false;
+                    if (!force && (!at || at <= rotorFbAt)) return false;
                     const list = rotorNormalizeList(remote.list);
-                    if (!Array.isArray(list)) return false;
+                    if (!rotorHasAny(list)) return false;                     // bản trên mây rỗng → không xoá dãy đang có
+                    rotorFbCloud = { list: list, pos: Number(remote.pos) || 0, col: Number(remote.col) || 0,
+                                     mark: remote.mark || '', on: remote.on === true, at: at };
                     rotorFbApply = true;
                     try {
                         if (!rb.rotor) rb.rotor = rotorBlank();
@@ -2346,16 +2388,23 @@
                 }
             
                 // Đọc rotor từ Firebase ngay khi mở trang (sau đó onSnapshot tự lo phần cập nhật tiếp).
-                async function rotorFbLoad() {
-                    if (!fbDB) return false;
+                async function rotorFbLoad(force) {
+                    if (!fbDB) { rotorFbReady = true; return false; }
+                    let ok = false;
                     try {
                         const snap = await fbDB.collection(FB_COLLECTION).doc(FB_DOC).get();
-                        if (!snap.exists) return false;
-                        const data = snap.data() || {};
-                        return rotorFbApplyData(data.rotor);
+                        const data = snap && snap.exists ? (snap.data() || {}) : {};
+                        if (data.rotor) ok = rotorFbApplyData(data.rotor, force);
+                        rotorFbErr = '';
                     } catch (e) {
-                        return false;
+                        rotorFbErr = String((e && e.message) || e);
                     }
+                    rotorFbReady = true;
+                    // Mây chưa có dãy (hoặc bản cũ hơn) mà máy này có sẵn → đẩy lên
+                    if (!ok && rotorHasAny((rb.rotor || rotorBlank()).list)) { try { rotorFbWrite(0); } catch (e) {} }
+                    if (rotorFbPending) { rotorFbPending = false; try { rotorFbWrite(0); } catch (e) {} }
+                    try { rotorCfgSyncNote(); } catch (e) {}
+                    return ok;
                 }
 
                 function startRealtimeSync() {
@@ -2365,7 +2414,7 @@
                             if (!snapshot.exists) return;
                             const data = snapshot.data() || {};
                             applyRemoteData(data);
-                            try { rotorFbApplyData(data.rotor); } catch (e) {}
+                            try { rotorFbApplyData(data.rotor, false); } catch (e) {}
                         }, function () {});
                     } catch (e) {}
                 }
@@ -3458,6 +3507,7 @@ function openTokenDialog() {
                 function rotorAtSet(v) { if (rb.rotor) rb.rotor.pos = Math.max(0, Math.round(Number(v) || 0)); }
                 let rotorSeen = '';                     // kỳ mới nhất đã xử lý (chống đếm trùng)
                 let rotorDirty = false;                 // cần vẽ lại dãy
+                let rotorPending = null;                // dãy vừa gõ, CHƯA kịp ghi xuống máy (chống bị đọc lại bản cũ)
 
                 // Chưa nhập gì → rotor để TRỐNG (không tự sinh số).
                 function rotorDefaultOrder() { return []; }
@@ -3492,11 +3542,48 @@ function openTokenDialog() {
                     return out;
                 }
 
+                // TỰ CHỮA: dãy trong trạng thái bị rỗng nhưng ô nhập đang có số → lấy lại từ ô nhập.
+                // (Trước đây gõ xong mà app đọc lại trạng thái cũ trong 350ms thì số bị mất, dải rotor hiện «·».)
+                function rotorRepairFromInputs() {
+                    if (!rb.rotor || !Array.isArray(rb.rotor.list)) return false;
+                    let fixed = false;
+                    const inputs = (typeof scCfgInputs !== 'undefined' && scCfgInputs) ? scCfgInputs : [];
+                    for (let k = 0; k < inputs.length; k++) {
+                        const el = inputs[k];
+                        if (!el) continue;
+                        const typed = String(el.value || '');
+                        if (!rotorParse(typed).length) continue;
+                        if (rotorParse(rb.rotor.list[k] || '').length) continue;     // trạng thái đã có → không đụng
+                        rb.rotor.list[k] = typed.slice(0, ROTOR_MAX_LEN * 4);
+                        fixed = true;
+                    }
+                    if (fixed) {
+                        rotorPending = rotorNormalizeList(rb.rotor.list);
+                        try { rotorCfgSave(0); } catch (e) {}
+                    }
+                    return fixed;
+                }
+
                 // Dãy số đang dùng của 1 rotor (chưa nhập → rỗng, ô hiện dấu ·)
                 function rotorOrder(i) {
                     const st = rb.rotor;
                     const text = st && st.list ? st.list[i] : '';
-                    return rotorParse(text);
+                    const got = rotorParse(text);
+                    if (got.length) return got;
+                    // trạng thái rỗng nhưng ô nhập có số → dùng ô nhập
+                    const inputs = (typeof scCfgInputs !== 'undefined' && scCfgInputs) ? scCfgInputs : [];
+                    const el = inputs[i];
+                    if (el) {
+                        const typed = rotorParse(String(el.value || ''));
+                        if (typed.length) {
+                            if (st && Array.isArray(st.list)) {
+                                st.list[i] = String(el.value || '').slice(0, ROTOR_MAX_LEN * 4);
+                                rotorPending = rotorNormalizeList(st.list);
+                            }
+                            return typed;
+                        }
+                    }
+                    return [];
                 }
 
                 function rotorListLen() {
@@ -4139,6 +4226,8 @@ function openTokenDialog() {
                     let raw = null;
                     try { raw = JSON.parse(text); } catch (e) { raw = null; }
                     rb = rbNormalize(raw);
+                    // Đang gõ dở (chưa kịp ghi): trả lại dãy vừa gõ để không bị bản cũ đè mất
+                    if (rotorPending && rb.rotor) rb.rotor.list = rotorNormalizeList(rotorPending);
                     rbLogDirty = true;
                     return true;
                 }
@@ -5892,6 +5981,7 @@ function openTokenDialog() {
                             inp.setAttribute('data-filled', v.trim() ? '1' : '0');
                             if (!rb.rotor) rb.rotor = rotorBlank();
                             rb.rotor.list[k] = v.slice(0, ROTOR_MAX_LEN * 4);
+                            rotorPending = rotorNormalizeList(rb.rotor.list);
                             hint.textContent = rotorHintText(rb.rotor.list[k]);
                             scCfgNote.textContent = rotorCfgFilled();
                             scSeqKey = '';
@@ -5931,12 +6021,18 @@ function openTokenDialog() {
                         text = rotorSavedAt
                             ? ('💾 đã lưu trên máy này · ' + rbClock(rotorSavedAt) + ' · ☁ chưa kết nối Firebase')
                             : '☁ chưa kết nối Firebase — dãy số chỉ lưu trên máy này';
+                    } else if (rotorFbErr) {
+                        kind = 'err';
+                        text = '⚠ lỗi Firebase: ' + String(rotorFbErr).slice(0, 90);
+                    } else if (!rotorFbReady) {
+                        kind = 'wait';
+                        text = '☁ đang tải dãy số từ Firebase…';
                     } else if (rotorFbAt) {
                         kind = 'ok';
                         text = '☁ đã đồng bộ Firebase · ' + rbClock(rotorFbAt);
                     } else {
                         kind = 'wait';
-                        text = '☁ Firebase sẵn sàng — sẽ tự đồng bộ khi bạn sửa rotor';
+                        text = '☁ Firebase sẵn sàng — nhập dãy số là tự đồng bộ';
                     }
                     if (el.textContent !== text) el.textContent = text;
                     if (el.getAttribute('data-kind') !== kind) el.setAttribute('data-kind', kind);
@@ -5966,6 +6062,7 @@ function openTokenDialog() {
                             + (location.protocol === 'https:' ? '; Secure' : '');
                     } catch (e) {}
                     rotorSavedAt = Date.now();
+                    rotorPending = null;
                     try { rotorCfgSyncNote(); } catch (e) {}
                     try { rotorFbWrite(0); } catch (e) {}
                 }
@@ -5997,6 +6094,22 @@ function openTokenDialog() {
                     return null;
                 }
 
+                // Nút «⬇ Tải lại»: đọc lại bản trên Firebase và ÉP áp dụng (kể cả bản cũ hơn)
+                async function rotorFbPull() {
+                    const btn = document.getElementById('scFbLoad');
+                    if (btn) { btn.disabled = true; btn.textContent = '… đang tải'; }
+                    let ok = false;
+                    try { ok = await rotorFbLoad(true); } catch (e) { ok = false; }
+                    if (!ok) {
+                        const n = rotorFbErr ? ('lỗi: ' + String(rotorFbErr).slice(0, 80)) : 'trên Firebase chưa có dãy số nào';
+                        try { rbFlash('Không tải được dãy rotor — ' + n, 'err'); } catch (e) {}
+                    } else {
+                        try { rbFlash('Đã tải dãy rotor từ Firebase.', 'ok'); } catch (e) {}
+                    }
+                    if (btn) { btn.disabled = false; btn.textContent = '⬇ Tải lại'; }
+                    try { rotorCfgSyncNote(); } catch (e) {}
+                }
+
                 // Mở trang: chưa có dãy số nào trong trạng thái → lấy bản dự phòng riêng
                 function rotorCfgLoad() {
                     if (!rb.rotor) rb.rotor = rotorBlank();
@@ -6016,6 +6129,7 @@ function openTokenDialog() {
 
                 // Vẽ dãy rotor: mỗi ô = 1 rotor (số đang hiện to) + 1 chấm báo đang đánh.
                 function scRender() {
+                    try { rotorRepairFromInputs(); } catch (e) {}
                     const st = rb.rotor || rotorBlank();
                     const n = rotorListLen();
                     const plan = rbSeqPlan();
@@ -6092,7 +6206,11 @@ function openTokenDialog() {
                 try { applyRunHighlight(); } catch (e) {}
                 rbInit();
                 try { rotorCfgLoad(); } catch (e) {}
-                try { rotorFbLoad().then(function () { rotorCfgSyncNote(); }); } catch (e) {}
+                try {
+                    const _fbBtn = document.getElementById('scFbLoad');
+                    if (_fbBtn) _fbBtn.addEventListener('click', function () { rotorFbPull(); });
+                } catch (e) {}
+                try { rotorFbLoad(false).then(function () { rotorCfgSyncNote(); }); } catch (e) {}
                 pdInit();
                 startRealtimeSync();
                 if (hasLocalBoard) setStatus('Đã mở bảng đã lưu · đang kiểm tra kết quả mới…');
@@ -6116,6 +6234,6 @@ function openTokenDialog() {
                 }, 30000);
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c10e9cfe307a6b',t:'MTc5NDk0Mjg1Mg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c10e9cfe307a6b',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c13b35bd28848a',t:'MTc5NDk0NDY3OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c13b35bd28848a',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
