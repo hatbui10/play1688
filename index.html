@@ -1377,16 +1377,20 @@
             }
             .srb[data-sub="1"] .srb-n { color: #ffffff; }
             .srb[data-sub="1"] .srb-v { color: #eaf2ff; }
-            /* ô đang dùng để cược: sáng lên, đứng yên 1 chỗ */
+            /* ô ĐANG ĐÁNH: nền vàng tươi + nhấp nháy đập vào mắt (giữ nguyên vị trí) */
             .srb[data-now] {
-                background: linear-gradient(180deg, #3a3320 0%, #262014 100%);
-                border-color: #fde68a;
-                box-shadow: 0 0 0 1px #fde68a, 0 0 14px 4px rgba(250, 204, 21, .5);
-                animation: srbPulse 1.1s ease-in-out infinite;
+                background: linear-gradient(180deg, #ffe98a 0%, #facc15 48%, #d97706 100%);
+                border-color: #ffffff;
+                box-shadow: 0 0 0 2px #ffffff, 0 0 14px 5px rgba(250, 204, 21, .85);
+                animation: srbPulse .62s ease-in-out infinite;
+                z-index: 2;
             }
-            .srb[data-now] .srb-n, .srb[data-now] .srb-v { color: #ffffff; }
-            @keyframes srbPulse { 0%,100% { box-shadow: 0 0 0 1px #fde68a, 0 0 10px 2px rgba(250, 204, 21, .38); } 50% { box-shadow: 0 0 0 1px #fde68a, 0 0 16px 5px rgba(250, 204, 21, .72); } }
-            @media (prefers-reduced-motion: reduce) { .srb[data-now] { animation: none; } }
+            .srb[data-now] .srb-n, .srb[data-now] .srb-v { color: #3b1702; text-shadow: 0 1px 0 rgba(255, 255, 255, .55); }
+            @keyframes srbPulse {
+                0%, 100% { background: linear-gradient(180deg, #ffe98a 0%, #facc15 48%, #d97706 100%); box-shadow: 0 0 0 2px #ffffff, 0 0 10px 3px rgba(250, 204, 21, .6); filter: brightness(1); }
+                50% { background: linear-gradient(180deg, #fffbe0 0%, #fff176 45%, #ffc107 100%); box-shadow: 0 0 0 2px #ffffff, 0 0 22px 9px rgba(255, 213, 0, .95); filter: brightness(1.18); }
+            }
+            @media (prefers-reduced-motion: reduce) { .srb[data-now] { animation: none; box-shadow: 0 0 0 2px #ffffff, 0 0 16px 6px rgba(250, 204, 21, .9); } }
             @media (max-width: 380px) { .srb-n { font-size: 7.5px; } .srb-v { font-size: 13.5px; } }
             @media (max-width: 340px) { .srb-n { font-size: 7px; } .srb-v { font-size: 12px; } }
 
@@ -5761,6 +5765,6 @@ function openTokenDialog() {
                 }, 30000);
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c00c7eb810e2ea',t:'MTc5NDkzMjI4MA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c00c7eb810e2ea',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c01243bc885158',t:'MTc5NDkzMjUxNg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c01243bc885158',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
