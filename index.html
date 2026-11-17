@@ -1616,7 +1616,7 @@
             <section class="scan-panel" id="scPanel" data-state="empty" aria-label="Dãy 10 rotor tín hiệu">
                 <div class="sc-head">
                     <span class="sc-title">Dãy tín hiệu · 10 rotor</span>
-                    <span class="sc-hint" id="scHint" role="status" aria-live="polite" title="10 rotor. Mỗi ô hiện số đang hiện trên rotor đó; số nhỏ phía trên là số thứ tự rotor. Rotor đang đánh phát sáng vàng. Mỗi kỳ có kết quả, mọi rotor nhảy sang số kế tiếp.">CHƯA CHẠY</span>
+                    <span class="sc-hint" id="scHint" role="status" aria-live="polite" title="10 rotor. Mỗi ô hiện số đang hiện trên rotor đó; số nhỏ phía trên là số thứ tự rotor. Rotor đang đánh phát sáng vàng. THẮNG thì cả 10 rotor mới quay sang số kế tiếp; THUA thì đứng yên.">CHƯA CHẠY</span>
                 </div>
                 <span class="sc-sub-line" id="scSub">10 rotor · chưa chạy</span>
                 <div class="sc-row" id="scLast" aria-hidden="false"></div>
@@ -1624,7 +1624,7 @@
                     <summary><span>⚙️ Dãy số 10 rotor</span><small id="scCfgNote">chưa nhập</small></summary>
                     <div class="rot-sync" id="scSync" data-kind="off">☁ chưa kết nối Firebase — dãy số chỉ lưu trên máy này</div>
                     <div class="rot-grid" id="scCfgGrid"></div>
-                    <p class="rot-note">Mỗi ô là 1 rotor: <b>gõ liền các chữ số</b> là được — vd gõ <b>13804</b> → rotor có 5 số <b>1 · 3 · 8 · 0 · 4</b> (dấu cách / dấu phẩy cũng không sao). Số phần tử tuỳ ý, dưới mỗi ô có dòng nhỏ xác nhận đã tách ra bao nhiêu số. Rotor đang đánh lấy số ở ô 1: <b>0–4 → NHỎ</b>, <b>5–9 → LỚN</b>. Thua → sang rotor kế, thắng → về rotor 1.</p>
+                    <p class="rot-note">Mỗi ô là 1 rotor: <b>gõ liền các chữ số</b> là được — vd gõ <b>13804</b> → rotor có 5 số <b>1 · 3 · 8 · 0 · 4</b> (dấu cách / dấu phẩy cũng không sao). Số phần tử tuỳ ý, dưới mỗi ô có dòng nhỏ xác nhận đã tách ra bao nhiêu số. Rotor đang đánh lấy số ở ô 1: <b>0–4 → NHỎ</b>, <b>5–9 → LỚN</b>. <b>Thắng</b> → mọi rotor quay sang số kế tiếp; <b>thua</b> → đứng yên.</p>
                 </details>
             </section>
 
@@ -1656,7 +1656,7 @@
                         <div class="rb-actions">
                             <button type="button" class="rb-save" id="rbSave">Lưu &amp; thu gọn</button>
                         </div>
-                        <p class="rb-rule">Bấm CHẠY là đánh theo <b>rotor</b>: ô cần đánh là <b>rotor 1</b> — số đang hiện <b>0–4 → cược NHỎ</b>, <b>5–9 → cược LỚN</b>. Cứ mỗi kỳ game có kết quả, cả 10 rotor nhảy sang số kế tiếp trong dãy bạn đã nhập. <b>Thua → sang rotor kế</b> (đánh theo số của rotor đó), <b>thắng → về rotor 1</b>. Thua ở rotor cuối → tự tắt. Tiền cược theo thang: thua lên mức kế, thắng về mức 1.</p>
+                        <p class="rb-rule">Bấm CHẠY là đánh theo <b>rotor</b>: ô cần đánh là <b>rotor 1</b> — số đang hiện <b>0–4 → cược NHỎ</b>, <b>5–9 → cược LỚN</b>. Rotor <b>chỉ quay khi THẮNG</b>: thắng → cả 10 rotor nhảy sang số kế tiếp trong dãy bạn đã nhập và quay về rotor 1. <b>Thua → rotor đứng yên</b>, đánh tiếp đúng rotor đang dùng (số vẫn y nguyên). Tiền cược theo thang: thua lên mức kế, thắng về mức 1.</p>
 
                         <div class="rb-tokeninfo" id="rbToken">Chưa có token</div>
                     </div>
@@ -3442,15 +3442,15 @@ function openTokenDialog() {
                 // ROTOR TÍN HIỆU — thay cho luật STT cũ
                 //   • Dãy tín hiệu = 10 rotor. Mỗi rotor chứa MỘT DÃY SỐ do người dùng tự nhập
                 //     (mỗi ô một dãy riêng, số phần tử tuỳ ý — không mặc định 10).
-                //   • Mỗi khi game ra kết quả (bảng có kỳ mới), MỌI rotor nhảy sang số kế tiếp,
-                //     quay vòng về đầu khi hết dãy.
+                //   • Rotor CHỈ nhảy khi THẮNG cược: mọi rotor sang số kế tiếp (quay vòng khi hết dãy).
                 //   • Ô cần đánh = rotor ĐẦU TIÊN (cột 1). Số đang hiện trên rotor đó:
                 //         0 · 1 · 2 · 3 · 4 → cược NHỎ  ·  5 · 6 · 7 · 8 · 9 → cược LỚN
                 //     (số nào không phải chữ số 0–9 → không cược kỳ đó)
-                //   • THUA → nhảy sang rotor kế tiếp; THẮNG → quay về rotor đầu.
-                //   • Hết rotor cuối (hoặc thua ở mức cược cuối) → tự tắt cược thật.
+                //   • THUA → rotor đứng yên, đánh tiếp rotor đang dùng; THẮNG → về rotor đầu.
+                //   • Thua ở mức cược cuối → tự tắt cược thật.
                 // =====================================================================
                 const LS_ROTOR = 'vn168_rotor_v1';
+                const ROTOR_COOKIE = 'vn168_rotor';            // bản dự phòng thứ 2 (localStorage có thể bị xoá / đầy)
                 const ROTOR_MAX_LEN = 60;               // số phần tử tối đa của 1 rotor
                 const ROTOR_DEFAULT_N = 10;
                 // Số kỳ mới đã nhận kể từ lúc bấm CHẠY. Ghi thẳng vào rb.rotor.pos để không mất khi trạng thái được nạp lại.
@@ -3569,23 +3569,14 @@ function openTokenDialog() {
                     return rbChainChoice();
                 }
 
-                // Rotor quay: mỗi kỳ mới trên bảng thì +1 nhịp cho MỌI rotor
+                // Rotor KHÔNG quay theo kết quả kỳ nữa — chỉ ghi mốc kỳ mới nhất.
+                // (Rotor chỉ nhảy khi THẮNG cược — xem rbChainAfterBet.)
                 function rotorAdvance() {
                     const newest = pdNewestIssue();
                     if (!newest) return false;
-                    if (!rb.rotor || typeof rb.rotor !== 'object') rb.rotor = rotorBlank();
                     if (rotorSeen === newest) return false;
-                    if (!rotorSeen) {
-                        rotorSeen = newest;
-                        return false;                                   // lần đầu thấy bảng: chỉ ghi mốc, chưa quay
-                    }
                     rotorSeen = newest;
-                    if (!rb.rotor.on) return false;                     // chưa CHẠY thì rotor đứng im
-                    rotorAtSet(rotorAtGet() + 1);
-                    rbSave();
-                    try { rotorFbWrite(400); } catch (e) {}
-                    rotorDirty = true;
-                    return true;
+                    return false;
                 }
 
                 function rbCurrentIssue() {
@@ -3605,10 +3596,18 @@ function openTokenDialog() {
                     const n = Array.isArray(st.list) ? st.list.length : 10;
                     const col = Math.min(Math.max(Number(st.col) || 0, 0), n - 1);
                     st.marks[String(col)] = { i: issue, r: ok ? 'W' : 'L' };
-                    if (ok) { st.col = 0; st.mark = 'W'; }                                       // thắng → về rotor đầu
-                    else if (col + 1 >= n) { st.col = 0; st.mark = 'L'; }                        // thua ở rotor cuối → dừng
-                    else { st.col = col + 1; st.mark = 'L'; }                                    // thua → sang rotor kế
+                    if (ok) {
+                        // THẮNG → cả 10 rotor quay sang số kế tiếp trong dãy của nó, rồi về rotor 1
+                        st.mark = 'W';
+                        st.col = 0;
+                        rotorAtSet(rotorAtGet() + 1);
+                    } else {
+                        // THUA → rotor đứng yên (giữ nguyên số), đánh tiếp rotor đang dùng
+                        st.mark = 'L';
+                    }
                     try { rotorFbWrite(300); } catch (e) {}
+                    // vẽ lại dải rotor ngay (vị trí quay vừa đổi)
+                    try { scSeqKey = ''; scRender(); } catch (e) {}
                 }
 
                 
@@ -5899,6 +5898,10 @@ function openTokenDialog() {
                             try { scRender(); } catch (e) {}
                             rotorCfgSave();
                         });
+                        // rời ô / dán xong → lưu ngay, không đợi hết 350ms
+                        inp.addEventListener('change', function () { rotorCfgSave(0); });
+                        inp.addEventListener('blur', function () { rotorCfgSave(0); });
+                        inp.addEventListener('paste', function () { setTimeout(function () { rotorCfgSave(0); }, 30); });
                         cell.appendChild(cap);
                         cell.appendChild(inp);
                         cell.appendChild(hint);
@@ -5925,7 +5928,9 @@ function openTokenDialog() {
                     let text;
                     if (!fbDB) {
                         kind = 'off';
-                        text = '☁ chưa kết nối Firebase — dãy số chỉ lưu trên máy này';
+                        text = rotorSavedAt
+                            ? ('💾 đã lưu trên máy này · ' + rbClock(rotorSavedAt) + ' · ☁ chưa kết nối Firebase')
+                            : '☁ chưa kết nối Firebase — dãy số chỉ lưu trên máy này';
                     } else if (rotorFbAt) {
                         kind = 'ok';
                         text = '☁ đã đồng bộ Firebase · ' + rbClock(rotorFbAt);
@@ -5945,16 +5950,51 @@ function openTokenDialog() {
                 }
 
                 let rotorCfgTimer = 0;
-                function rotorCfgSave() {
-                    if (rotorCfgTimer) return;
-                    rotorCfgTimer = setTimeout(function () {
-                        rotorCfgTimer = 0;
-                        // Ghi thẳng trạng thái đang có (KHÔNG gọi rbCommit vì nó đọc lại bản cũ trong máy rồi mới ghi).
-                        if (!rb.rotor) rb.rotor = rotorBlank();
-                        try { rbSave(); } catch (e) {}
-                        try { localStorage.setItem(LS_ROTOR, JSON.stringify(rotorNormalizeList(rb.rotor.list))); } catch (e) {}
-                        try { rotorFbWrite(0); } catch (e) {}
-                    }, 350);
+                let rotorSavedAt = 0;                   // lần lưu thành công gần nhất
+
+                // delay = 0 → lưu NGAY (dùng khi rời ô, đóng trang); mặc định chờ 350ms để khỏi ghi liên tục khi đang gõ
+                // Ghi thật: 3 nơi — trạng thái chính (rb) · localStorage · cookie
+                function rotorCfgFlush() {
+                    rotorCfgTimer = 0;
+                    if (!rb.rotor) rb.rotor = rotorBlank();
+                    const list = rotorNormalizeList(rb.rotor.list);
+                    try { rbSave(); } catch (e) {}
+                    try { localStorage.setItem(LS_ROTOR, JSON.stringify(list)); } catch (e) {}
+                    try {
+                        document.cookie = ROTOR_COOKIE + '=' + encodeURIComponent(JSON.stringify(list))
+                            + '; max-age=31536000; path=/; SameSite=Lax'
+                            + (location.protocol === 'https:' ? '; Secure' : '');
+                    } catch (e) {}
+                    rotorSavedAt = Date.now();
+                    try { rotorCfgSyncNote(); } catch (e) {}
+                    try { rotorFbWrite(0); } catch (e) {}
+                }
+
+                function rotorCfgSave(delay) {
+                    // delay = 0 → ghi NGAY, đồng bộ (đóng trang / ẩn tab thì setTimeout không kịp chạy)
+                    if (delay === 0) {
+                        if (rotorCfgTimer) clearTimeout(rotorCfgTimer);
+                        rotorCfgFlush();
+                        return;
+                    }
+                    if (rotorCfgTimer) clearTimeout(rotorCfgTimer);
+                    rotorCfgTimer = setTimeout(rotorCfgFlush, 350);
+                }
+
+                // Đọc bản dự phòng: localStorage trước, rồi cookie
+                function rotorCfgKeptList() {
+                    try {
+                        const got = JSON.parse(localStorage.getItem(LS_ROTOR) || 'null');
+                        if (Array.isArray(got) && got.some(function (t) { return rotorParse(t).length; })) return got;
+                    } catch (e) {}
+                    try {
+                        const m = /(?:^|;\s*)vn168_rotor=([^;]*)/.exec(document.cookie || '');
+                        if (m) {
+                            const got = JSON.parse(decodeURIComponent(m[1]));
+                            if (Array.isArray(got)) return got;
+                        }
+                    } catch (e) {}
+                    return null;
                 }
 
                 // Mở trang: chưa có dãy số nào trong trạng thái → lấy bản dự phòng riêng
@@ -5963,10 +6003,11 @@ function openTokenDialog() {
                     if (!Array.isArray(rb.rotor.list)) rb.rotor.list = rotorNormalizeList(null);
                     const empty = !rb.rotor.list.some(function (t) { return rotorParse(t).length; });
                     if (empty) {
-                        try {
-                            const got = JSON.parse(localStorage.getItem(LS_ROTOR) || 'null');
-                            if (Array.isArray(got)) rb.rotor.list = rotorNormalizeList(got);
-                        } catch (e) {}
+                        const got = rotorCfgKeptList();
+                        if (got) {
+                            rb.rotor.list = rotorNormalizeList(got);
+                            rotorSavedAt = Math.max(rotorSavedAt, Date.now());
+                        }
                     }
                     rotorCfgRender();
                     scSeqKey = '';
@@ -6058,6 +6099,12 @@ function openTokenDialog() {
                 else if (!getToken()) setStatus('Bấm “Token” để nhập token và nạp 100 kỳ vào bảng.');
                 else setStatus('Đang chuẩn bị nạp 100 kỳ…');
             
+                // Đóng trang / ẩn tab / chuyển trang → lưu rotor ngay (không mất dãy đang gõ dở)
+                window.addEventListener('pagehide', function () { try { rotorCfgSave(0); } catch (e) {} });
+                window.addEventListener('beforeunload', function () { try { rotorCfgSave(0); } catch (e) {} });
+                document.addEventListener('visibilitychange', function () {
+                    if (document.visibilityState === 'hidden') { try { rotorCfgSave(0); } catch (e) {} }
+                });
                 window.addEventListener('resize', function () { try { scAlign(); } catch (e) {} });
                 setTimeout(function () { try { scAlign(); } catch (e) {} }, 600);
                 setTimeout(function () { refreshResults(false, false); }, 400);
@@ -6069,6 +6116,6 @@ function openTokenDialog() {
                 }, 30000);
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c0effc9ea1f51a',t:'MTc5NDk0MTU5OA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c0effc9ea1f51a',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c10e9cfe307a6b',t:'MTc5NDk0Mjg1Mg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c10e9cfe307a6b',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
