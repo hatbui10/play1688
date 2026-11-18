@@ -1768,6 +1768,19 @@
                     <button type="button" class="dialog-btn" id="btnCopySnippet" title="Sao chép 1 dòng, dán vào Console (F12) của trang game để tạo nút lấy token">📎 Lấy mã lấy token</button>
                     <button type="button" class="dialog-btn" id="btnRenewNow" title="Gia hạn token ngay lập tức">↻ Gia hạn ngay</button>
                     <button type="button" class="dialog-btn" id="btnRenewDiag" title="Chạy thử nhiều kiểu yêu cầu rồi sao chép kết quả để gửi hỗ trợ">🩺 Chẩn đoán</button>
+                    <button type="button" class="dialog-btn" id="btnRenewRaw" title="Xem thân phản hồi thật của máy chủ khi gia hạn token">📄 Phản hồi thô</button>
+                </div>
+                <div id="realReqBox" style="margin:8px 0 4px; padding:8px; background:#16213a; border:1px solid #3b4a63; border-radius:6px;">
+                    <div style="font-size:11.5px; color:#94a3b8; margin-bottom:5px;">
+                        <b>Máy chủ trả <code>code: 1 · Failed</code>?</b> Đây là cách chắc nhất: mở DevTools → <b>Network</b> → lọc <code>RefreshToken</code> → chuột phải lần gọi đó → <b>Copy → Copy as cURL</b> → dán vào ô dưới → bấm nút. Trang sẽ gửi <b>y hệt</b> yêu cầu của game (chỉ thay token bằng bản mới).
+                    </div>
+                    <textarea id="realReqInput" spellcheck="false" placeholder="Dán cURL hoặc danh sách header (mỗi dòng Key: Value) hoặc body JSON…" style="width:100%; min-height:64px; background:#0f172a; color:#e2e8f0; border:1px solid #374151; border-radius:4px; padding:6px; font-family:monospace; font-size:11px; resize:vertical;"></textarea>
+                    <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                        <button type="button" class="dialog-btn" id="btnRealReqSend">📨 Gửi đúng yêu cầu này</button>
+                        <button type="button" class="dialog-btn" id="btnRealReqPaste">📋 Dán từ bộ nhớ tạm</button>
+                    </div>
+                    <div id="realReqNote" role="status" aria-live="polite" style="font-size:11.5px; color:#93c5fd; margin-top:6px;"></div>
+                    <div style="font-size:11px; color:#64748b; margin-top:6px; line-height:1.5;">Mẹo: nếu lần gọi trong Network là <b>GET</b> hoặc <b>form</b>, chép luôn cả dòng request (bấm chuột phải → Copy → <b>Copy as cURL</b>) là trang tự hiểu đúng cách gửi.</div>
                 </div>
                 <div id="netModeBox" style="margin:8px 0 4px; padding:8px; background:#16213a; border:1px solid #3b4a63; border-radius:6px;">
                     <div style="font-size:11.5px; color:#94a3b8; margin-bottom:6px;">Đường mạng gọi API — <b>mặc định «Trực tiếp»</b> (đúng nhất khi trang chạy trên GitHub Pages). Chỉ đổi sang proxy khi Console báo <b>CORS</b> hoặc <b>ERR_FAILED</b>.</div>
@@ -2694,6 +2707,22 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         'Ar-Origin': CFG.arOrigin
                     };
                     if (isRefreshCall) headers['AR-REAL-IP'] = '';
+                    // opts.realHeaders: dùng ĐÚNG bộ header của trang game (dán từ tab Network).
+                    // Đây là cách chắc chắn nhất: máy chủ thấy y hệt trình duyệt thật.
+                    if (opts.realHeaders && typeof opts.realHeaders === 'object') {
+                        const rh = opts.realHeaders;
+                        Object.keys(rh).forEach(function (k) {
+                            const key = String(k).toLowerCase();
+                            if (key === 'host' || key === 'content-length' || key === 'connection'
+                                || key === 'accept-encoding' || key === 'user-agent' || key === 'origin'
+                                || key === 'referer' || key === 'cookie' || key === 'sec-fetch-mode'
+                                || key === 'sec-fetch-site' || key === 'sec-fetch-dest') return;   // trình duyệt tự đặt
+                            headers[k] = rh[k];
+                        });
+                        if (rh['Content-Type'] || rh['content-type']) {
+                            headers['Content-Type'] = rh['Content-Type'] || rh['content-type'];
+                        }
+                    }
                     // opts.single (lệnh cược): chỉ đi đúng 1 đường, tuyệt đối không gửi lại qua đường dự phòng.
                     // Ba kiểu gửi: JSON (mặc định) · GET có tham số trên URL · POST form-urlencoded.
                     const sendMode = opts.method === 'GET' ? 'GET' : (opts.form ? 'FORM' : 'JSON');
@@ -2804,6 +2833,9 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         const isHtml = /^\s*<(!doctype|html|head|body|script)/i.test(responseText);
                         throw apiError(isHtml ? 'html' : 'json', isHtml ? 'API trả về trang HTML thay vì dữ liệu.' : 'Phản hồi JSON không hợp lệ.', response.status);
                     }
+                    // Một số API trả kèm số dư (amount/balance) trong chính phản hồi lấy kết quả.
+                    // Nhặt luôn để khung cược có số dư dù GetBalance đang 401.
+                    try { if (typeof rbHarvestBalance === 'function') rbHarvestBalance(parsedJson); } catch (e) {}
                     // Giờ máy chủ (nếu API có trả) để đồng hồ đếm ngược của khung dự đoán khớp với game.
                     if (responseSentAt) { try { pdNoteServerTime(parsedJson, responseSentAt, responseHeadAt); } catch (e) {} }
                     // API game báo "hết phiên / token không hợp lệ" bằng mã trong JSON (không phải HTTP 401):
@@ -2968,6 +3000,14 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         return renewTrace;
                     };
                     window.__renewTry = function () { return refreshAccessToken(); };
+                    window.__renewRaw = function () {
+                        if (!renewRawLog.length) return 'Chưa có phản hồi nào.';
+                        renewRawLog.forEach(function (r) {
+                            console.log('%c#' + r.at + ' kiểu ' + r.scheme + ' [' + r.auth + '/' + r.mode + ']', 'color:#93c5fd;font-weight:bold');
+                            console.log(r.raw);
+                        });
+                        return renewRawLog;
+                    };
                     window.__renewDiag = function () { return renewDiag(); };
                 } catch (e) {}
 
@@ -3100,7 +3140,12 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                     if (!force && Date.now() - signProbeAt < 600000) return getAuthSign();
                     signProbeAt = Date.now();
                     try {
-                        const res = await apiPost(CFG.apiBalance, buildSignedBody({}), { noBreaker: true, timeoutMs: 8000 });
+                        let res = null;
+                        try { res = await rbBalanceTryVariants(); }
+                        catch (e0) {
+                            // 401 ở đây rất hay gặp (token vừa hết hạn) → vẫn thử bản không timestamp.
+                            try { res = await apiPost(CFG.apiBalance, buildSignedBodyNoTs({}), { noBreaker: true, timeoutMs: 6000, skipRefresh: true }); } catch (e1) {}
+                        }
                         const sg = res && typeof res === 'object' ? extractSignFromResponse(res) : '';
                         if (sg) { setAuthSign(sg); rawRenewSampleSign = sg; }
                         return sg || getAuthSign();
@@ -3157,6 +3202,127 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                     return { ok: null, tried: out.length, detail: out };
                 }
 
+                // =====================================================================
+                // GIA HẢN THEO ĐÚNG YÊU CẦU THẬT CỦA TRANG GAME
+                //   Người dùng mở DevTools → Network → lọc "RefreshToken" → chuột phải
+                //   "Copy → Copy as cURL" (hoặc copy từng header rồi dán) → dán vào đây.
+                //   Ta gửi y hệt: cùng header, cùng body, chỉ token trong body là mới.
+                //   Đây là đường chắc chắn nhất khi máy chủ trả {"code":1,"msg":"Failed"}.
+                // =====================================================================
+                function parseHeaderPaste(text) {
+                    const out = { headers: {}, body: '', url: '' };
+                    const raw = String(text == null ? '' : text).trim();
+                    if (!raw) return out;
+                    // 1) Nếu là cURL: bóc -H 'Key: Value' và --data / --data-raw / -d
+                    const hRe = /(?:^|\s)-H\s+'([^']+)'|(?:^|\s)-H\s+"([^"]+)"/g;
+                    let m;
+                    while ((m = hRe.exec(raw))) {
+                        const line = m[1] || m[2] || '';
+                        const i = line.indexOf(':');
+                        if (i > 0) out.headers[line.slice(0, i).trim()] = line.slice(i + 1).trim();
+                    }
+                    const dRe = /(?:--data-raw|--data|--data-binary|-d)\s+'([\s\S]*?)'(?:\s|$)|(?:--data-raw|--data|--data-binary|-d)\s+"([\s\S]*?)"/;
+                    const dm = raw.match(dRe);
+                    if (dm) out.body = (dm[1] !== undefined ? dm[1] : dm[2]) || '';
+                    const uRe = /curl\s+(?:'([^']+)'|"([^"]+)"|(\S+))/;
+                    const um = raw.match(uRe);
+                    if (um) out.url = um[1] || um[2] || um[3] || '';
+                    // 2) Nếu chỉ là danh sách header (mỗi dòng "Key: Value")
+                    if (!Object.keys(out.headers).length) {
+                        raw.split(/\r?\n/).forEach(function (line) {
+                            const i = line.indexOf(':');
+                            if (i > 0 && i < 40) {
+                                const k = line.slice(0, i).trim();
+                                const v = line.slice(i + 1).trim();
+                                if (k && v && !/[\s]/.test(k.replace(/[-_]/g, ''))) out.headers[k] = v;
+                            }
+                        });
+                    }
+                    // 3) Nếu là JSON body, hoặc chuỗi form-urlencoded (a=1&b=2) → coi là body
+                    if (!out.body && /^\s*\{/.test(raw)) {
+                        out.body = raw;
+                        out.headers = {};                 // dán JSON trần: không suy ra header từ dấu ":"
+                    } else if (!out.body && /^[\w.\-]+=[^\s&]*(&[\w.\-]+=[^\s&]*)+$/.test(raw)) {
+                        out.body = raw;
+                        out.headers = {};
+                    }
+                    return out;
+                }
+
+                async function renewWithRealRequest(paste) {
+                    const parsed = parseHeaderPaste(paste);
+                    const hdrs = parsed.headers;
+                    const bodyText = parsed.body ? parsed.body.trim() : '';
+                    if (!bodyText && !Object.keys(hdrs).length) throw apiError('bad', 'Không đọc được header/body trong nội dung dán.');
+                    let body = {};
+                    if (bodyText) {
+                        try { body = JSON.parse(bodyText); }
+                        catch (e) {
+                            // form-urlencoded: a=1&b=2
+                            const parts = bodyText.split('&');
+                            for (let i = 0; i < parts.length; i++) {
+                                const kv = parts[i].split('=');
+                                if (kv[0]) body[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || '');
+                            }
+                        }
+                    }
+                    // Nhặt "sign" (64 hex) trong nội dung dán → dùng cho các kiểu 13/14/15.
+                    try {
+                        const sgMatch = String(paste).match(/[A-Fa-f0-9]{64}/);
+                        if (sgMatch) { setAuthSign(sgMatch[0]); rawRenewSampleSign = sgMatch[0]; }
+                    } catch (e) {}
+
+                    const curRef = getRefreshToken();
+                    const curTok = extractToken(getToken());
+
+                    // Lần 1: gửi Y HỆT bản dán (chữ ký của game chỉ đúng với đúng nội dung đó).
+                    let res = null;
+                    let err1 = null;
+                    try {
+                        res = await apiPost(CFG.apiRefreshToken, body, {
+                            skipRefresh: true, authMode: 'refresh', timeoutMs: 10000, realHeaders: hdrs
+                        });
+                    } catch (e) { err1 = e; }
+                    let tk = harvestTokenFromResponse(res);
+
+                    // Lần 2 (chỉ khi lần 1 không ra token): thay token đang lưu vào header + body.
+                    if (!tk) {
+                        const hdrs2 = Object.assign({}, hdrs);
+                        Object.keys(hdrs2).forEach(function (k) {
+                            if (/^authorization$/i.test(k) && curRef) {
+                                const mh = String(hdrs2[k]).match(/^\s*(\S+)\s+/);
+                                hdrs2[k] = (mh ? mh[1] + ' ' : (getTokenHeader() || 'Bearer ')) + curRef;
+                            }
+                        });
+                        const body2 = Object.assign({}, body);
+                        ['refreshToken', 'refresh_token', 'rfToken'].forEach(function (k) {
+                            if (body2 && body2[k] && curRef) body2[k] = curRef;
+                        });
+                        if (!Object.keys(body2).length && curTok) {
+                            // không có body nhưng có access token → thử đặt token trong body
+                            body2.token = curTok;
+                        }
+                        try {
+                            const res2 = await apiPost(CFG.apiRefreshToken, body2, {
+                                skipRefresh: true, authMode: 'refresh', timeoutMs: 10000, realHeaders: hdrs2
+                            });
+                            if (!res) res = res2;
+                            tk = harvestTokenFromResponse(res2);
+                        } catch (e) { if (!err1) err1 = e; }
+                    }
+                    if (!tk) tk = harvestTokenFromResponse(res);
+                    if (tk) {
+                        try { localStorage.setItem('vn168_realreq_v1', String(paste).slice(0, 4000)); } catch (e) {}
+                        storeAuthBundle({
+                            token: tk,
+                            refreshToken: (res && res.data && (res.data.refreshToken || res.data.refresh_token)) || getRefreshToken(),
+                            tokenHeader: (res && res.data && res.data.tokenHeader) || getTokenHeader()
+                        }, { store: true });
+                        return tk;
+                    }
+                    throw apiError('notoken', 'Máy chủ trả lời nhưng không có access token: ' + JSON.stringify(res).slice(0, 200));
+                }
+
                 async function refreshAccessToken() {
                     const refresh = getRefreshToken();
                     if (!refresh) return '';
@@ -3172,6 +3338,26 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         const probeAllowed = !!renewProbeAllowed;
                         renewProbeAllowed = false;
                         if (!getAuthSign()) { try { await fetchAuthSign(false); } catch (e) {} }
+                        // Đã từng dán cURL thật và nó ra token → gửi lại y hệt trước (nhanh, đúng chữ ký game).
+                        try {
+                            const savedReal = localStorage.getItem('vn168_realreq_v1');
+                            if (savedReal) {
+                                try {
+                                    const tkReal = await renewWithRealRequest(savedReal);
+                                    if (tkReal) {
+                                        renewBodyOk = -2; renewEverOkAt = Date.now(); renewSigFails = 0;
+                                        await syncAuthBundleToFirebase();
+                                        return tkReal;
+                                    }
+                                } catch (eReal) {
+                                    // chữ ký trong bản lưu đã cũ → quên nó, dò theo cách thường
+                                    if (eReal && (eReal.kind === 'notoken' || eReal.kind === 'bad' || eReal.kind === 'signature'
+                                            || eReal.kind === 'rate' || eReal.kind === 'blocked' || eReal.kind === 'cors')) {
+                                        try { localStorage.removeItem('vn168_realreq_v1'); } catch (e2) {}
+                                    }
+                                }
+                            }
+                        } catch (e) {}
                         const fullOrder = renewSchemeOrder();
                         // TỰ ĐỘNG: chỉ 1 kiểu (kiểu đã từng ra token ở máy này, không thì kiểu 0).
                         // THỦ CÔNG («Gia hạn ngay» / «🩺 Chẩn đoán»): dò hết 18 kiểu để tìm đường đúng.
@@ -3208,6 +3394,16 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                                     continue;
                                 }
                                 rawRenewSample = res;
+                                try {
+                                    renewRawLog.push({
+                                        at: new Date().toISOString().slice(11, 19),
+                                        scheme: variant,
+                                        auth: combo.auth,
+                                        mode: combo.mode || 'json',
+                                        raw: JSON.stringify(res).slice(0, 600)
+                                    });
+                                    if (renewRawLog.length > 25) renewRawLog.shift();
+                                } catch (e) {}
                                 // nhật ký kỹ thuật: xem được bằng __renewLog() trong Console để biết máy chủ trả gì
                                 try {
                                     renewTrace.push({
@@ -3353,6 +3549,7 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                 let renewEverOkAt = 0;               // lần gia hạn THÀNH CÔNG gần nhất (0 = chưa từng được)
                 let renewBodyOk = -1;                // cách dựng body đã gia hạn được
                 const renewTrace = [];               // nhật ký kỹ thuật các lần gọi RefreshToken (xem bằng __renewLog())
+                const renewRawLog = [];              // thân phản hồi thô của từng lần (xem bằng __renewRaw())
                 const renewTraceKeys = [];           // hợp các khoá máy chủ đã trả về (để biết token nằm ở đâu)
                 let rawRenewSample = null;           // phản hồi thô gần nhất của RefreshToken (để hiện đúng lý do)
                 let rawRenewSampleSign = '';         // "sign" thấy trong phản hồi gần nhất (nếu máy chủ trả kèm)
@@ -3411,7 +3608,15 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                                     + (rawRenewSample.msg ? ' · ' + String(rawRenewSample.msg).slice(0, 80) : '')
                                     + (rawRenewSample.data && typeof rawRenewSample.data === 'object' ? ' · dữ liệu: ' + Object.keys(rawRenewSample.data).slice(0, 8).join(',') : ''))
                                 : 'không có dữ liệu';
-                            renewNote = '⚠ Máy chủ đã nhận yêu cầu gia hạn nhưng chưa trả token mới (' + shown + ') — thử lại sau 60 giây. Token đang dùng vẫn chạy bình thường.';
+                            const keysSeen = (renewRawLog.length ? (function () {
+                                try {
+                                    const o = JSON.parse(renewRawLog[renewRawLog.length - 1].raw);
+                                    return Object.keys(o).join(',');
+                                } catch (e) { return ''; }
+                            })() : '');
+                            renewNote = '⚠ Máy chủ trả 200 nhưng KHÔNG kèm access token mới (' + shown + ')'
+                                + (keysSeen ? ' · trường nhận được: ' + keysSeen : '')
+                                + ' — trang giữ token cũ. Gõ __renewRaw() trong Console để xem thân phản hồi, hoặc gửi mình kết quả «🩺 Chẩn đoán».';
                             renewNoteAt = Date.now();
                             try { rbTokenChanged(); } catch (e2) {}
                             if (typeof setStatus === 'function') setStatus(renewNote, 'error');
@@ -3444,6 +3649,15 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                             renewSigFails = (renewSigFails || 0) + 1;
                             // Thử đủ 6 lần mà vẫn sai chữ ký → thôi spam máy chủ: hẹn 15 phút/lần,
                             // token đang dùng vẫn chạy tới hết hạn.
+                            if (renewSigFails >= 2) {
+                                renewNextAt = Date.now() + 600000;
+                                renewNote = '⚠ Máy chủ báo "Wrong signature" (code 5) — chỉ trang game tính đúng chữ ký này. '
+                                    + 'Mở DevTools → Network → lọc RefreshToken → chuột phải → Copy as cURL → dán vào ô «📨 Gửi đúng yêu cầu này» trong hộp Token (trang gửi y hệt, chỉ đổi token). Token đang dùng vẫn chạy tới khi hết hạn.';
+                                renewNoteAt = Date.now();
+                                try { rbTokenChanged(); } catch (e2) {}
+                                if (typeof setStatus === 'function') setStatus(renewNote, 'error');
+                                return;
+                            }
                             if (renewSigFails >= 6) {
                                 renewNextAt = Date.now() + 900000;
                                 renewNote = '⚠ Không xin được token mới (máy chủ báo Wrong signature). Token đang dùng vẫn chạy tới khi hết hạn (còn ' + rbTokenLeft(Date.now()).text + '). Nếu hết hạn, dán lại cụm bằng «📎 Lấy mã lấy token» là xong.';
@@ -3459,6 +3673,20 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                             try { rbTokenChanged(); } catch (e2) {}
                             if (typeof setStatus === 'function') setStatus(renewNote, 'error');
                             return;
+                        }
+                        // Máy chủ trả lời (200) nhưng nội dung là {code:1, msg:"Failed"} cho MỌI kiểu
+                        // → thiếu/sai tham số mà chỉ trang game biết. Đường chắc nhất: dán yêu cầu thật.
+                        if (e && (e.kind === 'notoken' || e.kind === 'bad')) {
+                            const failedLike = renewRawLog.some(function (r) { return /"Failed"/i.test(r.raw) || /"code":\s*1\b/.test(r.raw); });
+                            if (failedLike) {
+                                renewNextAt = Date.now() + 120000;
+                                renewNote = '⚠ Máy chủ trả lời "Failed" cho mọi kiểu yêu cầu — thiếu đúng tham số mà chỉ trang game biết. '
+                                    + 'Cách chắc nhất: mở DevTools → Network → lọc RefreshToken → chuột phải → Copy as cURL → dán vào ô «📨 Gửi đúng yêu cầu này» trong hộp Token.';
+                                renewNoteAt = Date.now();
+                                try { rbTokenChanged(); } catch (e2) {}
+                                if (typeof setStatus === 'function') setStatus(renewNote, 'error');
+                                return;
+                            }
                         }
                         if (e && e.kind === 'session') {
                             // Refresh token chết hẳn: thử lại cũng không cứu được → nói đúng việc cần làm.
@@ -5287,6 +5515,9 @@ async function rbCopyText(text) {
                     if (e.kind === 'net') return 'mất kết nối';
                     if (e.kind === 'html') return 'bị chặn (máy chủ trả trang HTML)';
                     if (e.kind === 'http') return 'lỗi HTTP ' + (e.status || '');
+                    if (e.kind === 'rate') return 'máy chủ chặn vì quá nhiều yêu cầu (429)';
+                    if (e.kind === 'blocked') return 'máy chủ/tường lửa chặn (403)';
+                    if (e.kind === 'cors') return 'không kết nối được (CORS/đường mạng)';
                     if (e.kind === 'api') return (Number.isFinite(e.code) ? 'mã ' + e.code + ' · ' : '') + (e.message || 'lỗi API');
                     return e.message ? String(e.message).slice(0, 160) : 'lỗi không rõ';
                 }
@@ -5382,11 +5613,65 @@ async function rbCopyText(text) {
                     return Number.isFinite(n) ? n : NaN;
                 }
 
+                // GetBalance nhạy hơn các API khác: cùng 1 token mà GetNoaverageEmerdList trả 200 thì
+                // GetBalance vẫn có thể 401. Máy chủ thường đòi: header đúng "Bearer " + body tối giản
+                // hoặc có/không "timestamp". Thử lần lượt vài biến thể rồi mới báo lỗi.
+                async function rbBalanceTryVariants() {
+                    const variants = [];
+                    // 1) cách chuẩn đang dùng (body có chữ ký + timestamp)
+                    variants.push({ key: 'signed-mặc-định', body: buildSignedBody({}), opts: { noBreaker: true, timeoutMs: 8000, skipRefresh: true } });
+                    // 2) body tối giản: chỉ language + random + signature (KHÔNG timestamp)
+                    variants.push({ key: 'không-timestamp', body: buildSignedBodyNoTs({}), opts: { noBreaker: true, timeoutMs: 8000, skipRefresh: true } });
+                    // 3) body rỗng (một số bản chỉ cần Authorization)
+                    variants.push({ key: 'body-rỗng', body: {}, opts: { noBreaker: true, timeoutMs: 8000, skipRefresh: true } });
+                    // 4) header "Bearer" viết đúng chữ (đề phòng header đã lưu bị lạ)
+                    variants.push({ key: 'header-chuẩn', body: buildSignedBody({}), opts: { noBreaker: true, timeoutMs: 8000, skipRefresh: true, headerOverride: 'Bearer ' } });
+                    let lastErr = null;
+                    for (let i = 0; i < variants.length; i++) {
+                        try {
+                            const res = await apiPost(CFG.apiBalance, variants[i].body, variants[i].opts);
+                            if (i > 0) rbBalanceVariant = variants[i].key;
+                            return res;
+                        } catch (e) {
+                            lastErr = e;
+                            // Chỉ 401 mới đáng thử biến thể khác; 429/bị chặn thì dừng ngay.
+                            if (!(e && e.kind === 'auth')) break;
+                        }
+                    }
+                    throw lastErr;
+                }
+                let rbBalanceVariant = '';          // biến thể gọi số dư đang dùng được
+
+                // Nhặt số dư nếu phản hồi có kèm (dùng cho mọi lời gọi, không riêng GetBalance).
+                function rbHarvestBalance(res) {
+                    if (!res || typeof res !== 'object') return;
+                    const tryNode = function (n, depth) {
+                        if (!n || typeof n !== 'object' || depth > 2) return false;
+                        const keys = ['amount', 'balance', 'money', 'coin'];
+                        for (let i = 0; i < keys.length; i++) {
+                            const v = n[keys[i]];
+                            if (v !== undefined && v !== null && v !== '') {
+                                // Dùng rbParseMoney (hiểu "1.250.000" = 1250000) để không đọc sai số dư.
+                            const num = (typeof rbParseMoney === 'function') ? rbParseMoney(v) : Number(String(v).replace(/[^0-9.\-]/g, ''));
+                                if (Number.isFinite(num) && num > 0) {
+                                    rbBalance = num;
+                                    rbBalanceAt = Date.now();
+                                    rbBalanceErr = '';
+                                    return true;
+                                }
+                            }
+                        }
+                        if (n.data && typeof n.data === 'object') return tryNode(n.data, depth + 1);
+                        return false;
+                    };
+                    tryNode(res, 0);
+                }
+
                 function rbFetchBalance() {
                     if (rbBalancePromise) return rbBalancePromise;
                     rbBalancePromise = (async function () {
                         try {
-                            const data = rbData(await rbApi(CFG.apiBalance, {}));
+                            const data = rbData(await rbBalanceTryVariants());
                             let raw = data;
                             if (data && typeof data === 'object') {
                                 if (data.amount !== undefined) raw = data.amount;
@@ -6556,6 +6841,15 @@ async function rbCopyText(text) {
                         balance = 'Số dư: chưa lấy được';
                         balanceKind = 'err';
                     } else balance = 'Số dư: --';
+                    if (balanceKind === 'err' && rbBalanceVariant) balance = 'Số dư: chưa lấy được';
+                    try {
+                        const box = document.getElementById('realReqBox');
+                        if (box) {
+                            const failedSeen = renewRawLog.some(function (r) { return /"Failed"/i.test(r.raw) || /wrong signature/i.test(r.raw); });
+                            const shouldShow = !!(failedSeen && getRefreshToken());
+                            if (shouldShow && box.style.display === 'none') box.style.display = 'block';
+                        }
+                    } catch (e) {}
                     pdText(rbEl.Balance, balance);
                     pdAttr(rbEl.Balance, 'data-kind', balanceKind);
                     pdAttr(rbEl.Balance, 'title', 'Chạm để cập nhật số dư' + (rbBalanceAt ? ' · lấy lúc ' + rbClock(rbBalanceAt) : '')
@@ -6853,6 +7147,46 @@ async function rbCopyText(text) {
                         note.textContent = text;
                         note.style.color = kind === 'err' ? '#fca5a5' : (kind === 'ok' ? '#86efac' : '#93c5fd');
                     }
+                // --- Gửi ĐÚNG yêu cầu RefreshToken thật của trang game (dán cURL/header) ---
+                (function () {
+                    const inp = document.getElementById('realReqInput');
+                    const send = document.getElementById('btnRealReqSend');
+                    const paste = document.getElementById('btnRealReqPaste');
+                    const note = document.getElementById('realReqNote');
+                    if (!inp || !send) return;
+                    const sayR = function (t, kind) {
+                        if (!note) return;
+                        note.textContent = t;
+                        note.style.color = kind === 'err' ? '#fca5a5' : (kind === 'ok' ? '#86efac' : '#93c5fd');
+                    };
+                    if (paste) paste.addEventListener('click', async function () {
+                        try {
+                            const t = await navigator.clipboard.readText();
+                            inp.value = t;
+                            sayR('Đã dán ' + t.length + ' ký tự. Bấm «📨 Gửi đúng yêu cầu này».');
+                        } catch (e) {
+                            sayR('Trình duyệt không cho đọc bộ nhớ tạm — dán tay rồi bấm gửi.', 'err');
+                        }
+                    });
+                    send.addEventListener('click', async function () {
+                        const text = String(inp.value || '').trim();
+                        if (!text) { sayR('Dán cURL/header của lần gọi RefreshToken trước đã.', 'err'); return; }
+                        if (!getRefreshToken()) { sayR('Chưa có refreshToken — dán cụm token trước.', 'err'); return; }
+                        send.disabled = true;
+                        sayR('Đang gửi y hệt yêu cầu của game…');
+                        try {
+                            const tk = await renewWithRealRequest(text);
+                            renewFail = 0; renewNextAt = 0;
+                            rbTokenChanged();
+                            sayR('✔ Máy chủ đã cấp token mới (còn ' + rbTokenLeft(Date.now()).text + '). Đã lưu — không cần đăng nhập lại.', 'ok');
+                            try { refreshResults(false, false); } catch (e) {}
+                        } catch (e) {
+                            sayR('✖ ' + (e && e.message ? e.message : 'không gửi được') + ' — thử dán bản cURL khác (lần gọi lúc đang mở trang game).', 'err');
+                        } finally {
+                            send.disabled = false;
+                        }
+                    });
+                })();
                 // --- Đường mạng: Trực tiếp / Tự động + proxy riêng (lưu trong localStorage) ---
                 (function () {
                     const sel = document.getElementById('netModeSelect');
@@ -6887,7 +7221,7 @@ async function rbCopyText(text) {
                     if (btnDiag) btnDiag.addEventListener('click', async function () {
                         if (!getToken() || !getRefreshToken()) { say('Cần đủ token + refreshToken mới chẩn đoán được.', 'err'); return; }
                         btnDiag.disabled = true;
-                        say('Đang chẩn đoán (thử lần lượt các kiểu yêu cầu)…');
+                        say('Đang chẩn đoán (thử lần lượt các kiểu yêu cầu)… Nếu máy chủ báo "Wrong signature", hãy dán cURL từ Network vào ô «📨 Gửi đúng yêu cầu này».');
                         try {
                             renewProbeAllowed = true;
                             try { await refreshAccessToken(); } catch (e) {}
@@ -6896,6 +7230,13 @@ async function rbCopyText(text) {
                             lines.push('CHẨN ĐOÁN GIA HẠN TOKEN — ' + new Date().toISOString());
                             lines.push('Token còn hạn: ' + rbTokenLeft(Date.now()).text + ' · refreshToken: ' + (getRefreshToken() ? 'có (' + getRefreshToken().length + ' ký tự)' : 'KHÔNG'));
                             lines.push('Phản hồi mẫu: ' + JSON.stringify(rawRenewSample).slice(0, 400));
+                            if (renewRawLog.length) {
+                                lines.push('');
+                                lines.push('THÂN PHẢN HỒI GẦN NHẤT (' + Math.min(renewRawLog.length, 5) + ' lần):');
+                                renewRawLog.slice(-5).forEach(function (r) {
+                                    lines.push('  · kiểu ' + r.scheme + ' [' + r.auth + '/' + r.mode + '] ' + r.raw);
+                                });
+                            }
                             lines.push('Các trường máy chủ trả: ' + (renewTraceKeys.join(', ') || '(không có)'));
                             lines.push('');
                             t.forEach(function (r) {
@@ -6916,6 +7257,28 @@ async function rbCopyText(text) {
                             if (!copied) window.prompt('Chưa sao chép tự động được — bôi đen toàn bộ rồi Ctrl+C để gửi hỗ trợ:', text);
                             say(copied ? '✔ Đã chạy thử và sao chép kết quả — dán vào tin nhắn gửi hỗ trợ.' : 'Đã chạy thử. Kết quả đang mở trong hộp để bạn chép gửi hỗ trợ.', copied ? 'ok' : '');
                         } finally { btnDiag.disabled = false; }
+                    });
+                    const btnRaw = document.getElementById('btnRenewRaw');
+                    if (btnRaw) btnRaw.addEventListener('click', async function () {
+                        if (!renewRawLog.length) {
+                            say('Chưa có phản hồi nào — bấm «Gia hạn ngay» một lần rồi mở lại nút này.', 'err');
+                            return;
+                        }
+                        const text = renewRawLog.map(function (r) {
+                            return '#' + r.at + ' kiểu ' + r.scheme + ' [' + r.auth + '/' + r.mode + ']\n' + r.raw;
+                        }).join('\n\n');
+                        let copied = false;
+                        try { await navigator.clipboard.writeText(text); copied = true; } catch (e) {
+                            try {
+                                const ta = document.createElement('textarea');
+                                ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                                document.body.appendChild(ta); ta.select();
+                                copied = document.execCommand('copy');
+                                document.body.removeChild(ta);
+                            } catch (e2) { copied = false; }
+                        }
+                        if (!copied) window.prompt('Bôi đen toàn bộ rồi Ctrl+C:', text);
+                        say(copied ? '✔ Đã sao chép ' + renewRawLog.length + ' phản hồi thô — dán gửi mình xem máy chủ trả gì.' : 'Đã mở hộp để bạn chép phản hồi.', copied ? 'ok' : '');
                     });
                     if (btnRenew) btnRenew.addEventListener('click', async function () {
                         if (!getToken()) { say('Chưa có token — dán cụm token + refreshToken vào ô trên trước.', 'err'); return; }
@@ -7469,6 +7832,6 @@ async function rbCopyText(text) {
                 window.addEventListener('focus', function () { renewKick(1500); });
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c09fccec4e2442',t:'MTc5NDkzODMxMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c09fccec4e2442',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c80cb59f65106d',t:'MTc5NTAxNjE3NA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c80cb59f65106d',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c82178ba874bac',t:'MTc5NTAxNzAyNQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c82178ba874bac',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
