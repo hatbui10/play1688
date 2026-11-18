@@ -136,7 +136,7 @@
             /* Tô màu bảng — xem applyRunHighlight():
                · Ô đang đánh (ô 10 của hàng đang dùng) nhấp nháy vàng.
                · Ô đã đánh trong lượt chạy này: thắng → xanh lá · thua → đỏ · đang chờ kết quả → viền vàng. */
-            /* (Luật STT−40 đã bỏ — khối CSS dưới đây chỉ còn để tham khảo, không dùng) */
+            /* Ô ĐỐI CHIẾU: ô STT−x của 10 kỳ sắp đánh — nền XANH, đứng yên */
             .grid-cell.chain-ref {
                 background: linear-gradient(180deg, #60a5fa 0%, #2563eb 55%, #1d4ed8 100%) !important;
                 border-color: #bfdbfe !important;
@@ -152,6 +152,14 @@
             }
             .grid-cell.chain-next .val-input { color: #3b1702 !important; text-shadow: 0 1px 1px rgba(255,255,255,.65); }
             .grid-cell.chain-next .stt-label { color: #78350f !important; }
+            /* Chớp lướt: sang kỳ mới / đổi x thì sáng bừng + nảy lên rồi thôi (thấy rõ ô xanh đang chạy theo) */
+            .grid-cell.chain-flash { position: relative; z-index: 5; animation: flashSweep .75s ease-out 1; }
+            @keyframes flashSweep {
+                0% { filter: brightness(1); transform: scale(1); }
+                30% { filter: brightness(1.8); transform: scale(1.12); }
+                100% { filter: brightness(1); transform: scale(1); }
+            }
+            @media (prefers-reduced-motion: reduce) { .grid-cell.chain-flash { animation: none; } }
             @keyframes chainPulse {
                 0%, 100% { background: linear-gradient(180deg,#fffbe0 0%,#ffe140 45%,#ffb000 100%); box-shadow: 0 0 0 1px #fff, 0 0 6px 2px rgba(255,205,40,.85); transform: scale(1); }
                 50% { background: linear-gradient(180deg,#ffffff 0%,#fff59d 40%,#ffd000 100%); box-shadow: 0 0 0 2px #fff, 0 0 18px 6px rgba(255,215,0,1); transform: scale(1.06); }
@@ -1343,13 +1351,8 @@
                 position: relative;
                 display: block;
                 width: 100%;
-                margin-top: 7px;
+                margin-top: 6px;
                 height: calc(var(--cell) + 4px);
-                border-radius: 9px;
-                background:
-                    repeating-linear-gradient(90deg, rgba(96, 165, 250, .06) 0 1px, transparent 1px 28px),
-                    linear-gradient(180deg, #20263a 0%, #171b28 100%);
-                box-shadow: inset 0 0 0 1px rgba(96, 165, 250, .22), inset 0 2px 10px rgba(0, 0, 0, .55);
             }
             .srb {
                 position: absolute;
@@ -1361,59 +1364,28 @@
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                gap: 0;
-                border: 1px solid #4b4d57;
+                gap: 1px;
+                border: 1px solid rgba(255, 200, 61, .45);
                 border-radius: 4px;
-                background: linear-gradient(180deg, #33353d 0%, #26282f 100%);
-                box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+                background: linear-gradient(180deg, #0f5b76 0%, #0a3f57 100%);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
                 font-family: var(--font-display);
                 overflow: hidden;
                 user-select: none;
             }
-            .srb-n { color: #7f8ba6; font-size: 7px; font-weight: 700; line-height: 1; letter-spacing: 0; }
-            /* số trong rotor: to vừa, nét ĐẬM tương ứng với cỡ chữ */
-            .srb-v { font-size: 18px; font-weight: 800; line-height: .9; letter-spacing: 0; color: #dfe6f2; }
-            /* dải rotor: nền riêng, tách hẳn khỏi bảng */
-            .sc-row[data-wrap="1"] { }
-            .rot-cfg { margin-top: 8px; border-top: 1px dashed #3a3550; padding-top: 6px; }
-            .rot-cfg > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; list-style: none;
-                color: #cbd5e1; font-size: 11px; font-weight: 800; letter-spacing: .04em; }
-            .rot-cfg > summary::-webkit-details-marker { display: none; }
-            .rot-cfg > summary small { color: #8b93a7; font-weight: 700; }
-            .rot-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 7px; }
-            @media (min-width: 560px) { .rot-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
-            .rot-cell { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-            .rot-cell span { color: #8b93a7; font-size: 9px; font-weight: 800; letter-spacing: .04em; }
-            .rot-cell input { width: 100%; min-width: 0; padding: 6px 7px; border-radius: 6px; border: 1px solid #454b60;
-                background: #171a26; color: #e8edf7; font-size: 12px; font-weight: 800; letter-spacing: .06em; }
-            .rot-cell input:focus { outline: none; border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96, 165, 250, .3); }
-            .rot-cell input[data-filled="1"] { border-color: #2563eb; background: #14213a; }
-            .rot-cell small { color: #7f8ba6; font-size: 9px; font-weight: 700; letter-spacing: .02em; line-height: 1.3;
-                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            .rot-cell small:not(:empty) { color: #93c5fd; }
-            .rot-sync-line { display: flex; align-items: stretch; gap: 6px; margin-top: 6px; }
-            .rot-sync-line .rot-sync { flex: 1 1 auto; min-width: 0; margin-top: 0; }
-            .rot-fb-load { flex: 0 0 auto; padding: 5px 9px; border-radius: 6px; border: 1px solid #3b5bdb; background: #17203a;
-                color: #bfdbfe; font-size: 10px; font-weight: 800; letter-spacing: .02em; cursor: pointer; }
-            .rot-fb-load:active { transform: translateY(1px); }
-            .rot-fb-load[data-kind="err"] { border-color: #b91c1c; color: #fecaca; }
-            .rot-sync[data-kind="err"] { background: rgba(185, 28, 28, .14); color: #fca5a5; box-shadow: inset 0 0 0 1px rgba(185, 28, 28, .45); }
-            .rot-sync { margin-top: 6px; padding: 5px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: .02em;
-                background: #1a1e2b; color: #94a3b8; box-shadow: inset 0 0 0 1px #343a4c; }
-            .rot-sync[data-kind="ok"] { background: rgba(16, 185, 129, .12); color: #6ee7b7; box-shadow: inset 0 0 0 1px rgba(16, 185, 129, .45); }
-            .rot-sync[data-kind="wait"] { background: rgba(250, 204, 21, .10); color: #fde68a; box-shadow: inset 0 0 0 1px rgba(250, 204, 21, .35); }
-            .rot-note { margin: 7px 0 0; color: #8b93a7; font-size: 10px; font-weight: 600; line-height: 1.45; }
-            .rot-note b { color: #dbe3f2; }
-            .srb[data-kind="B"] .srb-v { color: #fbbf24; }
-            .srb[data-kind="S"] .srb-v { color: #a5b4fc; }
-            /* (cũ) kỳ tận cùng 1 / 3 / 8 — không còn dùng với rotor */
+            .srb-n { color: #d9a83c; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: .02em; }
+            .srb-v { font-size: 15px; font-weight: 800; line-height: .95; letter-spacing: .02em; color: #ffc83d; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+            .srb[data-kind="B"] .srb-v { color: #ffc83d; }
+            .srb[data-kind="S"] .srb-v { color: #ffc83d; }
+            /* Dãy tín hiệu: chung 1 kiểu dim (nền teal đậm + chữ vàng gold), không phát sáng — chỉ ô đang cược mới vàng nhấp nháy */
             .srb[data-sub="1"] {
-                border-color: #bfdbfe;
-                background: linear-gradient(180deg, #60a5fa 0%, #2563eb 55%, #1d4ed8 100%);
-                box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 0 8px 2px rgba(59, 130, 246, .6);
+                border-color: rgba(255, 200, 61, .3);
+                background: linear-gradient(180deg, #0d4f68 0%, #083850 100%);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
             }
-            .srb[data-sub="1"] .srb-n { color: #ffffff; }
-            .srb[data-sub="1"] .srb-v { color: #eaf2ff; }
+            .srb[data-sub="1"] .srb-n { color: #d9a83c; }
+            .srb[data-sub="1"] .srb-v { color: #f2c14e; }
+            .srb:not([data-kind]) .srb-v { color: #7d6f4d; text-shadow: none; }
             /* ô ĐANG ĐÁNH: nền vàng tươi + nhấp nháy đập vào mắt (giữ nguyên vị trí) */
             .srb[data-now] {
                 background: linear-gradient(180deg, #ffe98a 0%, #facc15 48%, #d97706 100%);
@@ -1428,8 +1400,26 @@
                 50% { background: linear-gradient(180deg, #fffbe0 0%, #fff176 45%, #ffc107 100%); box-shadow: 0 0 0 2px #ffffff, 0 0 22px 9px rgba(255, 213, 0, .95); filter: brightness(1.18); }
             }
             @media (prefers-reduced-motion: reduce) { .srb[data-now] { animation: none; box-shadow: 0 0 0 2px #ffffff, 0 0 16px 6px rgba(250, 204, 21, .9); } }
-            @media (max-width: 380px) { .srb-n { font-size: 6.5px; } .srb-v { font-size: 17px; } }
-            @media (max-width: 340px) { .srb-n { font-size: 6px; } .srb-v { font-size: 16px; } }
+            @media (max-width: 380px) { .srb-n { font-size: 7.5px; } .srb-v { font-size: 13.5px; } }
+            @media (max-width: 340px) { .srb-n { font-size: 7px; } .srb-v { font-size: 12px; } }
+            .srb { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+            .srb:active { filter: brightness(1.25); }
+            .srb[data-edit="1"] { outline: 2px solid #fde047; outline-offset: -2px; }
+            /* Khung sửa x cho từng ô tín hiệu */
+            .sc-edit { margin-top: 8px; padding: 9px 10px 10px; border-radius: 8px; background: rgba(15, 23, 42, .82); box-shadow: inset 0 0 0 1px rgba(253, 230, 138, .4); }
+            .sc-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+            .sc-edit-head span { color: #f8fafc; font-size: 12px; font-weight: 800; letter-spacing: .03em; }
+            .sc-edit-x { flex: 0 0 auto; width: 26px; height: 26px; border: 1px solid rgba(148, 163, 184, .45); border-radius: 6px; background: rgba(30, 41, 59, .9); color: #e2e8f0; font-size: 12px; font-weight: 800; cursor: pointer; }
+            .sc-edit-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+            .sc-edit-lab { color: #fde68a; font-size: 14px; font-weight: 800; white-space: nowrap; }
+            .sc-edit-input { width: 64px; padding: 6px 8px; border: 1px solid #fde68a; border-radius: 6px; background: rgba(2, 6, 23, .9); color: #fef3c7; font-size: 15px; font-weight: 800; text-align: center; outline: none; }
+            .sc-edit-input:focus { box-shadow: 0 0 0 2px rgba(253, 230, 138, .25); }
+            .sc-edit-save { flex: 1 1 auto; padding: 7px 10px; border: none; border-radius: 6px; background: linear-gradient(180deg, #fde047, #f59e0b); color: #451a03; font-size: 13px; font-weight: 800; cursor: pointer; }
+            .sc-edit-save:active { filter: brightness(1.1); }
+            .sc-edit-note { margin-top: 7px; min-height: 15px; font-size: 11px; font-weight: 700; line-height: 1.45; color: #94a3b8; }
+            .sc-edit-note[data-kind="ok"] { color: #a7f3d0; }
+            .sc-edit-note[data-kind="err"] { color: #fca5a5; }
+            .sc-edit-reset { margin-top: 7px; width: 100%; padding: 6px 8px; border: 1px dashed rgba(148, 163, 184, .45); border-radius: 6px; background: transparent; color: #cbd5e1; font-size: 12px; font-weight: 800; cursor: pointer; }
 
             /* ===== Khung tín hiệu cược ===== */
             .scan-panel {
@@ -1620,22 +1610,23 @@
         <main class="board-panel" aria-label="Bảng kết quả 100 kỳ">
             <div id="gridContainer" class="grid-table" role="grid" aria-label="Bảng 10 dòng và 10 cột"></div>
 
-            <section class="scan-panel" id="scPanel" data-state="empty" aria-label="Dãy 10 rotor tín hiệu">
+            <section class="scan-panel" id="scPanel" data-state="empty" aria-label="Dãy 10 ô tín hiệu">
                 <div class="sc-head">
-                    <span class="sc-title">Dãy tín hiệu · 10 rotor</span>
-                    <span class="sc-hint" id="scHint" role="status" aria-live="polite" title="10 rotor. Mỗi ô hiện số đang hiện trên rotor đó; số nhỏ phía trên là số thứ tự rotor. Rotor đang đánh phát sáng vàng. THẮNG thì cả 10 rotor mới quay sang số kế tiếp; THUA thì đứng yên.">CHƯA CHẠY</span>
+                    <span class="sc-title">Dãy tín hiệu</span>
+                    <span class="sc-hint" id="scHint" role="status" aria-live="polite" title="Mỗi ô là 1 kỳ sắp đánh, dóng thẳng cột với hàng 10 của bảng. Mỗi ô tra ô STT−x (chạm vào ô để sửa x, mặc định 40) rồi đánh THUẬN đúng như ô đó: ô ra 0-4 → NHỎ · 5-9 → LỚN. Ô vàng nhấp nháy: đang cược ô đó.">CHƯA CHẠY</span>
                 </div>
-                <span class="sc-sub-line" id="scSub">10 rotor · chưa chạy</span>
+                <span class="sc-sub-line" id="scSub">10 kỳ sắp đánh</span>
                 <div class="sc-row" id="scLast" aria-hidden="false"></div>
-                <details class="rot-cfg" id="scCfg">
-                    <summary><span>⚙️ Dãy số 10 rotor</span><small id="scCfgNote">chưa nhập</small></summary>
-                    <div class="rot-sync-line">
-                        <div class="rot-sync" id="scSync" data-kind="off">☁ chưa kết nối Firebase — dãy số chỉ lưu trên máy này</div>
-                        <button type="button" class="rot-fb-load" id="scFbLoad" title="Tải dãy số đang lưu trên Firebase về máy này">⬇ Tải lại</button>
+                <div class="sc-edit" id="scEdit" hidden>
+                    <div class="sc-edit-head"><span id="scEditTitle">Ô 1</span><button type="button" class="sc-edit-x" id="scEditClose" aria-label="Đóng">✕</button></div>
+                    <div class="sc-edit-row">
+                        <span class="sc-edit-lab">STT −</span>
+                        <input class="sc-edit-input" id="scEditInput" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="2" placeholder="40">
+                        <button type="button" class="sc-edit-save" id="scEditSave">Lưu &amp; ô tiếp</button>
                     </div>
-                    <div class="rot-grid" id="scCfgGrid"></div>
-                    <p class="rot-note">Mỗi ô là 1 rotor: <b>gõ liền các chữ số</b> là được — vd gõ <b>13804</b> → rotor có 5 số <b>1 · 3 · 8 · 0 · 4</b> (dấu cách / dấu phẩy cũng không sao). Số phần tử tuỳ ý, dưới mỗi ô có dòng nhỏ xác nhận đã tách ra bao nhiêu số. Rotor đang đánh lấy số ở ô 1: <b>0–4 → NHỎ</b>, <b>5–9 → LỚN</b>. <b>Thắng</b> → mọi rotor quay sang số kế tiếp; <b>thua</b> → đứng yên.</p>
-                </details>
+                    <div class="sc-edit-note" id="scEditNote"></div>
+                    <button type="button" class="sc-edit-reset" id="scEditReset">↺ Tất cả về 40</button>
+                </div>
             </section>
 
             <section class="real-panel" id="rbPanel" data-on="false" data-open="true" aria-label="Cược thật tự động">
@@ -1644,7 +1635,7 @@
                     <span class="rb-count" id="rbSum">ĐANG TẮT</span>
                 </div>
                 <div class="rb-card">
-                    <div class="rb-title"><span>🎯 Cược thật tự động</span><small id="rbState">Đánh theo rotor tín hiệu</small></div>
+                    <div class="rb-title"><span>🎯 Cược thật tự động</span><small id="rbState">Đánh theo STT của kỳ</small></div>
                     <div class="rb-issue-row">
                         <span class="rb-issue" id="rbIssue">Kỳ: --</span>
                         <span class="rb-clock" id="rbClock" data-kind="syncing">⏳ Chờ kỳ</span>
@@ -1655,7 +1646,7 @@
                     </div>
                     <div class="rb-chips" id="rbChips" role="group" aria-label="Các mức cược"></div>
                     <div class="rb-msg" id="rbMsg" role="status" aria-live="polite"></div>
-                    <button type="button" class="rb-run" id="rbRun" aria-pressed="false">▶ CHẠY TỰ ĐỘNG</button>
+                    <button type="button" class="rb-run" id="rbRun" aria-pressed="false">▶ BẬT TỰ ĐỘNG CƯỢC THẬT</button>
                 </div>
                 <details class="rb-fold" id="rbBody" open>
                     <summary><span>✏️ Mức cược</span><small id="rbFoldNote">Chưa cài</small></summary>
@@ -1666,8 +1657,7 @@
                         <div class="rb-actions">
                             <button type="button" class="rb-save" id="rbSave">Lưu &amp; thu gọn</button>
                         </div>
-                        <p class="rb-rule">Bấm CHẠY là đánh theo <b>rotor</b>: ô cần đánh là <b>rotor 1</b> — số đang hiện <b>0–4 → cược NHỎ</b>, <b>5–9 → cược LỚN</b>. Rotor <b>chỉ quay khi THẮNG</b>: thắng → cả 10 rotor nhảy sang số kế tiếp trong dãy bạn đã nhập và quay về rotor 1. <b>Thua → rotor đứng yên</b>, đánh tiếp đúng rotor đang dùng (số vẫn y nguyên). Tiền cược theo thang: thua lên mức kế, thắng về mức 1.</p>
-
+                        <p class="rb-rule">Bấm BẬT là đánh theo ô STT<b>−x</b> của từng kỳ (mặc định x = 40; chạm vào từng ô trong Dãy tín hiệu để sửa x): ô đó ra 0-4 → cược <b>NHỎ</b> · 5-9 → cược <b>LỚN</b> (<b>luôn đánh thuận</b> — không đảo ngược dù thắng hay thua). Tiền cược theo thang: thua lên mức kế, thắng về mức 1.</p>
                         <div class="rb-tokeninfo" id="rbToken">Chưa có token</div>
                     </div>
                 </details>
@@ -1752,6 +1742,19 @@
             <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="tokenDialogTitle">
                 <h2 id="tokenDialogTitle">Kết nối API · token game</h2>
                 <p>Dán access token hoặc toàn bộ JSON gồm token, refreshToken và tokenHeader. Token dùng để đọc kết quả; khi bạn bật CƯỢC THẬT, trang dùng chính token này để đặt cược bằng tiền thật trên tài khoản đó.</p>
+                <p style="margin-top:6px; font-size:12px;"><b>Không cần đăng xuất game nữa:</b> nếu cụm dán vào có <b>refreshToken</b>, trang tự gia hạn token liền tay (còn ~10 phút là làm mới) → token không bao giờ hết. Chỉ cần lấy đủ cụm 1 lần đầu bằng nút bên dưới.</p>
+                <div style="margin:8px 0 10px; display:flex; flex-wrap:wrap; gap:6px;">
+                    <button type="button" class="dialog-btn" id="btnCopySnippet" title="Sao chép 1 dòng, dán vào Console (F12) của trang game để tạo nút lấy token">📎 Lấy mã lấy token</button>
+                    <button type="button" class="dialog-btn" id="btnRenewNow" title="Gia hạn token ngay lập tức">↻ Gia hạn ngay</button>
+                </div>
+                <div id="tokenRenewBox" style="margin:8px 0 4px; padding:8px; background:#16213a; border:1px solid #3b4a63; border-radius:6px; display:none;">
+                    <div style="font-size:11.5px; color:#94a3b8; margin-bottom:5px;">Đã có token nhưng thiếu <b>refreshToken</b>? Dán riêng refreshToken vào đây — token đang chạy được giữ nguyên, không phải dán lại access token.</div>
+                    <div style="display:flex; gap:6px;">
+                        <input id="refreshOnlyInput" type="text" autocomplete="off" spellcheck="false" placeholder="refreshToken (chuỗi eyJ… hoặc cả cụm đều được)" style="flex:1; min-width:0; background:#0f172a; color:#e2e8f0; border:1px solid #374151; border-radius:4px; padding:6px; font-family:monospace; font-size:11.5px;">
+                        <button type="button" class="dialog-btn" id="btnSaveRefreshOnly" style="white-space:nowrap;">Lưu refreshToken</button>
+                    </div>
+                </div>
+                <div id="tokenRenewNote" role="status" aria-live="polite" style="font-size:12px; color:#93c5fd; min-height:16px; margin-bottom:6px;"></div>
                 <textarea id="tokenInput" autocomplete="off" spellcheck="false" placeholder="eyJ... hoặc {&quot;token&quot;:&quot;...&quot;,&quot;refreshToken&quot;:&quot;...&quot;}"></textarea>
 
                 <div id="tokenSavedFrame" style="margin:10px 0; padding:8px; background:#16213a; border:1px solid #374151; border-radius:6px;">
@@ -1797,6 +1800,8 @@
         try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
     }
 })();
+// Địa chỉ trang này (bỏ phần #…) — để nút «Lấy mã lấy token» mở đúng trang đang dùng.
+window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } catch (e) { return ''; } })();
 
                 const FB_COLLECTION = 'vn168';
                 const FB_DOC = 'data';
@@ -1840,8 +1845,13 @@
                     try { loadToken(); } catch (e) {}
                     try { document.getElementById('tokenDisplay').value = text; } catch (e) {}
                     rbTokenChanged();
-                    rbFlash('Đã lưu token' + (bundle.refreshToken ? ' + refresh token' : '') + '.' +
-                        (bundle.token ? ' Còn hạn: ' + rbTokenLeft(Date.now()).text : ''), 'ok', 8000);
+                    try { updateRefreshOnlyBox(); } catch (e) {}
+                    if (bundle.refreshToken) {
+                        rbFlash('Đã lưu token + refresh token · token sẽ tự gia hạn, không cần đăng nhập lại. Còn hạn: ' + rbTokenLeft(Date.now()).text, 'ok', 9000);
+                    } else {
+                        rbFlash('⚠ Đã lưu access token nhưng KHÔNG có refreshToken — hết hạn sẽ phải dán lại. '
+                            + 'Dán refreshToken vào ô «Lưu refreshToken» trong hộp Token (hoặc bấm «📎 Lấy mã lấy token» chạy 1 lần trên trang game). Còn hạn: ' + rbTokenLeft(Date.now()).text, 'warn', 14000);
+                    }
                     tokenInput.value = '';
                     closeTokenDialog();
                     if (typeof refreshResults === 'function') setTimeout(function () { refreshResults(false, false); }, 300);
@@ -1873,15 +1883,11 @@
                 let applyingRemote = false;
                 let remoteUnsub = null;
                 let refreshTokenPromise = null;
+                let onAuthRecovered = null;           // hàm chạy sau khi tự gia hạn thành công (gắn ở phần CƯỢC THẬT)
+                let sessKickAt = 0;                   // giãn cách gọi /RefreshToken từ cầu cứu 401 (tránh spam)
                 let apiFailStreak = 0;
                 let apiCircuitUntil = 0;
                 let fbDB = null;
-                let rotorFbAt = 0;                      // mốc thời gian của bản rotor trên máy (ms)
-                let rotorFbApply = false;               // đang nhận rotor từ Firebase (không ghi ngược lại)
-                let rotorFbReady = false;               // đã đọc xong bản trên mây lần đầu chưa
-                let rotorFbPending = false;             // có thay đổi chờ ghi (vì chưa đọc xong)
-                let rotorFbCloud = null;                // bản rotor đang có trên mây (để gộp, không xoá dãy)
-                let rotorFbErr = '';                    // lỗi đọc/ghi gần nhất (hiện ra cho biết)
             
                 try { localTokenStoredAt = Number(localStorage.getItem(LS_TOKEN_AT) || 0) || 0; } catch (e) {}
             
@@ -1954,19 +1960,80 @@
                     box.title = full
                         ? ('ID ' + full + (ymd ? ' · ngày ' + ymdPretty(ymd) : '') + ' · STT ' + String(full).slice(-3) + ' · số ' + cell.value)
                         : ('STT ' + (cell.stt || '') + ' · số ' + cell.value);
+                    cell.baseTitle = box.title;
                     box.setAttribute('aria-label', box.title);
                 }
             
                 // ===== TÔ MÀU BẢNG =====
-                //  · Luật STT−40 đã bỏ: bảng không còn tô ô đối chiếu.
-                //  · Ô đã dùng trong lượt chạy này: thắng → xanh · thua → đỏ · đang chờ kết quả → viền vàng.
-                //  (Đã bỏ hẳn cách tô NNN / LLL ở hai đầu và NN / LL ở giữa.)
-                function applyRunHighlight() {
-                    // Bảng KHÔNG còn tô ô STT−40 (luật STT đã bỏ). Chỉ giữ chỗ cho các dấu W/L nếu có.
+                //  · Loạt 10 ô đã chốt: mỗi ô = 1 kỳ sắp đánh + ô nguồn STT−x của nó → nền XANH.
+                //    Màu dính theo STT của ô nguồn nên khi bảng trôi, các ô xanh trôi theo (317 vẫn xanh ở 317).
+                //  · Ô đang dùng cho kỳ sắp đánh (khi đang BẬT) → nhấp nháy vàng.
+                //  · Ô đã đánh trong loạt này: thắng → xanh lá · thua → đỏ · đang chờ kết quả → viền vàng.
+                //  Hết ô 10 → sang loạt mới: 10 ô nguồn mới được chốt và tô lại.
+                let flashLastNewest = '';
+                function applyRunHighlight(opts) {
+                    if (!rb.chain || typeof rb.chain !== 'object') rb.chain = rbChainBlank();
+                    const st = rb.chain;
+                    let nextIdx = -1;
+                    const flashOrder = [];                // ô đối chiếu theo thứ tự ô 1→10 (để chớp lướt)
+                    const refSet = new Set();               // ô nguồn ĐÃ CHỐT của loạt → tô xanh
+                    const refInfo = {};                     // idx -> ['ô 2 (−35)', ...] để ghi chú thích
+                    // 10 ô xanh = 10 ô nguồn đã chốt của loạt đang chạy. Ô chốt theo STT nên khi bảng trôi,
+                    // màu đi theo đúng ô đó (317 vẫn xanh ở 317), không đứng im một chỗ.
+                    const planNow = rbChainPlan();
+                    const batchNow = (planNow && st.batch && rbChainBatchOk(st.batch)) ? st.batch : null;
+                    const listNow = batchNow ? batchNow.cells : [];
+                    for (let j = 0; j < listNow.length; j++) {
+                        const c = listNow[j];
+                        if (!c || !c.i || !c.ref) continue;
+                        const ref = rbCellOfN(Number(c.ref));
+                        if (!ref) continue;
+                        const idx = cells.indexOf(ref);
+                        refSet.add(idx);
+                        flashOrder.push(ref);
+                        (refInfo[idx] = refInfo[idx] || []).push('ô ' + (j + 1) + ' (−' + c.off + ')');
+                    }
+                    if (st.on && planNow && planNow.cell && planNow.cell.ref) {
+                        // Ô đang dùng = ô nguồn của kỳ sắp đánh (ô của loạt đang chạy)
+                        const src = rbCellOfN(Number(planNow.cell.ref));
+                        if (src) nextIdx = cells.indexOf(src);
+                    }
+                    // Đổi ô đang dùng (sang kỳ mới / sang loạt mới) → chớp lướt cho thấy vừa chuyển ô.
+                    const planKey = planNow ? ((planNow.batch && planNow.batch.base ? planNow.batch.base : '') + '#' + planNow.ri) : '';
+                    const curChanged = !!(planKey && planKey !== flashLastNewest);
+                    if (planKey) flashLastNewest = planKey;
                     for (let k = 0; k < TOTAL; k++) {
-                        const list = cells[k].valEl.parentElement.classList;
-                        list.remove('chain-next');
-                        list.remove('chain-ref');
+                        const box = cells[k].valEl.parentElement;
+                        const list = box.classList;
+                        const sttKey = String(Number(String(cells[k].sttFull || '').slice(-3)) || '');
+                        const at = (st.marks && sttKey && st.marks[sttKey]) ? st.marks[sttKey] : null;
+                        const mark = at ? at.r : '';
+                        list.toggle('chain-next', k === nextIdx);
+                        list.toggle('chain-ref', k !== nextIdx && refSet.has(k));
+                        list.toggle('chain-win', mark === 'W');
+                        list.toggle('chain-lose', mark === 'L');
+                        list.toggle('chain-wait', mark === '?');
+                        const info = refInfo[k];
+                        if (info && info.length) {
+                            box.title = (cells[k].baseTitle || box.title) + ' · tra cho ' + info.join(' + ');
+                            box.setAttribute('aria-label', box.title);
+                        }
+                    }
+                    // Chớp lướt: sang ô kế trong loạt / sang loạt mới thì chạy thứ tự ô 1→10 · đổi x thì chớp cùng lúc.
+                    const wantFlash = (opts && opts.flash) || curChanged;
+                    if (wantFlash && flashOrder.length) {
+                        const cascade = !(opts && opts.flash);
+                        flashOrder.forEach(function (cell, i) {
+                            setTimeout(function () {
+                                try {
+                                    const box = cell.valEl.parentElement;
+                                    box.classList.remove('chain-flash');
+                                    void box.offsetWidth;
+                                    box.classList.add('chain-flash');
+                                    setTimeout(function () { try { box.classList.remove('chain-flash'); } catch (e2) {} }, 750);
+                                } catch (e) {}
+                            }, cascade ? (i * 55) : 0);
+                        });
                     }
                 }
 
@@ -2103,6 +2170,20 @@
                         const hm = raw.match(/token[_ ]?header["']?\s*[:=]\s*["']?([^"'\r\n,}]+)/i);
                         if (hm) out.tokenHeader = hm[1];
                     }
+                    // Dán kiểu chép từ tab Network/Console: header 1 dòng + dòng "token:" + dòng
+                    // "refreshToken:" (không có ngoặc JSON). Lấy theo nhãn, chạy cả khi không phải JSON.
+                    if (!out.token) {
+                        const tm = raw.match(/(?:^|[\s"'{(,])token\s*[:=]\s*([A-Za-z0-9._\-+/=]{20,})/i);
+                        if (tm && !/^refresh/i.test(tm[1])) out.token = cleanAuthSecret(tm[1]);
+                    }
+                    if (!out.refreshToken) {
+                        const rm2 = raw.match(/refresh_?token\s*[:=]\s*([A-Za-z0-9._\-+/=]{20,})/i);
+                        if (rm2) out.refreshToken = cleanAuthSecret(rm2[1]);
+                    }
+                    if (!out.tokenHeader) {
+                        const am = raw.match(/authorization\s*[:=]\s*["']?([A-Za-z][A-Za-z0-9._\-]{2,20})[\s"']+[A-Za-z0-9._\-]{20,}/i);
+                        if (am) out.tokenHeader = am[1];
+                    }
                     out.refreshToken = cleanAuthSecret(out.refreshToken);
                     out.tokenHeader = normalizeTokenHeader(out.tokenHeader);
                     return out;
@@ -2215,94 +2296,6 @@
                     } catch (e) {}
                 }
             
-                // ----- Đồng bộ 10 rotor qua Firebase (cùng document vn168/data) -----
-                // Lưu: danh sách dãy số + nhịp quay + rotor đang đánh + dấu W/L, kèm mốc thời gian.
-                function rotorFbPayload() {
-                    const st = rb.rotor || rotorBlank();
-                    return {
-                        list: rotorNormalizeList(st.list),
-                        pos: Number(st.pos) || 0,
-                        col: Number(st.col) || 0,
-                        mark: (st.mark === 'W' || st.mark === 'L') ? st.mark : '',
-                        on: st.on === true,
-                        at: Date.now()
-                    };
-                }
-
-                // Có ít nhất 1 rotor có số?
-                function rotorHasAny(list) {
-                    const arr = Array.isArray(list) ? list : [];
-                    for (let k = 0; k < arr.length; k++) if (rotorParse(arr[k]).length) return true;
-                    return false;
-                }
-
-                // Ghi rotor lên Firebase (gộp vào document đang dùng, không đụng bảng / token).
-                //  · Chưa đọc xong bản trên mây → hoãn, không ghi (tránh đè dãy của máy khác).
-                //  · Không bao giờ ghi toàn ô trống (sẽ xoá dãy trên mây).
-                //  · Ô nào máy này để trống mà trên mây có số → giữ số của mây.
-                let rotorFbTimer = 0;
-                function rotorFbWrite(delay) {
-                    if (!fbDB || rotorFbApply) return;
-                    if (!rotorFbReady) { rotorFbPending = true; return; }
-                    if (rotorFbTimer) clearTimeout(rotorFbTimer);
-                    rotorFbTimer = setTimeout(function () {
-                        rotorFbTimer = 0;
-                        if (!fbDB || rotorFbApply) return;
-                        const local = rotorNormalizeList((rb.rotor || rotorBlank()).list);
-                        const cloud = (rotorFbCloud && Array.isArray(rotorFbCloud.list)) ? rotorFbCloud.list : [];
-                        const merged = local.map(function (t, k) {
-                            if (rotorParse(t).length) return t;
-                            const c = String(cloud[k] == null ? '' : cloud[k]);
-                            return rotorParse(c).length ? c : '';
-                        });
-                        if (!rotorHasAny(merged)) return;                    // không có gì để lưu → bỏ qua
-                        const data = rotorFbPayload();
-                        data.list = merged;
-                        rotorFbAt = data.at;
-                        rotorFbCloud = { list: merged, pos: data.pos, col: data.col, mark: data.mark, on: data.on, at: data.at };
-                        try { rotorCfgSyncNote(); } catch (e) {}
-                        try {
-                            fbDB.collection(FB_COLLECTION).doc(FB_DOC).set({ rotor: data }, { merge: true })
-                                .then(function () { rotorFbErr = ''; try { rotorCfgSyncNote(); } catch (e) {} })
-                                .catch(function (e) { rotorFbErr = String((e && e.message) || e); try { rotorCfgSyncNote(); } catch (e2) {} });
-                        } catch (e) {
-                            rotorFbErr = String((e && e.message) || e);
-                            try { rotorCfgSyncNote(); } catch (e2) {}
-                        }
-                    }, Math.max(0, Number(delay) || 0));
-                }
-
-                // Nhận rotor từ Firebase: chỉ lấy khi bản trên mây MỚI HƠN bản đang có trong máy.
-                function rotorFbApplyData(remote, force) {
-                    if (!remote || typeof remote !== 'object') return false;
-                    const at = Number(remote.at) || 0;
-                    if (!force && (!at || at <= rotorFbAt)) return false;
-                    const list = rotorNormalizeList(remote.list);
-                    if (!rotorHasAny(list)) return false;                     // bản trên mây rỗng → không xoá dãy đang có
-                    rotorFbCloud = { list: list, pos: Number(remote.pos) || 0, col: Number(remote.col) || 0,
-                                     mark: remote.mark || '', on: remote.on === true, at: at };
-                    rotorFbApply = true;
-                    try {
-                        if (!rb.rotor) rb.rotor = rotorBlank();
-                        rb.rotor.list = list;
-                        rb.rotor.pos = Math.max(0, Math.round(Number(remote.pos) || 0));
-                        rb.rotor.col = Math.min(Math.max(Math.round(Number(remote.col) || 0), 0), list.length - 1);
-                        rb.rotor.mark = (remote.mark === 'W' || remote.mark === 'L') ? remote.mark : '';
-                        if (rb.rotor.on && remote.on !== true) rb.rotor.on = false;
-                        rotorFbAt = at;
-                        try { rbSave(); } catch (e) {}
-                        try { localStorage.setItem(LS_ROTOR, JSON.stringify(list)); } catch (e) {}
-                        try { rotorCfgRender(); } catch (e) {}
-                        try { rotorCfgSyncNote(); } catch (e) {}
-                        scSeqKey = '';
-                        try { scRender(); } catch (e) {}
-                        try { rbRender(); } catch (e) {}
-                    } finally {
-                        rotorFbApply = false;
-                    }
-                    return true;
-                }
-
                 async function writeToFirebase() {
                     if (!fbDB || applyingRemote) return;
                     try {
@@ -2352,6 +2345,21 @@
                             }
                         }
             
+                        // Đồng bộ x từ thiết bị khác: chỉ nhận khi mới hơn giờ sửa trên máy này.
+                        if (data && Array.isArray(data.scOffsets) && data.scOffsets.length === 10) {
+                            const remoteAt = Number(data.scOffsetsUpdatedAt || 0) || 0;
+                            const norm = [];
+                            for (let k = 0; k < 10; k++) norm.push(scNormOff(data.scOffsets[k]));
+                            const same = scOffsets && norm.every(function (v, k) { return v === scOffsets[k]; });
+                            if (!same && (!scOffsetsAt || !remoteAt || remoteAt > scOffsetsAt)) {
+                                scOffsets = norm;
+                                scOffsetsAt = remoteAt || Date.now();
+                                scSaveOffsets(false);
+                                scOffsetsChanged();
+                                setStatus('Đã đồng bộ x từ thiết bị khác.', 'ok');
+                            }
+                        }
+
                         const remoteBoard = data.board;
                         // Đang cược thật (hoặc còn lệnh thật chờ chấm): bảng chỉ lấy từ API game bằng token của máy này,
                         // không nhận bảng máy khác ghi lên Firebase — tránh đặt tiền / chấm thắng thua theo dữ liệu không kiểm được.
@@ -2387,34 +2395,11 @@
                     }
                 }
             
-                // Đọc rotor từ Firebase ngay khi mở trang (sau đó onSnapshot tự lo phần cập nhật tiếp).
-                async function rotorFbLoad(force) {
-                    if (!fbDB) { rotorFbReady = true; return false; }
-                    let ok = false;
-                    try {
-                        const snap = await fbDB.collection(FB_COLLECTION).doc(FB_DOC).get();
-                        const data = snap && snap.exists ? (snap.data() || {}) : {};
-                        if (data.rotor) ok = rotorFbApplyData(data.rotor, force);
-                        rotorFbErr = '';
-                    } catch (e) {
-                        rotorFbErr = String((e && e.message) || e);
-                    }
-                    rotorFbReady = true;
-                    // Mây chưa có dãy (hoặc bản cũ hơn) mà máy này có sẵn → đẩy lên
-                    if (!ok && rotorHasAny((rb.rotor || rotorBlank()).list)) { try { rotorFbWrite(0); } catch (e) {} }
-                    if (rotorFbPending) { rotorFbPending = false; try { rotorFbWrite(0); } catch (e) {} }
-                    try { rotorCfgSyncNote(); } catch (e) {}
-                    return ok;
-                }
-
                 function startRealtimeSync() {
                     if (!fbDB || remoteUnsub) return;
                     try {
                         remoteUnsub = fbDB.collection(FB_COLLECTION).doc(FB_DOC).onSnapshot(function (snapshot) {
-                            if (!snapshot.exists) return;
-                            const data = snapshot.data() || {};
-                            applyRemoteData(data);
-                            try { rotorFbApplyData(data.rotor, false); } catch (e) {}
+                            if (snapshot.exists) applyRemoteData(snapshot.data());
                         }, function () {});
                     } catch (e) {}
                 }
@@ -2548,13 +2533,20 @@
                         throw apiError('net', 'Không kết nối được API: ' + (lastNetworkError && lastNetworkError.message ? lastNetworkError.message : 'không có phản hồi'));
                     }
                     if (!response.ok) {
-                        if (response.status === 401 && !isRefreshCall && !opts.skipRefresh && !opts.retried && getRefreshToken()) {
-                            try {
-                                const fresh = await refreshAccessToken();
-                                if (fresh) return apiPost(url, body, Object.assign({}, opts, { retried: true }));
-                            } catch (e) {}
+                        if (response.status === 401 && !isRefreshCall && !opts.skipRefresh && getRefreshToken()) {
+                            // 401: tự gia hạn rồi gửi lại (tối đa 1 lần); lần refresh dự phòng chỉ chạy
+                            // khi cách lần trước ≥ 12 giây để nhiều lời gọi song song không spam máy chủ.
+                            if (!opts.retried) {
+                                try {
+                                    const fresh = await refreshAccessToken();
+                                    if (fresh) return apiPost(url, body, Object.assign({}, opts, { retried: true }));
+                                } catch (e) {}
+                            } else if (Date.now() - sessKickAt > 12000 && !renewBusy) {
+                                sessKickAt = Date.now();
+                                try { await refreshAccessToken(); } catch (e) {}
+                            }
                         }
-                        if (response.status === 401 && !isRefreshCall) deadToken = accessToken;
+                        if (response.status === 401 && !isRefreshCall && !getRefreshToken()) deadToken = accessToken;
                         throw apiError(response.status === 401 ? 'auth' : 'http', 'HTTP ' + response.status + ' · ' + responseText.slice(0, 120).replace(/\s+/g, ' '), response.status);
                     }
                     if (!responseText) throw apiError('json', 'API trả về phản hồi rỗng.', response.status);
@@ -2566,9 +2558,22 @@
                     }
                     // Giờ máy chủ (nếu API có trả) để đồng hồ đếm ngược của khung dự đoán khớp với game.
                     if (responseSentAt) { try { pdNoteServerTime(parsedJson, responseSentAt, responseHeadAt); } catch (e) {} }
+                    // API game báo "hết phiên / token không hợp lệ" bằng mã trong JSON (không phải HTTP 401):
+                    // tự gia hạn 1 lần rồi gọi lại — khỏi phải đăng nhập lại.
+                    if (!isRefreshCall && !opts.skipRefresh && !opts.retried && getRefreshToken()
+                            && parsedJson && typeof parsedJson === 'object' && parsedJson.code !== undefined && parsedJson.code !== null
+                            && [10, 22, 401, 403].indexOf(Number(parsedJson.code)) >= 0) {
+                        try {
+                            const fresh = await refreshAccessToken();
+                            if (fresh) return apiPost(url, body, Object.assign({}, opts, { retried: true }));
+                        } catch (e) {}
+                    }
                     return parsedJson;
                 }
             
+                // Mã lỗi "hết phiên / token không hợp lệ" từ chính API game (thường 10, 22).
+                function looksLikeAuthCodeCode(code) { return code === 10 || code === 22; }
+
                 async function apiPostRetry(url, body, tries, gapMs) {
                     let lastError = null;
                     for (let i = 0; i < (tries || 3); i++) {
@@ -2666,6 +2671,14 @@
                     return body;
                 }
             
+                // Như buildSignedBody nhưng bỏ timestamp (nếu máy chủ tính chữ ký không gồm timestamp
+                // thì bản có timestamp bị trả "Wrong signature", còn bản này qua được).
+                function buildSignedBodyNoTs(params) {
+                    const body = buildSignedBody(params);
+                    delete body.timestamp;
+                    return body;
+                }
+
                 function buildResultBody(pageNo, pageSize) {
                     return buildSignedBody({
                         typeId: CFG.payload.typeId,
@@ -2674,22 +2687,118 @@
                     });
                 }
             
+                // =====================================================================
+                // Dò "Wrong signature": máy chủ có thể tính chữ ký theo cách khác trang đang dùng.
+                // Thử lần lượt các biến thể (chuỗi ký khác nhau / không timestamp / body rỗng),
+                // lần nào ra token thì ghi nhớ (localStorage) để mọi lần sau dùng đúng cách đó.
+                // =====================================================================
+                const RENEW_SCHEMES_KEY = 'vn168_renew_scheme_v2';
+                function getRenewSchemePreference() {
+                    try { const v = Number(localStorage.getItem(RENEW_SCHEMES_KEY)); return Number.isInteger(v) && v >= 0 && v <= 11 ? v : -1; } catch (e) { return -1; }
+                }
+                function setRenewSchemePreference(v) {
+                    try { if (v >= 0) localStorage.setItem(RENEW_SCHEMES_KEY, String(v)); } catch (e) {}
+                }
+                function buildRenewBody(scheme) {
+                    const lang = CFG.payload.language;
+                    const typeId = CFG.payload.typeId;
+                    const rnd = randHex32();
+                    const ts = Math.floor(Date.now() / 1000);
+                    if (scheme === 0) return buildSignedBody({});
+                    if (scheme === 1) return {};
+                    if (scheme === 2) return buildSignedBodyNoTs({});
+                    if (scheme === 3) {
+                        // Chữ ký chỉ gồm language + random (không có typeId)
+                        const core = { language: lang, random: rnd };
+                        return { language: lang, random: rnd, signature: md5hex(JSON.stringify(core)).toUpperCase(), timestamp: ts };
+                    }
+                    if (scheme === 4) {
+                        // Ký chuỗi "language|random|typeId|timestamp"
+                        const str = lang + '|' + rnd + '|' + typeId + '|' + ts;
+                        return { language: lang, random: rnd, typeId: typeId, timestamp: ts, signature: md5hex(str).toUpperCase() };
+                    }
+                    if (scheme === 5) {
+                        // Chỉ language + random + typeId, KHÔNG chữ ký, KHÔNG timestamp
+                        return { language: lang, random: rnd, typeId: typeId };
+                    }
+                    if (scheme === 6) {
+                        // Ký trên chuỗi nối thẳng giá trị (không phải JSON)
+                        const str6 = String(lang) + rnd + String(typeId) + String(ts);
+                        return { language: lang, random: rnd, typeId: typeId, timestamp: ts, signature: md5hex(str6).toUpperCase() };
+                    }
+                    if (scheme === 7 || scheme === 8) {
+                        // Ký GỒM cả timestamp (đặt timestamp trước rồi mới ký) — nhiều máy chủ tính kiểu này.
+                        const core = { language: lang, random: rnd, timestamp: ts };
+                        if (scheme === 7) core.typeId = typeId;
+                        const sorted = {};
+                        Object.keys(core).sort().forEach(function (k) { sorted[k] = core[k]; });
+                        return Object.assign({}, core, { signature: md5hex(JSON.stringify(sorted)).toUpperCase() });
+                    }
+                    if (scheme === 9) {
+                        // gửi cả refresh token trong body + ký gồm cả nó (máy chủ đọc body thay vì header)
+                        const core9 = { language: lang, random: rnd, refreshToken: getRefreshToken(), timestamp: ts, typeId: typeId };
+                        const sorted9 = {};
+                        Object.keys(core9).sort().forEach(function (k) { sorted9[k] = core9[k]; });
+                        return Object.assign({}, core9, { signature: md5hex(JSON.stringify(sorted9)).toUpperCase() });
+                    }
+                    if (scheme === 10) {
+                        // ký trên chuỗi "language=2&random=…&typeId=30" (kiểu query string)
+                        const pairs = [['language', lang], ['random', rnd], ['typeId', typeId]]
+                            .sort(function (a, b) { return a[0] < b[0] ? -1 : 1; })
+                            .map(function (p2) { return p2[0] + '=' + p2[1]; })
+                            .join('&');
+                        return { language: lang, random: rnd, typeId: typeId, signature: md5hex(pairs).toUpperCase() };
+                    }
+                    // 11: dùng lại nguyên bộ tham số tĩnh của trang (giống lúc máy chủ cấp token đầu tiên).
+                    // Đây là bộ đã được máy chủ chấp nhận một lần → rất đáng thử khi mọi cách tự ký đều hỏng.
+                    if (scheme === 11) {
+                    return {
+                        language: CFG.payload.language,
+                        random: CFG.payload.random,
+                        signature: CFG.payload.signature,
+                        timestamp: CFG.payload.timestamp,
+                        typeId: CFG.payload.typeId
+                    };
+                    }
+                    return buildSignedBody({});
+                }
+                function renewSchemeOrder() {
+                    const pref = getRenewSchemePreference();
+                    const all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+                    if (pref >= 0) return [pref].concat(all.filter(function (v) { return v !== pref; }));
+                    return all;
+                }
+
                 async function refreshAccessToken() {
                     const refresh = getRefreshToken();
                     if (!refresh) return '';
                     if (refreshTokenPromise) return refreshTokenPromise;
                     refreshTokenPromise = (async function () {
                         let lastError = null;
-                        for (let attempt = 0; attempt < 3; attempt++) {
+                        // Thử lần lượt các cách dựng body (xem buildRenewBody). Cách nào đã từng ra token
+                        // thì đứng đầu danh sách. Gặp "Wrong signature" là nhảy ngay sang cách kế.
+                        const order = renewSchemeOrder();
+                        const MAX_TRY = order.length;
+                        for (let attempt = 0; attempt < MAX_TRY; attempt++) {
                             try {
-                                const body = attempt < 2 ? buildSignedBody({}) : {};
-                                const res = await apiPost(CFG.apiRefreshToken, body, { skipRefresh: true, authMode: 'refresh' });
+                                const variant = order[attempt];
+                                const body = buildRenewBody(variant);
+                                rememberedRenewBody = variant;
+                                const res = await apiPost(CFG.apiRefreshToken, body, { skipRefresh: true, authMode: 'refresh', timeoutMs: 8000 });
+                                if (res && res.msg && /signature/i.test(String(res.msg))) {
+                                    lastError = apiError('signature', String(res.msg));
+                                    continue;
+                                }
                                 const code = res && res.code !== undefined ? Number(res.code) : 0;
                                 if (Number.isFinite(code) && code !== 0 && code !== 1) {
-                                    if ((code === 3 || code === 4) && attempt < 2) {
+                                    if ((code === 3 || code === 4) && attempt < MAX_TRY - 1) {
                                         lastError = new Error(res.msg || res.message || ('Mã ' + code));
                                         await sleep(800);
                                         continue;
+                                    }
+                                    // Refresh token hết hiệu lực → thử nữa cũng vô ích, báo rõ để người dùng lấy lại cụm.
+                                    if ([10, 22, 400, 401, 403].indexOf(code) >= 0) {
+                                        throw apiError('session', 'Refresh token hết hiệu lực (' + (res.msg || res.message || ('mã ' + code)) + ')');
                                     }
                                     throw new Error(res.msg || res.message || ('Không gia hạn được token, mã ' + code));
                                 }
@@ -2700,18 +2809,29 @@
                                     tokenHeader: (data && data.tokenHeader) || getTokenHeader()
                                 }, { store: true });
                                 if (!token) throw new Error('Máy chủ không trả token mới.');
+                                renewBodyOk = variant;                // cách dựng body đã qua → lần sau dùng luôn
+                                setRenewSchemePreference(variant);
+                                renewEverOkAt = Date.now();
+                                renewSigFails = 0;
                                 await syncAuthBundleToFirebase();
                                 return token;
                             } catch (error) {
                                 lastError = error;
-                                if (attempt >= 2 || error.kind === 'auth') break;
-                                await sleep(attempt === 0 ? 1200 : 3000);
+                                // 'session' (refresh token chết) / 'auth' → đổi cách cũng vô ích, dừng ngay.
+                                if (attempt >= MAX_TRY - 1 || error.kind === 'auth' || error.kind === 'session') break;
+                                // Lỗi chữ ký: thử ngay cách kế (không chờ). Lỗi khác: chờ ngắn rồi làm lại.
+                                await sleep(error && error.kind === 'signature' ? 120 : (attempt === 0 ? 1200 : 3000));
                             }
                         }
                         throw lastError || new Error('Không gia hạn được token.');
                     })();
-                    try { return await refreshTokenPromise; }
-                    finally { refreshTokenPromise = null; }
+                    try {
+                        const fresh = await refreshTokenPromise;
+                        // Gia hạn xong: báo cho phần CƯỢC THẬT (nếu vừa bị tắt vì token thì tự BẬT lại)
+                        sessKickAt = 0;
+                        if (typeof onAuthRecovered === 'function') { try { onAuthRecovered(fresh); } catch (e) {} }
+                        return fresh;
+                    } finally { refreshTokenPromise = null; }
                 }
             
                 async function ensureFreshToken(skewMs) {
@@ -2727,6 +2847,110 @@
                     return getToken() || token || '';
                 }
             
+                // =====================================================================
+                // TỰ ĐỘNG GIA HẠN TOKEN (chạy ngầm)
+                //   • Có refresh token: cứ 20 giây tự thay access token trước khi hết hạn,
+                //     và trước mỗi lệnh cược (ensureFreshToken đã lo) → không cần đăng nhập lại.
+                //   • Chưa có refresh token: chưa có gì để gia hạn. Trang sẽ báo rõ; cách lấy
+                //     refresh token 1 lần duy nhất là dán cả cụm {token, refreshToken} lúc nhập.
+                //   • Gia hạn hỏng: thử lại giãn dần 15s → 30s → 60s → 120s → 240s → 300s.
+                //   • Mở nhiều tab: chỉ tab đang hiện (hoặc tab giữ quyền cược) đi gia hạn,
+                //     tránh 2 tab cùng refresh làm refresh token bị máy chủ đá.
+                // =====================================================================
+                const RENEW_CHECK_MS = 20000;        // nhịp kiểm tra
+                const RENEW_AHEAD_MS = 600000;       // còn dưới 10 phút là gia hạn trước
+                let renewBusy = false;
+                let renewFail = 0;                   // số lần hỏng liên tiếp
+                let renewNextAt = 0;                 // mốc thử lại kế tiếp
+                let renewLastAt = 0;                 // lần gia hạn thành công gần nhất
+                let renewNote = '';                  // ghi chú ngắn cho khung cược thật
+                let renewNoteAt = 0;                 // lúc ghi chú đó
+                let rbRenewStopped = null;           // { lvl } khi cược thật bị tắt chỉ vì token → tự bật lại sau khi gia hạn
+                let renewSigFails = 0;               // số lần liên tiếp máy chủ báo "Wrong signature"
+                let renewEverOkAt = 0;               // lần gia hạn THÀNH CÔNG gần nhất (0 = chưa từng được)
+                let renewBodyOk = -1;                // biến thể body đã gia hạn được (0/1/2)
+                let rememberedRenewBody = 0;         // biến thể đang thử (để lần sau thử đúng cái đã qua)
+
+                function rbRenewWant() {
+                    const tok = getToken();
+                    if (!tok || !getRefreshToken()) return false;           // chưa có refresh token → không gia hạn được
+                    if (renewBusy) return false;
+                    if (Date.now() < renewNextAt) return false;
+                    if (!tokenAlive()) return true;                         // bị từ chối → thay ngay
+                    if (isTokenExpiredLocally(tok, 0)) return true;         // đã hết hạn
+                    if (rb.on || rb.bet) return true;                       // đang chạy tiền thật → luôn có token tươi
+                    return isTokenExpiredLocally(tok, RENEW_AHEAD_MS);      // sắp hết hạn
+                }
+
+                async function autoRenewTick() {
+                    if (!rbRenewWant()) return;
+                    // Tab khác đang mở và đang hiện: nhường để tránh 2 tab cùng gia hạn.
+                    if (document.hidden && !rbRunner && !rb.on) return;
+                    // Chưa có kết quả kỳ nào trên bảng thì không tốn lượt gọi.
+                    if (!pdNewestIssue() && !rb.on) return;
+                    renewBusy = true;
+                    try {
+                        await refreshAccessToken();
+                        renewFail = 0;
+                        renewNextAt = 0;
+                        renewLastAt = Date.now();
+                        renewNote = '↻ Đã tự gia hạn token · còn ' + rbTokenLeft(Date.now()).text;
+                        renewNoteAt = Date.now();
+                        try { rbTokenChanged(); } catch (e) {}
+                        if (typeof setStatus === 'function') setStatus('Đã tự gia hạn token · hạn mới còn ' + rbTokenLeft(Date.now()).text, 'ok');
+                        return;
+                    } catch (e) {
+                        renewFail++;
+                        const wait = [15000, 30000, 60000, 120000, 240000, 300000][Math.min(renewFail - 1, 5)];
+                        renewNextAt = Date.now() + wait;
+                        // "Wrong signature": máy chủ từ chối chữ ký của yêu cầu xin token, KHÔNG có nghĩa
+                        // refresh token đã chết. Thử lại bằng kiểu body khác, và tuyệt đối không đụng
+                        // tới access token đang dùng được.
+                        const sigLike = e && (e.kind === 'signature' || /signature/i.test(String(e.message || '')));
+                        if (sigLike) {
+                            renewSigFails = (renewSigFails || 0) + 1;
+                            // Thử đủ 6 lần mà vẫn sai chữ ký → thôi spam máy chủ: hẹn 15 phút/lần,
+                            // token đang dùng vẫn chạy tới hết hạn.
+                            if (renewSigFails >= 6) {
+                                renewNextAt = Date.now() + 900000;
+                                renewNote = '⚠ Không xin được token mới (máy chủ báo Wrong signature). Token đang dùng vẫn chạy tới khi hết hạn (còn ' + rbTokenLeft(Date.now()).text + '). Nếu hết hạn, dán lại cụm bằng «📎 Lấy mã lấy token» là xong.';
+                                renewNoteAt = Date.now();
+                                try { rbTokenChanged(); } catch (e2) {}
+                                if (typeof setStatus === 'function') setStatus(renewNote, 'error');
+                                return;
+                            }
+                            const quick = [15000, 60000, 120000][Math.min(renewFail - 1, 2)];
+                            renewNextAt = Date.now() + quick;
+                            renewNote = '⚠ Chưa xin được token mới: máy chủ báo chữ ký không hợp lệ (Wrong signature) — sẽ thử lại sau ' + Math.round(quick / 1000) + 's. Token đang dùng vẫn chạy bình thường.';
+                            renewNoteAt = Date.now();
+                            try { rbTokenChanged(); } catch (e2) {}
+                            if (typeof setStatus === 'function') setStatus(renewNote, 'error');
+                            return;
+                        }
+                        if (e && e.kind === 'session') {
+                            // Refresh token chết hẳn: thử lại cũng không cứu được → nói đúng việc cần làm.
+                            renewFail = 6;
+                            renewNextAt = Date.now() + 3600000;
+                            renewNote = '⚠ Refresh token đã hết hiệu lực — lấy lại cụm token 1 lần bằng nút «📎 Lấy mã lấy token» trong hộp Token. Token đang dùng vẫn chạy tới khi hết hạn.';
+                            renewNoteAt = Date.now();
+                            try { rbTokenChanged(); } catch (e2) {}
+                            if (typeof setStatus === 'function') setStatus(renewNote, 'error');
+                            return;
+                        }
+                        renewNote = '⚠ Chưa gia hạn được token (' + (e && e.message ? e.message : 'lỗi mạng') + ') — thử lại sau ' + Math.round(wait / 1000) + ' giây.';
+                        renewNoteAt = Date.now();
+                        try { rbTokenChanged(); } catch (e2) {}
+                        if (typeof setStatus === 'function') setStatus(renewNote, 'error');
+                    } finally {
+                        renewBusy = false;
+                    }
+                }
+
+                // Gọi khi mạng trở lại / quay lại tab: thử gia hạn ngay, không chờ nhịp 20 giây.
+                function renewKick(delayMs) {
+                    setTimeout(function () { autoRenewTick(); }, delayMs || 0);
+                }
+
                 function valueToDigit(value) {
                     if (value === null || value === undefined) return null;
                     let text;
@@ -3166,7 +3390,17 @@ async function rbCopyText(text) {
     rbFlash(ok ? 'Đã sao chép vào bộ nhớ tạm.' : 'Không sao chép được.', ok ? '' : 'warn');
 }
 
-function openTokenDialog() {
+function updateRefreshOnlyBox() {
+                    try {
+                        const box = document.getElementById('tokenRenewBox');
+                        if (!box) return;
+                        const need = !!getToken() && !getRefreshToken();
+                        box.style.display = need ? 'block' : 'none';
+                    } catch (e) {}
+                }
+
+                function openTokenDialog() {
+                    updateRefreshOnlyBox();
                     tokenInput.value = currentToken || '';
                     try {
                         var _note = document.getElementById('tokenPasteNote');
@@ -3259,7 +3493,7 @@ function openTokenDialog() {
                 let pdHistoryDirty = true;
                 let pdBannerKey = '';
                 let pdResetArmedUntil = 0;
-                let scSignal = null;                    // không còn dùng (dải ô đang đánh tự đọc rb.rotor)
+                let scSignal = null;                    // không còn dùng (dải "Ô đang đánh" tự đọc rb.chain)
                 let pdManualRoundEnd = 0;               // mốc endAt của kỳ mà người chơi chủ động bấm tay
                 let pdLastResolvedEndAt = 0;            // mốc endAt của kỳ vừa được chấm xong
                 let rb = rbBlank();                     // trạng thái cược thật tự động — xem phần CƯỢC THẬT TỰ ĐỘNG phía dưới
@@ -3488,216 +3722,256 @@ function openTokenDialog() {
                 }
 
                 // =====================================================================
-                // ROTOR TÍN HIỆU — thay cho luật STT cũ
-                //   • Dãy tín hiệu = 10 rotor. Mỗi rotor chứa MỘT DÃY SỐ do người dùng tự nhập
-                //     (mỗi ô một dãy riêng, số phần tử tuỳ ý — không mặc định 10).
-                //   • Rotor CHỈ nhảy khi THẮNG cược: mọi rotor sang số kế tiếp (quay vòng khi hết dãy).
-                //   • Ô cần đánh = rotor ĐẦU TIÊN (cột 1). Số đang hiện trên rotor đó:
-                //         0 · 1 · 2 · 3 · 4 → cược NHỎ  ·  5 · 6 · 7 · 8 · 9 → cược LỚN
-                //     (số nào không phải chữ số 0–9 → không cược kỳ đó)
-                //   • THUA → rotor đứng yên, đánh tiếp rotor đang dùng; THẮNG → về rotor đầu.
-                //   • Thua ở mức cược cuối → tự tắt cược thật.
+                // TÍN HIỆU THEO SỐ KỲ (STT) — chỉ dùng cho CƯỢC THẬT ở khung trên
+                //   MỌI kỳ sắp đánh đều lấy ô có STT = n − x (n = 3 số cuối của STT kỳ,
+                //   x = số trừ lùi của ô đó trong dãy tín hiệu, mặc định 40):
+                //         ô đó ra 0-4 → đánh NHỎ · ô đó ra 5-9 → đánh LỚN
+                //     LUÔN ĐÁNH THUẬN — không đảo ngược, không theo dõi thắng/thua.
+                //   • Dãy tín hiệu là LOẠT 10 Ô CỐ ĐỊNH: ô thứ k của loạt = kỳ (base+k), tra ô
+                //     STT (n_k − x_k) và CHỐT 1 lần. Kỳ mới không tính lại → màu xanh dính đúng STT
+                //     của ô nguồn và trôi theo bảng (317 vẫn xanh ở 317 khi bảng chạy lên).
+                //   • Hết 1 kỳ là sang ô kế tiếp — thắng hay thua đều như nhau. Hết ô 10 → sang loạt mới.
+                //   • Ô cần tra chưa có số trên bảng → không đặt lệnh kỳ đó (chờ đủ số).
+                //   • Tiền cược theo thang cược: thua lên mức kế, thắng về mức 1.
                 // =====================================================================
-                const LS_ROTOR = 'vn168_rotor_v1';
-                const ROTOR_COOKIE = 'vn168_rotor';            // bản dự phòng thứ 2 (localStorage có thể bị xoá / đầy)
-                const ROTOR_MAX_LEN = 60;               // số phần tử tối đa của 1 rotor
-                const ROTOR_DEFAULT_N = 10;
-                // Số kỳ mới đã nhận kể từ lúc bấm CHẠY. Ghi thẳng vào rb.rotor.pos để không mất khi trạng thái được nạp lại.
-                function rotorAtGet() { return (rb.rotor && Number(rb.rotor.pos)) || 0; }
-                function rotorAtSet(v) { if (rb.rotor) rb.rotor.pos = Math.max(0, Math.round(Number(v) || 0)); }
-                let rotorSeen = '';                     // kỳ mới nhất đã xử lý (chống đếm trùng)
-                let rotorDirty = false;                 // cần vẽ lại dãy
-                let rotorPending = null;                // dãy vừa gõ, CHƯA kịp ghi xuống máy (chống bị đọc lại bản cũ)
 
-                // Chưa nhập gì → rotor để TRỐNG (không tự sinh số).
-                function rotorDefaultOrder() { return []; }
-
-                // Tách ô nhập của người dùng thành dãy số: "1 3 8 0 4" · "1,3,8" · "13804" (chuỗi nhiều chữ số → tách từng chữ số)
-                function rotorParse(text) {
-                    const raw = String(text == null ? '' : text);
-                    const tout = raw.split(/[^0-9]+/).filter(Boolean);        // nhóm toàn số
-                    if (!tout.length) return [];
-                    const out = [];
-                    for (let i = 0; i < tout.length; i++) {
-                        const part = tout[i];
-                        if (part.length === 1) { out.push(part); continue; }
-                        for (let j = 0; j < part.length; j++) out.push(part.charAt(j));   // "13804" → 1,3,8,0,4
-                    }
-                    return out.slice(0, ROTOR_MAX_LEN);
-                }
-
-                function rotorBlank() {
-                    const list = [];
-                    for (let k = 0; k < 10; k++) list.push('');
-                    return { on: false, row: 1, marks: {}, list: list, pos: 0, col: 0, mark: '' };
-                }
-
-                function rotorNormalizeList(raw) {
-                    const out = [];
-                    const src = Array.isArray(raw) ? raw : [];
-                    for (let k = 0; k < 10; k++) {
-                        const t = src[k];
-                        out.push(typeof t === 'string' ? t.slice(0, ROTOR_MAX_LEN * 4) : '');
-                    }
-                    return out;
-                }
-
-                // TỰ CHỮA: dãy trong trạng thái bị rỗng nhưng ô nhập đang có số → lấy lại từ ô nhập.
-                // (Trước đây gõ xong mà app đọc lại trạng thái cũ trong 350ms thì số bị mất, dải rotor hiện «·».)
-                function rotorRepairFromInputs() {
-                    if (!rb.rotor || !Array.isArray(rb.rotor.list)) return false;
-                    let fixed = false;
-                    const inputs = (typeof scCfgInputs !== 'undefined' && scCfgInputs) ? scCfgInputs : [];
-                    for (let k = 0; k < inputs.length; k++) {
-                        const el = inputs[k];
-                        if (!el) continue;
-                        const typed = String(el.value || '');
-                        if (!rotorParse(typed).length) continue;
-                        if (rotorParse(rb.rotor.list[k] || '').length) continue;     // trạng thái đã có → không đụng
-                        rb.rotor.list[k] = typed.slice(0, ROTOR_MAX_LEN * 4);
-                        fixed = true;
-                    }
-                    if (fixed) {
-                        rotorPending = rotorNormalizeList(rb.rotor.list);
-                        try { rotorCfgSave(0); } catch (e) {}
-                    }
-                    return fixed;
-                }
-
-                // Dãy số đang dùng của 1 rotor (chưa nhập → rỗng, ô hiện dấu ·)
-                function rotorOrder(i) {
-                    const st = rb.rotor;
-                    const text = st && st.list ? st.list[i] : '';
-                    const got = rotorParse(text);
-                    if (got.length) return got;
-                    // trạng thái rỗng nhưng ô nhập có số → dùng ô nhập
-                    const inputs = (typeof scCfgInputs !== 'undefined' && scCfgInputs) ? scCfgInputs : [];
-                    const el = inputs[i];
-                    if (el) {
-                        const typed = rotorParse(String(el.value || ''));
-                        if (typed.length) {
-                            if (st && Array.isArray(st.list)) {
-                                st.list[i] = String(el.value || '').slice(0, ROTOR_MAX_LEN * 4);
-                                rotorPending = rotorNormalizeList(st.list);
-                            }
-                            return typed;
-                        }
-                    }
-                    return [];
-                }
-
-                function rotorListLen() {
-                    const st = rb.rotor || rotorBlank();
-                    return Array.isArray(st.list) ? st.list.length : 10;
-                }
-
-                // Số đang hiện trên rotor k (k = 0…n−1) theo số kỳ đã nhận
-                function rotorValueAt(k) {
-                    const st = rb.rotor || rotorBlank();
-                    const order = rotorOrder(k);
-                    if (!order.length) return '';
-                    const pos = ((Number(st.pos) || 0) % order.length + order.length) % order.length;
-                    return order[pos];
-                }
-
-                // 3 chữ số cuối của STT kỳ (chỉ dùng để hiển thị / dự đoán tay)
+                // n = 3 chữ số cuối của STT kỳ
                 function rbN(issue) {
-                    const t = String(issue == null ? '' : issue).replace(/[^0-9]/g, '');
-                    return t ? Number(t.slice(-3)) : NaN;
+                    const s = String(issue == null ? '' : issue).replace(/\\D/g, '');
+                    return s ? Number(s.slice(-3)) : NaN;
                 }
 
-                // Dãy 10 ô sắp đánh: ô k = số hiện tại của rotor k (chỉ để hiển thị)
+
+                function rbChainBlank() {
+                    // ri = ô đang dùng trong loạt (0..9) · batch = loạt 10 ô ĐANG chạy (đã chốt, không tính lại
+                    // theo kỳ mới) · next = loạt kế chốt sẵn để dãy tín hiệu luôn đủ 10 ô · marks = dấu W/L dính STT
+                    return { on: false, ri: 0, batch: null, next: null, marks: {}, inv: false };
+                }
+
+                // Dãy 10 ô dóng với hàng 10 (mỗi ô = 1 kỳ sắp đánh, tính từ kỳ ngay sau kỳ mới nhất trên bảng)
                 function rbRowSeq() {
                     const newest = pdNewestIssue();
                     const out = [];
                     let issue = newest ? pdNextIssue(newest) : '';
-                    const n = rotorListLen();
-                    for (let k = 0; k < n; k++) {
-                        out.push(issue ? { issue: issue, n: rbN(issue), k: k } : { issue: '', n: NaN, k: k });
+                    for (let k = 0; k < 10; k++) {
+                        out.push(issue ? { issue: issue, n: rbN(issue) } : { issue: '', n: NaN });
                         issue = issue ? pdNextIssue(issue) : '';
                     }
                     return out;
                 }
 
-                // Cửa cược theo 1 chữ số: 'B' = LỚN (5–9) · 'S' = NHỎ (0–4) · '' = không cược
-                function rotorSideOf(val) {
-                    const t = String(val == null ? '' : val);
-                    if (!/^[0-9]$/.test(t)) return '';
-                    return Number(t) >= 5 ? 'B' : 'S';
+                // Ô của bảng ứng với số kỳ n−x — tra trong 100 ô (không có → chờ).
+                function rbCellOfN(n) {
+                    if (!Number.isFinite(n) || n < 0 || n > 999) return null;
+                    const want = String(Math.round(n)).padStart(3, '0');
+                    for (let i = TOTAL - 1; i >= 0; i--) {
+                        const stt = String(cells[i].sttFull || '');
+                        if (!stt) continue;
+                        if (stt.slice(-3) !== want) continue;
+                        return cells[i];
+                    }
+                    return null;
                 }
 
-                // Rotor đang dùng để đánh = rotor đầu tiên (cột 1)
-                function rotorCurrentValue() {
-                    const st = rb.rotor;
-                    if (!st || !st.on) return '';
-                    return rotorValueAt(0);
+
+                // Khoá dính màu theo ô: 3 số cuối STT (317 → '317', 007 → '7')
+                function rbRefKey(n) {
+                    if (!Number.isFinite(n)) return '';
+                    return String(((Math.round(n) % 1000) + 1000) % 1000);
                 }
 
-                function rbChainChoice() {
-                    return rotorSideOf(rotorCurrentValue());
+                // Cộng kỳ: 347 → 348 … (qua ngày thì nhảy 0001 như pdNextIssue)
+                function rbIssueShift(issue, count) {
+                    let s = String(issue || '');
+                    for (let k = 0; k < count && s; k++) s = pdNextIssue(s);
+                    return s;
                 }
 
-                // Dãy 10 ô hiển thị: mỗi ô = { issue, n, val, side }
-                function rbSeqPlan() {
-                    const seq = rbRowSeq();
+                // CHỐT 1 loạt 10 ô: ô k = kỳ (base+k) tra ô STT (n_k − x_k). Chốt 1 lần rồi giữ nguyên,
+                // không tính lại theo kỳ mới → ô xanh dính đúng STT và trôi cùng bảng.
+                function rbChainCells(baseIssue) {
                     const out = [];
-                    for (let k = 0; k < seq.length; k++) {
-                        const e = seq[k];
-                        const val = rotorValueAt(k);
-                        out.push({ issue: e.issue, n: e.n, k: k, val: val, side: rotorSideOf(val) });
+                    let issue = String(baseIssue || '');
+                    for (let k = 0; k < 10; k++) {
+                        if (!issue) { out.push({ i: '', n: NaN, off: scOffsetAt(k), ref: '', side: '' }); continue; }
+                        const n = rbN(issue);
+                        const off = scOffsetAt(k);
+                        const refN = n - off;
+                        const cell = rbCellOfN(refN);
+                        const kind = cell ? pdKind(cell.value) : '';
+                        out.push({ i: issue, n: n, off: off, ref: rbRefKey(refN), side: kind === 'B' ? 'B' : (kind === 'S' ? 'S' : '') });
+                        issue = pdNextIssue(issue);
                     }
                     return out;
                 }
 
-                // Cửa cho 1 kỳ cụ thể — chỉ áp dụng cho kỳ sắp đánh (dùng cho khung dự đoán tay)
-                function rbSideFor(issue) {
-                    const now = rbCurrentIssue();
-                    if (!now || String(issue) !== String(now)) return '';
-                    return rbChainChoice();
+                function rbChainBatchSign(baseIssue) {
+                    return baseIssue ? { base: String(baseIssue), cells: rbChainCells(baseIssue) } : null;
                 }
 
-                // Rotor KHÔNG quay theo kết quả kỳ nữa — chỉ ghi mốc kỳ mới nhất.
-                // (Rotor chỉ nhảy khi THẮNG cược — xem rbChainAfterBet.)
-                function rotorAdvance() {
+                function rbChainBatchOk(b) {
+                    return !!(b && Array.isArray(b.cells) && b.cells.length === 10 && b.cells[0] && b.cells[0].i);
+                }
+
+                // Loạt đang chạy phải khớp kỳ sắp đánh: kỳ nào đã qua thì bỏ ô đó (không đánh),
+                // hết ô 10 → sang loạt mới. Bảng nhảy lùi → chốt lại loạt từ kỳ sắp đánh.
+                function rbChainPlan() {
                     const newest = pdNewestIssue();
-                    if (!newest) return false;
-                    if (rotorSeen === newest) return false;
-                    rotorSeen = newest;
-                    return false;
+                    if (!newest) return null;
+                    const up = pdNextIssue(newest);
+                    if (!up) return null;
+                    const st = rb.chain;
+                    if (!st) return null;
+                    let dirty = false;
+                    if (!rbChainBatchOk(st.batch)) {
+                        st.batch = rbChainBatchSign(up);
+                        st.next = rbChainBatchSign(rbIssueShift(up, 10));
+                        st.ri = 0;
+                        st.marks = {};
+                        dirty = true;
+                    }
+                    if (!rbChainBatchOk(st.batch)) return null;
+                    if (!rbChainBatchOk(st.next)) {
+                        st.next = rbChainBatchSign(rbIssueShift(st.batch.cells[0].i, 10));
+                        dirty = true;
+                    }
+                    let guard = 0;
+                    while (guard++ < 30) {
+                        const cur = st.batch.cells[st.ri];
+                        if (!cur || !cur.i) break;
+                        if (cur.i === up) break;
+                        if (issueGreater(cur.i, up)) {                 // loạt đang ở phía trước kỳ sắp đánh → chốt lại
+                            st.batch = rbChainBatchSign(up);
+                            st.next = rbChainBatchSign(rbIssueShift(up, 10));
+                            st.ri = 0;
+                            st.marks = {};
+                            dirty = true;
+                            break;
+                        }
+                        st.ri++;                                       // kỳ này đã qua → sang ô kế (dù thắng hay thua)
+                        if (st.ri > 9) {                               // hết ô 10 → sang loạt mới
+                            st.batch = rbChainBatchOk(st.next) ? st.next : rbChainBatchSign(up);
+                            st.ri = 0;
+                            st.marks = {};
+                            dirty = true;
+                            if (!rbChainBatchOk(st.batch)) return null;
+                            st.next = rbChainBatchSign(rbIssueShift(st.batch.cells[0].i, 10));
+                        }
+                    }
+                    // Chốt hạ: loạt phải đứng đúng kỳ sắp đánh (bảng nhảy quá xa / dữ liệu lạ) → chốt lại từ đầu.
+                    const cur0 = st.batch.cells[st.ri];
+                    if (!cur0 || cur0.i !== up) {
+                        st.batch = rbChainBatchSign(up);
+                        st.next = rbChainBatchSign(rbIssueShift(up, 10));
+                        st.ri = 0;
+                        st.marks = {};
+                        dirty = true;
+                    }
+                    if (!rbChainBatchOk(st.batch)) return null;
+                    const cur = st.batch.cells[st.ri] || null;
+                    // Ô đã chốt mà lúc chốt chưa có số (ô nguồn mới xuất hiện sau) → điền bù, giữ đúng STT đã chốt.
+                    if (cur && cur.i && !cur.side && cur.ref) {
+                        const src2 = rbCellOfN(Number(cur.ref));
+                        const kind2 = src2 ? pdKind(src2.value) : '';
+                        if (kind2) { cur.side = (kind2 === 'B') ? 'B' : 'S'; dirty = true; }
+                    }
+                    if (dirty) rbSave();
+                    return { issue: up, ri: st.ri, cell: cur, batch: st.batch };
                 }
 
+                // Đổi x → chốt lại ô nguồn của loạt đang chạy (giữ nguyên kỳ gốc của loạt).
+                function rbChainResign() {
+                    const st = rb.chain;
+                    if (!st || !rbChainBatchOk(st.batch)) { if (st) { st.batch = null; st.next = null; st.ri = 0; } return; }
+                    st.batch = rbChainBatchSign(st.batch.base);
+                    st.next = rbChainBatchSign(rbIssueShift(st.batch.base, 10));
+                    st.marks = {};
+                    rbSave();
+                }
+
+                // MỌI kỳ đều tra ô STT−x rồi đánh THUẬN đúng như ô đó (0-4 → NHỎ · 5-9 → LỚN).
+                // (x = số trừ lùi của ô đó trong dãy tín hiệu; không truyền x thì tự tìm theo kỳ.)
+                function rbSideFor(issue, off) {
+                    const n = rbN(issue);
+                    if (!Number.isFinite(n)) return '';
+                    const x = (off === undefined) ? rbOffsetForIssue(issue) : scNormOff(off);
+                    const cell = rbCellOfN(n - x);
+                    const kind = cell ? pdKind(cell.value) : '';
+                    if (!kind) return '';                             // ô STT−x chưa có số
+                    return (kind === 'B') ? 'B' : 'S';
+                }
+
+                // Dãy 10 ô sắp đánh — mọi ô đều THUẬN.
+                // Dãy 10 ô tín hiệu = 10 ô CÒN LẠI của loạt đang chạy (ô đầu = kỳ sắp đánh, đang dùng),
+                // nối tiếp bằng các ô đã chốt của loạt kế. Mọi ô đều THUẬN, không đảo theo thắng/thua.
+                function rbSeqPlan() {
+                    const out = [];
+                    const plan = rbChainPlan();
+                    const st = rb.chain;
+                    for (let k = 0; k < 10; k++) {
+                        let c = null;
+                        if (plan && st) {
+                            const d = plan.ri + k;
+                            if (d <= 9 && st.batch) c = st.batch.cells[d];
+                            else if (rbChainBatchOk(st.next)) c = st.next.cells[d - 10];
+                        }
+                        if (!c) { out.push({ issue: '', n: NaN, inv: false, off: scOffsetAt(k), side: '' }); continue; }
+                        out.push({ issue: c.i, n: c.n, inv: false, off: c.off, side: c.side, ref: c.ref, pos: (plan.ri + k) % 10 + 1 });
+                    }
+                    return out;
+                }
+                // Cửa của lệnh sắp tới (kỳ ngay sau kỳ mới nhất trên bảng)
+                // Cửa của lệnh sắp tới = cửa của ô đang dùng trong loạt (đã chốt, chỉ đọc lại)
+                function rbChainChoice() {
+                    const st = rb.chain;
+                    if (!st || !st.on) return '';
+                    const plan = rbChainPlan();
+                    return plan && plan.cell ? (plan.cell.side || '') : '';
+                }
+
+                // Kỳ sắp đánh = kỳ của ô đang dùng trong loạt
                 function rbCurrentIssue() {
+                    const plan = rbChainPlan();
+                    if (plan && plan.issue) return plan.issue;
                     const newest = pdNewestIssue();
                     return newest ? pdNextIssue(newest) : '';
                 }
-
-                // Chấm 1 lệnh: ghi dấu W/L lên ô đã đánh + nhảy sang rotor kế khi thua
-                function rbChainAfterBet(issue, c, ok) {
-                    const st = rb.rotor;
+                // Chấm 1 lệnh. Đã nằm trong rbCommit (không tự đọc/ghi bộ nhớ).
+                // Chấm 1 lệnh: ghi dấu W/L lên ô nguồn (dính theo STT của ô) để nhìn lại.
+                // Ô kế tiếp đã tự sang từ lúc ra kỳ mới (rbChainPlan) — thắng hay thua đều đi tiếp như nhau.
+                function rbChainAfterBet(issue, c, ok, offHint) {
+                    const st = rb.chain;
                     if (!st || !st.on) return;
                     if (!st.marks || typeof st.marks !== 'object') st.marks = {};
                     for (const k in st.marks) {
                         const at = st.marks[k] || {};
                         if (at.i === issue && at.r === '?') delete st.marks[k];
                     }
-                    const n = Array.isArray(st.list) ? st.list.length : 10;
-                    const col = Math.min(Math.max(Number(st.col) || 0, 0), n - 1);
-                    st.marks[String(col)] = { i: issue, r: ok ? 'W' : 'L' };
-                    if (ok) {
-                        // THẮNG → cả 10 rotor quay sang số kế tiếp trong dãy của nó, rồi về rotor 1
-                        st.mark = 'W';
-                        st.col = 0;
-                        rotorAtSet(rotorAtGet() + 1);
-                    } else {
-                        // THUA → rotor đứng yên (giữ nguyên số), đánh tiếp rotor đang dùng
-                        st.mark = 'L';
+                    // Tìm đúng ô của loạt đã dùng cho kỳ này → dấu dính theo STT của ô đó.
+                    let key = '';
+                    const pools = [st.batch, st.next];
+                    for (let p = 0; p < pools.length && !key; p++) {
+                        const b = pools[p];
+                        if (!b || !Array.isArray(b.cells)) continue;
+                        for (let k = 0; k < b.cells.length; k++) {
+                            if (b.cells[k] && b.cells[k].i === issue) { key = b.cells[k].ref || ''; break; }
+                        }
                     }
-                    try { rotorFbWrite(300); } catch (e) {}
-                    // vẽ lại dải rotor ngay (vị trí quay vừa đổi)
-                    try { scSeqKey = ''; scRender(); } catch (e) {}
+                    if (!key) {
+                        const n = rbN(issue);
+                        const x = (offHint === undefined) ? rbOffsetForIssue(issue) : scNormOff(offHint);
+                        key = rbRefKey(n - x);
+                    }
+                    const cell = key ? rbCellOfN(Number(key)) : null;
+                    if (cell && pdKind(cell.value)) {
+                        st.marks[key] = { i: issue, r: ok ? 'W' : 'L' };
+                        for (const k in st.marks) {
+                            const at = st.marks[k] || {};
+                            if (at.r === '?' && k !== key) delete st.marks[k];
+                        }
+                    }
+                    // luôn đánh thuận: không đảo nhịp dù thắng hay thua
                 }
-
-                
                 // Khung dự đoán KHÔNG còn tự bấm: mọi thứ chạy theo STT ở khung CƯỢC THẬT.
                 function pdMaybeAutoPick() { return; }
 
@@ -4077,8 +4351,7 @@ function openTokenDialog() {
                         bet: null,              // lệnh đã gửi, chưa có kết quả: { issue, base, c, n, lvl, fl, at, endAt, st, vAt, why }
                         posted: '',             // kỳ gần nhất đã gửi lệnh (mỗi kỳ chỉ gửi 1 lần)
                         last: null,             // lệnh thật vừa chấm xong: { issue, c, ok }
-                        chain: null,            // (cũ, không dùng)
-                        rotor: null,            // 10 rotor tín hiệu: { on, row, marks, list[10], col, pos }
+                        chain: rbChainBlank(),  // tín hiệu theo loạt: { on, ri, batch, next, marks, inv }
                         fail: 0,                // số lần liên tiếp lệnh không vào
                         win: 0,
                         lose: 0,
@@ -4170,33 +4443,54 @@ function openTokenDialog() {
                             why: typeof b.why === 'string' ? b.why.slice(0, 200) : ''
                         };
                     }
-                    if (raw.rotor && typeof raw.rotor === 'object') {
-                        const ro = raw.rotor;
-                        const mk = (ro.marks && typeof ro.marks === 'object') ? ro.marks : {};
+                    if (raw.chain && typeof raw.chain === 'object') {
+                        const ch = raw.chain;
+                        const mk = (ch.marks && typeof ch.marks === 'object') ? ch.marks : {};
                         const marks = {};
-                        for (const k in mk) {                                  // khoá = số thứ tự rotor (0…9)
-                            if (!/^\d{1,2}$/.test(k)) continue;
+                        for (const k in mk) {                                  // khoá = 3 số cuối STT của ô nguồn
+                            if (!/^\d{1,3}$/.test(k)) continue;
                             const at = mk[k];
                             if (!at || typeof at !== 'object') continue;
                             if (at.r !== 'W' && at.r !== 'L' && at.r !== '?') continue;
                             marks[String(Number(k))] = { i: isIssue(at.i) ? at.i : '', r: at.r };
                         }
-                        out.rotor = {
-                            on: ro.on === true,
-                            row: int(ro.row, 1, ROWS, 1),
+                        const normBatch = function (b) {
+                            if (!b || typeof b !== 'object' || !isIssue(b.base)) return null;
+                            if (!Array.isArray(b.cells) || b.cells.length !== 10) return null;
+                            const cs = [];
+                            for (let k = 0; k < 10; k++) {
+                                const c = b.cells[k];
+                                if (!c || typeof c !== 'object' || !isIssue(c.i)) return null;
+                                const n = Number(c.n);
+                                let off = Math.round(Number(c.off));
+                                if (!Number.isFinite(n) || !Number.isFinite(off)) return null;
+                                if (off < 1) off = 1;
+                                if (off > 99) off = 99;
+                                cs.push({
+                                    i: c.i,
+                                    n: n,
+                                    off: off,
+                                    ref: /^\d{1,3}$/.test(String(c.ref == null ? '' : c.ref)) ? String(c.ref) : '',
+                                    side: isSide(c.side) ? c.side : ''
+                                });
+                            }
+                            return { base: b.base, cells: cs };
+                        };
+                        out.chain = {
+                            on: ch.on === true,
+                            ri: int(ch.ri, 0, 9, 0),                          // ô đang dùng trong loạt (0..9)
+                            batch: normBatch(ch.batch),                       // loạt 10 ô đang chạy (đã chốt)
+                            next: normBatch(ch.next),                         // loạt kế (chốt sẵn cho đủ 10 ô)
                             marks: marks,
-                            list: rotorNormalizeList(ro.list),
-                            col: int(ro.col, 0, 9, 0),
-                            pos: int(ro.pos, 0, 1e9, 0),
-                            mark: (ro.mark === 'W' || ro.mark === 'L') ? ro.mark : ''
+                            inv: false                            // luôn đánh THUẬN (không còn đảo)
                         };
                     }
-                    // Đang BẬT mà chưa có dữ liệu rotor (state của bản cũ) → dựng lại.
-                    if (out.on && (!out.rotor || !out.rotor.on)) {
-                        out.rotor = rotorBlank();
-                        out.rotor.on = true;
+                    // Đang BẬT mà chưa có dữ liệu tín hiệu (state của bản cũ) → dựng lại (mọi ô đánh thuận).
+                    if (out.on && (!out.chain || !out.chain.on)) {
+                        out.chain = rbChainBlank();
+                        out.chain.on = true;
                     }
-                    if (!out.on && out.rotor) out.rotor.on = false;
+                    if (!out.on && out.chain) out.chain.on = false;
                     out.posted = isIssue(raw.posted) ? raw.posted : '';
                     if (raw.last && typeof raw.last === 'object' && isIssue(raw.last.issue) && isSide(raw.last.c)) {
                         out.last = { issue: raw.last.issue, c: raw.last.c, ok: raw.last.ok === true };
@@ -4226,8 +4520,6 @@ function openTokenDialog() {
                     let raw = null;
                     try { raw = JSON.parse(text); } catch (e) { raw = null; }
                     rb = rbNormalize(raw);
-                    // Đang gõ dở (chưa kịp ghi): trả lại dãy vừa gõ để không bị bản cũ đè mất
-                    if (rotorPending && rb.rotor) rb.rotor.list = rotorNormalizeList(rotorPending);
                     rbLogDirty = true;
                     return true;
                 }
@@ -4770,7 +5062,8 @@ function openTokenDialog() {
                     if (rbBoardOk() !== before) pdRender();
                 }
 
-                // Token hết hạn / bị từ chối mà không tự gia hạn được → tắt (có refresh token thì chờ gia hạn tối đa 45 giây).
+                // Token hết hạn / bị từ chối: tự gia hạn trước. Có refresh token thì kiên nhẫn chờ
+                // (thử lại giãn dần tới 5 phút) và chỉ tắt khi hết cách thật sự.
                 function rbTokenGuard(now) {
                     if (!rb.on || rbBusy) return;
                     const token = getToken();
@@ -4779,19 +5072,23 @@ function openTokenDialog() {
                         return;
                     }
                     if (!rbTokenBadSince) rbTokenBadSince = now;
-                    if (token && getRefreshToken() && now - rbTokenBadSince < 45000) return;
+                    if (token && getRefreshToken()) {
+                        renewKick(0);                                  // nhờ bộ tự gia hạn chạy ngay
+                        if (now - rbTokenBadSince < 300000) return;    // chờ tối đa 5 phút (mạng chập chờn vẫn cứu được)
+                    }
                     rbTokenBadSince = 0;
-                    rbStop(token ? 'Token hết hạn hoặc bị từ chối — đã tắt cược thật. Hãy dán token mới rồi bấm BẬT.'
+                    if (token && getRefreshToken()) rbMarkRenewStop();
+                    rbStop(token ? 'Token hết hạn hoặc bị từ chối — đã thử tự gia hạn 5 phút không được. Dán lại cụm token + refreshToken rồi bấm BẬT.'
                         : 'Chưa có token — đã tắt cược thật.', 'err');
                 }
 
                 // ----- Bật / tắt -----
                 function rbStop(text, kind) {
+                    if (!(kind === 'err' && /Token hết hạn|token/i.test(String(text || '')))) rbRenewStopped = null;
                     rbCommit(function () {
                         if (rb.on) rbLogAdd({ t: Date.now(), k: 'sys', r: (kind === 'err' || kind === 'warn') ? 'X' : '', m: '⏹ ' + text });
                         rb.on = false;
-                        if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
-                        try { rotorFbWrite(0); } catch (e) {}
+                        if (rb.chain) rb.chain.on = false;        // tắt luôn việc đánh theo ô
                         rb.note = String(text || '').slice(0, 400);
                         rb.noteKind = kind || '';
                         rb.noteAt = Date.now();
@@ -4800,22 +5097,14 @@ function openTokenDialog() {
 
                 function rbStart() {
                     const now = Date.now();
+                    rbRenewStopped = null;                  // người dùng tự BẬT → huỷ ý định tự BẬT lại
                     rbCommit(function () {
                         // BẬT luôn bắt đầu thang cược từ mức 1. Lệnh của lượt chạy trước còn chờ kết quả vẫn được chấm thắng / thua,
                         // nhưng nó nằm ngoài thang cược mới: thua cũng không đẩy lượt này lên mức 2.
                         rb.lvl = 0;
                         rb.last = null;
-                        // Bấm CHẠY: giữ nguyên dãy số đã nhập, đưa rotor về ô 1 và mốc kỳ hiện tại.
-                        const keptList = rotorNormalizeList(rb.rotor ? rb.rotor.list : null);
-                        rb.rotor = rotorBlank();
-                        rb.rotor.list = keptList;
-                        rb.rotor.on = true;
-                        rb.rotor.col = 0;
-                        rb.rotor.pos = 0;
-                        rb.rotor.marks = {};
-                        rotorSeen = pdNewestIssue();
-                        try { rotorFbWrite(0); } catch (e) {}
-                        rotorDirty = true;
+                        rb.chain = rbChainBlank();
+                        rb.chain.on = true;                     // bấm BẬT → đánh theo STT của từng kỳ
                         if (rb.bet) rb.bet.out = true;
                         rb.on = true;
                         rb.fail = 0;
@@ -4826,7 +5115,7 @@ function openTokenDialog() {
                         rb.note = '';
                         rb.noteKind = '';
                         rb.noteAt = 0;
-                        rbLogAdd({ t: now, k: 'sys', r: '', m: '▶ Bật · ' + rbLevelsText(rb.levels) + ' · đánh theo rotor' });
+                        rbLogAdd({ t: now, k: 'sys', r: '', m: '▶ Bật · ' + rbLevelsText(rb.levels) + ' · đánh theo STT' });
                     });
                     rbTry = { issue: '', n: 0, nextAt: 0, msg: '' };
                     rbBoardAskAt = 0;
@@ -4888,6 +5177,22 @@ function openTokenDialog() {
                     if (!token || ((isTokenExpiredLocally(token, 0) || !tokenAlive()) && !getRefreshToken())) {
                         rbFlash('Chưa có token dùng được — dán token game rồi bấm ▶ lại.', 'err');
                         openTokenDialog();
+                        return;
+                    }
+                    // Access token đã hết hạn nhưng CÓ refreshToken: xin token mới rồi tự BẬT,
+                    // người dùng không phải làm gì thêm.
+                    if (isTokenExpiredLocally(token, 0) && getRefreshToken()) {
+                        rbFlash('Token đang cũ — đang tự gia hạn rồi bật…', 'warn', 6000);
+                        renewKick(0);
+                        (function () {
+                            let tries = 0;
+                            const waitStart = setInterval(function () {
+                                tries++;
+                                const tok2 = getToken();
+                                if (tok2 && !isTokenExpiredLocally(tok2, 0)) { clearInterval(waitStart); rbStart(); return; }
+                                if (tries >= 30) { clearInterval(waitStart); rbFlash('Chưa gia hạn xong token — thử lại sau ít giây hoặc dán lại cụm token.', 'err', 9000); }
+                            }, 500);
+                        })();
                         return;
                     }
                     rbStart();                                              // bấm 1 lần là chạy
@@ -4960,6 +5265,33 @@ function openTokenDialog() {
                     }
                 }
 
+                // Token vừa được tự gia hạn: nếu cược thật vừa bị tắt vì token (hoặc đang chờ gia hạn)
+                // thì BẬT lại luôn — người dùng không phải bấm gì, không phải đăng nhập lại.
+                function rbMarkRenewStop(text) {
+                    rbRenewStopped = { on: true, lvl: rb.lvl, at: Date.now() };
+                }
+                onAuthRecovered = function () {
+                    try {
+                        renewNote = '↻ Vừa tự gia hạn token — chạy tiếp bình thường.';
+                        renewNoteAt = Date.now();
+                        rbTokenChanged();
+                        // Chỉ BẬT lại khi chính lần tắt trước là do token (không phải do người dùng bấm DỪNG).
+                        if (!rb.on && rbRenewStopped && rbRenewStopped.on && Date.now() - rbRenewStopped.at < 3600000) {
+                            rbRenewStopped = null;
+                            rbCommit(function () {                   // giữ nguyên mức cược, thắng/thua, loạt 10 ô
+                                if (rb.on) return;
+                                if (!rb.chain) rb.chain = rbChainBlank();
+                                rb.chain.on = true;
+                                rb.on = true;
+                                rb.fail = 0;
+                                if (rb.bet) rb.bet.out = true;
+                                rbLogAdd({ t: Date.now(), k: 'sys', r: '', m: '▶ Token đã tự gia hạn — BẬT lại cược thật (mức ' + (rb.lvl + 1) + ').' });
+                                rbNote('Đã tự gia hạn token và BẬT lại cược thật — không phải đăng nhập lại.', 'ok');
+                            });
+                        }
+                    } catch (e) {}
+                };
+
                 function rbTokenCleared() {
                     if (rb.on) rbStop('Đã xoá token nên cược thật tự tắt.', 'warn');
                     rbTokenChanged();
@@ -5007,32 +5339,41 @@ function openTokenDialog() {
                         const min = Math.max(1, Math.round(left / 60000));
                         text += ' · còn ' + (min >= 4320 ? Math.round(min / 1440) + ' ngày' : (min >= 120 ? Math.round(min / 60) + ' giờ' : min + ' phút'));
                     }
-                    return { text: text + (refresh ? ' · tự gia hạn' : ' · không tự gia hạn'), kind: 'ok' };
+                    let renewTxt;
+                    if (!refresh) renewTxt = ' · không tự gia hạn';
+                    else if (renewEverOkAt) renewTxt = ' · tự gia hạn (lần cuối ' + rbClock(renewEverOkAt) + ')';
+                    else if (renewSigFails > 0) renewTxt = ' · tự gia hạn: máy chủ báo sai chữ ký, đang thử cách khác';
+                    else renewTxt = ' · tự gia hạn';
+                    return { text: text + renewTxt, kind: 'ok' };
                 }
 
                 // ----- Đặt lệnh -----
                 function rbPlan(now, round, newest, synced) {
                     if (!rbBoardOk() || !newest || !synced || round.rem < RB_START_MIN_MS) return null;
-                    // Đang BẬT mà chưa có dữ liệu rotor (state bản cũ) → dựng lại.
-                    if (!rb.rotor || !rb.rotor.on) {
+                    // Đang BẬT mà chưa có dữ liệu tín hiệu (state bản cũ / dữ liệu thiếu) → dựng lại, đánh thuận.
+                    if (!rb.chain || !rb.chain.on) {
                         if (!rb.on) return null;
                         rbCommit(function () {
-                            if (!rb.rotor || !rb.rotor.on) {
-                                rb.rotor = rotorBlank();
-                                rb.rotor.on = true;
-                                rbLogAdd({ t: Date.now(), k: 'sys', r: '', m: '↻ Khởi động lại: đánh theo rotor' });
+                            if (!rb.chain || !rb.chain.on) {
+                                rb.chain = rbChainBlank();
+                                rb.chain.on = true;
+                                rbLogAdd({ t: Date.now(), k: 'sys', r: '', m: '↻ Khởi động lại: đánh theo STT' });
                             }
                         });
                     }
-                    // Ô đang đánh = rotor đang dùng; số không phải chữ số 0–9 → kỳ này không cược.
-                    const col = Math.min(Math.max(Number(rb.rotor.col) || 0, 0), rotorListLen() - 1);
-                    const val = rotorValueAt(col);
-                    const c = rotorSideOf(val);
+                    // Ô đang dùng của loạt (đã chốt) — cửa cược lấy đúng từ ô này, không tính lại theo kỳ mới.
+                    const batchPlan = rbChainPlan();
+                    const cellNow = batchPlan ? batchPlan.cell : null;
+                    const c = cellNow ? (cellNow.side || '') : '';
                     if (!c) {
-                        rbTry.msg = 'rotor ' + (col + 1) + ' đang là «' + (val || 'trống') + '» — không phải số 0–9 nên kỳ này không cược';
+                        // Ô của loạt chưa có số trên bảng → chưa biết cược chiều nào.
+                        const nxIssue = cellNow ? cellNow.i : pdNextIssue(newest);
+                        const t = rbN(nxIssue) % 10;
+                        const off0 = cellNow ? scNormOff(cellNow.off) : rbOffsetForIssue(nxIssue);
+                        rbTry.msg = 'phải tra ô STT−' + off0 + ' (tận cùng ' + t + ') mà ô đó chưa có số trên bảng';
                         return null;
                     }
-                    const issue = pdNextIssue(newest);
+                    const issue = cellNow ? cellNow.i : pdNextIssue(newest);
                     if (!issue || rb.posted === issue || rbPostedMem[issue]) return null;
                     if (rbTry.issue === issue && (rbTry.n >= RB_PREP_TRIES || now < rbTry.nextAt)) return null;
                     const count = rb.levels[rb.lvl];
@@ -5040,13 +5381,18 @@ function openTokenDialog() {
                         rbStop('Mức cược không hợp lệ — đã tắt. Hãy nhập lại mức cược.', 'err');
                         return null;
                     }
-                    // Ghi dấu "đang chờ kết quả" lên rotor đang đánh
-                    if (!rb.rotor.marks || typeof rb.rotor.marks !== 'object') rb.rotor.marks = {};
-                    for (const k in rb.rotor.marks) {
-                        if ((rb.rotor.marks[k] || {}).r === '?') delete rb.rotor.marks[k];
+                    // Ghi dấu "đang chờ kết quả" cho ô STT−x đã dùng để chọn cửa (viền vàng trên bảng)
+                    if (!rb.chain.marks || typeof rb.chain.marks !== 'object') rb.chain.marks = {};
+                    for (const k in rb.chain.marks) {
+                        if ((rb.chain.marks[k] || {}).r === '?') delete rb.chain.marks[k];
                     }
-                    rb.rotor.marks[String(col)] = { i: issue, r: '?' };
-                    return { issue: issue, base: newest, c: c, follow: false, lvl: rb.lvl, n: count, col: col };
+                    const planOff = cellNow ? scNormOff(cellNow.off) : rbOffsetForIssue(issue);
+                    const srcKey = cellNow ? (cellNow.ref || '') : rbRefKey(rbN(issue) - planOff);
+                    const srcCell = srcKey ? rbCellOfN(Number(srcKey)) : null;
+                    if (srcCell && pdKind(srcCell.value)) {
+                        rb.chain.marks[srcKey] = { i: issue, r: '?' };   // dấu dính theo STT của ô nguồn
+                    }
+                    return { issue: issue, base: newest, c: c, follow: false, lvl: rb.lvl, n: count, off: planOff };
                 }
 
                 // Trong lúc chờ mạng mọi thứ còn đúng như lúc lập lệnh không? ('' = còn đúng)
@@ -5059,7 +5405,7 @@ function openTokenDialog() {
                     const newest = pdNewestIssue();
                     if (newest !== plan.base) return 'bảng vừa có kết quả mới';
                     const wantC = rbChainChoice();
-                    if (!wantC || wantC !== plan.c) return 'rotor vừa đổi số';
+                    if (!wantC || wantC !== plan.c) return 'ô STT−' + (plan.off || 40) + ' vừa đổi số';
                     if (!rbBoardOk()) return 'bảng vừa thay đổi';
                     return '';
                 }
@@ -5073,6 +5419,12 @@ function openTokenDialog() {
                     try {
                         let token = '';
                         try { token = extractToken((await ensureFreshToken(60000)) || ''); } catch (e) { token = ''; }
+                        if ((!token || isTokenExpiredLocally(token, 0) || !tokenAlive()) && getRefreshToken()) {
+                            // Token vừa hỏng trong lúc gửi: gia hạn rồi dùng token mới, không tắt cược.
+                            try {
+                                token = extractToken((await ensureFreshToken(0)) || '');
+                            } catch (e) { token = ''; }
+                        }
                         if (!token || isTokenExpiredLocally(token, 0) || !tokenAlive()) {
                             return { kind: 'stop', msg: 'Token hết hạn hoặc chưa có — đã tắt cược thật. Hãy dán token mới.' };
                         }
@@ -5101,7 +5453,7 @@ function openTokenDialog() {
                             selectType: plan.c === 'B' ? 13 : 14
                         });
                     } catch (e) {
-                        if (rbIsAuthErr(e)) return { kind: 'stop', msg: 'Token không dùng được (' + rbErrText(e) + ') — đã tắt cược thật. Hãy dán token mới.' };
+                        if (rbIsAuthErr(e)) return { kind: 'skip', final: true, msg: 'token bị từ chối — đang tự gia hạn rồi đặt lại' };
                         return { kind: 'skip', msg: rbErrText(e) };
                     }
 
@@ -5113,9 +5465,9 @@ function openTokenDialog() {
                     rb.posted = plan.issue;
                     rb.bet = {
                         issue: plan.issue, base: plan.base, c: plan.c, n: plan.n, lvl: plan.lvl, fl: plan.follow,
-                        at: Date.now(), endAt: info.deadline, st: 'sending', vAt: 0, why: ''
+                        at: Date.now(), endAt: info.deadline, st: 'sending', vAt: 0, why: '', off: plan.off
                     };
-                    rbLogAdd({ t: Date.now(), k: 'bet', i: plan.issue, c: plan.c, n: plan.n, l: plan.lvl + 1, r: '', m: 'đang gửi…' });
+                    rbLogAdd({ t: Date.now(), k: 'bet', i: plan.issue, c: plan.c, n: plan.n, l: plan.lvl + 1, r: '', m: 'đang gửi… · STT−' + plan.off, x: plan.off });
                     rbSave();
                     rbRender();
 
@@ -5180,13 +5532,21 @@ function openTokenDialog() {
                             rbCommit(function () {
                                 if (rb.bet && rb.bet.issue === issue) rb.bet = null;
                                 rbLogSet(issue, { r: 'X', m: out.msg || 'bị từ chối' });
+                                if (out.auth && getRefreshToken()) {
+                                    // Token bị từ chối khi đặt lệnh → tự gia hạn rồi đặt lại đúng kỳ đó (không tắt).
+                                    renewKick(0);
+                                    rb.posted = '';                       // mở lại kỳ này để đặt lại sau khi có token mới
+                                    try { delete rbPostedMem[issue]; } catch (e) {}
+                                    rbTry = { issue: issue, n: 0, nextAt: Date.now() + 4000, msg: 'đang tự gia hạn token rồi đặt lại' };
+                                    rbNote('Token vừa bị từ chối ở kỳ ' + short + ' (' + out.msg + ') — đang tự gia hạn rồi đặt lại.', 'warn');
+                                    return;
+                                }
                                 const text = out.auth
-                                    ? 'Token không dùng được khi đặt lệnh kỳ ' + short + ' (' + out.msg + ') — đã tắt cược thật. Hãy dán token mới.'
+                                    ? 'Token không dùng được khi đặt lệnh kỳ ' + short + ' (' + out.msg + ') — đã thử tự gia hạn không được. Dán lại cụm token + refreshToken rồi bấm BẬT.'
                                     : 'Máy chủ từ chối lệnh kỳ ' + short + ' (' + out.msg + ') — đã tắt cược thật.';
                                 if (rb.on) rbLogAdd({ t: Date.now(), k: 'sys', r: 'X', m: '⏹ ' + text });
                                 rb.on = false;
-                                if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
-                        try { rotorFbWrite(0); } catch (e) {}
+                                if (rb.chain) rb.chain.on = false;        // tắt luôn việc đánh theo ô
                                 rbNote(text, 'err');
                             });
                         } else if (out.kind === 'stop') {
@@ -5251,8 +5611,7 @@ function openTokenDialog() {
                                 const text = RB_FAIL_MAX + ' lần liên tiếp lệnh không vào (' + why + ') — đã tắt cược thật. Hãy kiểm tra mạng.';
                                 rbLogAdd({ t: t, k: 'sys', r: 'X', m: '⏹ ' + text });
                                 rb.on = false;
-                                if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
-                        try { rotorFbWrite(0); } catch (e) {}
+                                if (rb.chain) rb.chain.on = false;        // tắt luôn việc đánh theo ô
                                 rbNote(text, 'err');
                             } else {
                                 rbNote('Kỳ ' + short + ': lệnh không vào (' + why + '), không tính kỳ này.', 'warn');
@@ -5267,8 +5626,7 @@ function openTokenDialog() {
                             rbLogSet(issue, { r: '?', m: 'không xác nhận được lệnh đã vào hay chưa' });
                             if (rb.on) rbLogAdd({ t: t, k: 'sys', r: 'X', m: '⏹ ' + text });
                             rb.on = false;
-                            if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
-                        try { rotorFbWrite(0); } catch (e) {}
+                            if (rb.chain) rb.chain.on = false;        // tắt luôn việc đánh theo ô
                             rbNote(text, 'err');
                             rbSave();
                             return;
@@ -5314,8 +5672,7 @@ function openTokenDialog() {
                             rbLogSet(issue, { r: '?', m: 'không thấy kết quả trên bảng' });
                             if (rb.on) rbLogAdd({ t: now, k: 'sys', r: 'X', m: '⏹ ' + text });
                             rb.on = false;
-                            if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
-                        try { rotorFbWrite(0); } catch (e) {}
+                            if (rb.chain) rb.chain.on = false;        // tắt luôn việc đánh theo ô
                             rbNote(text, 'err');
                         });
                         return;
@@ -5359,8 +5716,7 @@ function openTokenDialog() {
                                 const text = 'Thua ở mức cuối (mức ' + (b.lvl + 1) + ' · ' + rbFmtK(b.n) + ') — đã tắt cược thật. Bấm BẬT để chạy lại từ mức 1.';
                                 rbLogAdd({ t: now, k: 'sys', r: 'X', m: '⏹ ' + text });
                                 rb.on = false;
-                                if (rb.rotor) rb.rotor.on = false;        // tắt luôn việc đánh theo rotor
-                        try { rotorFbWrite(0); } catch (e) {}
+                                if (rb.chain) rb.chain.on = false;        // tắt luôn việc đánh theo ô
                                 rbNote(text, 'warn');
                             }
                             rb.lvl = 0;
@@ -5368,14 +5724,7 @@ function openTokenDialog() {
                             rb.lvl = b.lvl + 1;
                         }
                     }
-                    rbChainAfterBet(issue, b.c, ok);            // thắng → về rotor đầu · thua → rotor kế · thua ở rotor cuối → dừng
-                    if (!b.out && rb.rotor && rb.rotor.on && rb.rotor.mark === 'L' && (Number(rb.rotor.col) || 0) === 0 && rotorListLen() > 1) {
-                        const text = 'Thua ở rotor cuối — đã tắt cược thật. Bấm CHẠY TỰ ĐỘNG để quay lại từ rotor 1.';
-                        rbLogAdd({ t: now, k: 'sys', r: 'X', m: '⏹ ' + text });
-                        rb.on = false;
-                        rb.rotor.on = false;
-                        rbNote(text, 'warn');
-                    }
+                    rbChainAfterBet(issue, b.c, ok, b.off);            // thắng → về ô 10 hàng 6 · thua → hàng kế · thua hàng 10 → tự dừng
                     rbSave();
                     rbBalanceSoon(1500);
                     rbBalanceSoon(6000);
@@ -5385,10 +5734,6 @@ function openTokenDialog() {
                 // Gọi từ pdRender (10 lần/giây và mỗi khi bảng đổi).
                 function rbTick(now, round, newest, synced) {
                     if (!rbReady) return;
-                    // Rotor quay: mỗi kỳ mới trên bảng → mọi rotor +1 nhịp (chỉ khi đang CHẠY)
-                    try {
-                        if (rotorAdvance()) { scSeqKey = ''; scRender(); }
-                    } catch (e) {}
                     rbRunnerSync();
                     rbHeartbeat(now);
                     if (rbRunner) {
@@ -5432,13 +5777,14 @@ function openTokenDialog() {
                     if (!rbBoardOk()) return 'Cược thật đang BẬT · đang đối chiếu bảng với kết quả của game…';
                     const issue = pdNextIssue(newest);
                     const level = 'mức ' + (rb.lvl + 1) + '/' + rb.levels.length + ' · ' + rbFmtK(rb.levels[rb.lvl]);
-                    const col = Math.min(Math.max(Number(rb.rotor && rb.rotor.col) || 0, 0), rotorListLen() - 1);
-                    const val = rotorValueAt(col);
-                    const want = rotorSideOf(val);
-                    const tail = 'rotor ' + (col + 1) + ' đang là ' + (val === '' ? 'trống' : '«' + val + '»') + ' · ' + level;
+                    const n = rbN(issue);
+                    const t = Number.isFinite(n) ? ((n % 10) + 10) % 10 : NaN;
                     if (rb.posted === issue) return 'Kỳ ' + curShort + ': lệnh không vào — chờ kỳ sau · ' + level;
                     if (rbTry.issue === issue && rbTry.msg) return '⚠ Kỳ ' + curShort + ' chưa đặt được: ' + rbTry.msg;
-                    if (!want) return 'Kỳ ' + curShort + ' · ' + tail + ' — số này không phải 0–9 nên không cược';
+                    const off = rbOffsetForIssue(issue);
+                    const want = rbSideFor(issue, off);
+                    const tail = 'tận cùng ' + t + ' → tra ô STT−' + off + ' · ' + level;
+                    if (!want) return 'Kỳ ' + curShort + ': ' + tail.replace('tra ô STT−' + off, 'phải tra ô STT−' + off) + ' — ô đó chưa có số';
                     return 'Kỳ ' + curShort + ' · ' + tail + ' → sắp đặt ' + pdKindName(want);
                 }
 
@@ -5452,7 +5798,7 @@ function openTokenDialog() {
                     else if (e.r === 'X') result = 'KHÔNG VÀO: ' + String(e.m || '');
                     else if (e.r === '?') result = 'CHƯA RÕ: ' + String(e.m || '');
                     else result = e.m ? String(e.m) : 'chờ kết quả';
-                    return time + ' · kỳ ' + pdShort(e.i) + ' · ' + pdKindName(e.c) + ' ' + rbFmtK(e.n) + ' · mức ' + e.l + ' · ' + result;
+                    return time + ' · kỳ ' + pdShort(e.i) + ' · ' + pdKindName(e.c) + ' ' + rbFmtK(e.n) + ' · mức ' + e.l + ' · ' + result + (e.x ? ' · STT−' + e.x : '');
                 }
 
                 // Mục «Lịch sử cược thật»: mỗi lệnh 1 dòng (cửa · kỳ + mức · kết quả + tiền), việc bật / tắt là dòng chữ thường.
@@ -5637,11 +5983,13 @@ function openTokenDialog() {
                         + (rbBalanceErr ? ' · lỗi: ' + rbBalanceErr : ''));
                     pdText(rbEl.Sum, on ? 'Thắng ' + rb.win + ' · Thua ' + rb.lose : 'ĐANG TẮT');
                     // Chữ nhỏ cạnh tiêu đề: đang chạy thì hiện lãi / lỗ so với số dư lúc bật
-                    let side = 'Đánh theo rotor';
+                    let side = 'Đánh theo STT của kỳ';
                     let sideKind = '';
                     if (on) {
-                        const _c = Math.min(Math.max(Number(rb.rotor && rb.rotor.col) || 0, 0), rotorListLen() - 1);
-                        side = 'Rotor ' + (_c + 1) + ' · số «' + (rotorValueAt(_c) || '—') + '»';
+                        const _issue = rbCurrentIssue();
+                        const _t = rbN(_issue) % 10;
+                        const _off = rbOffsetForIssue(_issue);
+                        side = 'Tận cùng ' + (Number.isFinite(_t) ? _t : '-') + ' · tra ô STT−' + _off;
                         if (rb.bal0 !== null && Number.isFinite(rbBalance)) {
                             const diff = rbBalance - rb.bal0;
                             side = 'Từ lúc bật: ' + rbFmtSigned(diff);
@@ -5693,6 +6041,9 @@ function openTokenDialog() {
                     if (rbFlashText && now < rbFlashUntil) {
                         msg = rbFlashText;
                         kind = rbFlashKind;
+                    } else if (renewNote && now - renewNoteAt < (renewFail ? 120000 : 25000)) {
+                        msg = renewNote;                         // báo tự gia hạn chạy được / hỏng
+                        kind = renewFail ? 'warn' : 'ok';
                     } else if (on) {
                         if (rb.note && rb.noteKind && now - rb.noteAt < 45000) {
                             msg = rb.note;
@@ -5721,9 +6072,9 @@ function openTokenDialog() {
 
                     // --- Nút tự chạy ---
                     pdText(rbEl.Run, on ? '⏹ DỪNG · MỨC ' + (lvl + 1) + '/' + count + ' · ' + rbFmtK(rb.levels[lvl])
-                        : '▶ CHẠY TỰ ĐỘNG');
+                        : '▶ BẬT TỰ ĐỘNG CƯỢC THẬT');
                     pdAttr(rbEl.Run, 'aria-pressed', on ? 'true' : 'false');
-                    pdAttr(rbEl.Run, 'title', on ? 'Dừng cược thật tự động' : 'Chạy tự động theo rotor: thua sang rotor kế, thắng về rotor 1');
+                    pdAttr(rbEl.Run, 'title', on ? 'Dừng cược thật tự động' : 'Bật cược thật tự động (bấm 1 lần là chạy)');
 
                     // --- Mục «Mức cược» và «Lịch sử cược thật» ---
                     let ladder = 'Chưa cài';
@@ -5809,7 +6160,99 @@ function openTokenDialog() {
 
                     // Nút «📋 Dán»: ưu tiên nội dung đang có trong ô nhập; nếu ô trống thì đọc bộ nhớ tạm.
                     // Đọc được → lưu thật rồi mới đóng; không đọc được thì giữ dialog mở và báo lỗi ngay trong dialog.
-                    document.getElementById('btnPasteToken').addEventListener('click', async function () {
+                function tokenSnippet() {
+                    // Một dòng dán vào Console (F12) của trang game: tự đọc token + refresh token trong
+                    // localStorage/sessionStorage rồi mở trang này kèm đủ cụm (#?token=…&refreshToken=…).
+                    // Cần đúng 1 lần — sau đó trang tự gia hạn mãi mãi, không phải đăng nhập lại.
+                    const js = "(function(){var o={};function sc(s){try{for(var i=0;i<s.length;i++){var k=s.key(i);if(!(k in o)){var v=s.getItem(k);if(v&&v.length<4000)o[k]=v;}}}catch(e){}}"
+                        + "sc(localStorage);sc(sessionStorage);var tok='',ref='',hdr='';"
+                        + "for(var k in o){var kk=k.toLowerCase();var v=o[k];var m=v.match(/eyJ[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+){1,3}/);if(!m)continue;var j=m[0];"
+                        + "if(/header/i.test(kk)){if(!hdr)hdr=v;}else if(/refresh/i.test(kk)){if(!ref)ref=j;}else if(!tok)tok=j;}"
+                        + "if(!tok){var all='';for(var k in o)all+=o[k]+'|';var w=all.match(/eyJ[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+){1,3}/g)||[];tok=w[0]||'';if(!ref)ref=w.filter(function(x){return x!==tok;})[0]||'';}"
+                        + "if(!tok){alert('Không thấy token — hãy F5 đăng nhập lại trang game rồi chạy lại.');return;}"
+                        + "if(!ref&&!confirm('Chỉ thấy access token, KHÔNG thấy refresh token. Vẫn mở trang? (sau này hết hạn sẽ phải dán lại thủ công)'))return;"
+                        + "location.href='__HUB__#?token='+encodeURIComponent(tok)+(ref?'&refreshToken='+encodeURIComponent(ref):'')+(/\\S/.test(hdr||'')?'&tokenHeader='+encodeURIComponent(hdr):'');})();";
+                    return js.split('__HUB__').join(window.__HUB_URL || '');
+                }
+
+                (function () {
+                    // Chỉ lưu refreshToken vào cụm đang có (access token giữ nguyên).
+                    const btnRef = document.getElementById('btnSaveRefreshOnly');
+                    const inputRef = document.getElementById('refreshOnlyInput');
+                    if (btnRef && inputRef) btnRef.addEventListener('click', function () {
+                        const note2 = document.getElementById('tokenRenewNote');
+                        const say2 = function (text, kind) {
+                            if (!note2) return;
+                            note2.textContent = text;
+                            note2.style.color = kind === 'err' ? '#fca5a5' : (kind === 'ok' ? '#86efac' : '#93c5fd');
+                        };
+                        const text = String(inputRef.value || '').trim();
+                        if (!text) { say2('Dán refreshToken vào ô trước đã.', 'err'); return; }
+                        const parsed = parseAuthBundle(text);
+                        let ref = parsed.refreshToken || '';
+                        if (!ref) {
+                            const jw = text.match(/eyJ[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+){1,3}/g) || [];
+                            ref = jw.find(function (x) { return x !== getToken(); }) || jw[0] || '';
+                        }
+                        if (!ref || ref === getToken()) { say2('Không đọc được refreshToken trong nội dung vừa dán (có thể bạn dán lại access token).', 'err'); return; }
+                        storeAuthBundle({
+                            token: getToken(),
+                            refreshToken: ref,
+                            tokenHeader: getTokenHeader()
+                        }, { store: true });
+                        inputRef.value = '';
+                        renewFail = 0; renewNextAt = 0; renewSigFails = 0;
+                        try { rbTokenChanged(); } catch (e) {}
+                        try { syncAuthBundleToFirebase(); } catch (e) {}
+                        updateRefreshOnlyBox();
+                        say2('✔ Đã lưu refreshToken — đang thử xin token mới để chắc chắn dùng được…', 'ok');
+                        (async function () {
+                            try {
+                                await refreshAccessToken();
+                                renewFail = 0; renewNextAt = 0; renewSigFails = 0;
+                                try { rbTokenChanged(); } catch (e) {}
+                                say2('✔ Đã kiểm tra: máy chủ cấp token mới thành công — token mới còn ' + rbTokenLeft(Date.now()).text + '. Từ giờ trang tự gia hạn, không cần đăng nhập lại.', 'ok');
+                                if (typeof rbFlash === 'function') rbFlash('✔ refreshToken dùng được — token đã tự gia hạn, không cần đăng nhập lại.', 'ok', 8000);
+                            } catch (e3) {
+                                const kind = e3 && e3.kind ? e3.kind : '';
+                                if (kind === 'signature') {
+                                    say2('Đã lưu refreshToken. Máy chủ chưa chịu cấp token ngay (Wrong signature) — trang sẽ tự thử các cách khác trong nền; token hiện tại vẫn dùng bình thường tới khi hết hạn.', '');
+                                } else if (kind === 'session') {
+                                    say2('✖ refreshToken này không dùng được (máy chủ báo hết hiệu lực). Hãy bấm «📎 Lấy mã lấy token» và chạy trên trang game để lấy cụm mới.', 'err');
+                                } else {
+                                    say2('Đã lưu refreshToken nhưng chưa gọi thử được (' + (e3 && e3.message ? e3.message : 'lỗi mạng') + '). Trang sẽ tự gia hạn trong nền.', '');
+                                }
+                            }
+                        })();
+                    });
+                    const btnCopy = document.getElementById('btnCopySnippet');
+                    if (btnCopy) btnCopy.addEventListener('click', function () { rbCopyText(tokenSnippet()); });
+                    const btnRenew = document.getElementById('btnRenewNow');
+                    const note = document.getElementById('tokenRenewNote');
+                    function say(text, kind) {
+                        if (!note) return;
+                        note.textContent = text;
+                        note.style.color = kind === 'err' ? '#fca5a5' : (kind === 'ok' ? '#86efac' : '#93c5fd');
+                    }
+                    if (btnRenew) btnRenew.addEventListener('click', async function () {
+                        if (!getToken()) { say('Chưa có token — dán cụm token + refreshToken vào ô trên trước.', 'err'); return; }
+                        if (!getRefreshToken()) { say('Cụm token hiện tại KHÔNG có refreshToken nên không gia hạn được. Bấm «📎 Lấy mã lấy token», chạy 1 lần trên trang game để lấy đủ cụm.', 'err'); return; }
+                        btnRenew.disabled = true;
+                        say('Đang gia hạn…');
+                        try {
+                            await refreshAccessToken();
+                            renewFail = 0; renewNextAt = 0; renewLastAt = Date.now();
+                            rbTokenChanged();
+                            say('✔ Đã gia hạn · token mới còn ' + rbTokenLeft(Date.now()).text + ' (hạn cũ vẫn dùng được tới khi hết).', 'ok');
+                        } catch (e) {
+                            say('✖ Chưa gia hạn được: ' + (e && e.message ? e.message : 'lỗi mạng') + ' — thử lại sau ít giây.', 'err');
+                        } finally {
+                            btnRenew.disabled = false;
+                        }
+                    });
+                })();
+
+                document.getElementById('btnPasteToken').addEventListener('click', async function () {
                         const btn = this;
                         const note = document.getElementById('tokenPasteNote');
                         const say = function (text, kind) {
@@ -5891,9 +6334,229 @@ function openTokenDialog() {
                 }
 
                 // =====================================================================
+                // SỐ TRỪ LÙI x CHO TỪNG Ô TÍN HIỆU (STT−x, mặc định x = 40)
+                //   · Mỗi vị trí 0..9 trong dãy 10 kỳ sắp đánh có 1 số x riêng (1..99).
+                //   · Mọi kỳ đều dùng x của ô mình để tra ô STT−x.
+                //   · Cược thật luôn đánh kỳ ở vị trí 0 nên dùng x của ô đầu dãy.
+                //   · x được lưu vào localStorage — tải lại trang hay mở tab khác vẫn còn.
+                // =====================================================================
+                const LS_SC_OFFSETS = 'vn168_sc_offsets_v1';
+                const LS_SC_OFFSETS_AT = 'vn168_sc_offsets_at';
+                const SC_OFF_DEF = 40;
+                let scOffsets = null;                 // mảng 10 số, nạp lười từ localStorage
+                let scOffsetsAt = 0;                  // giờ sửa x lần cuối (để so với Firebase)
+                try { scOffsetsAt = Number(localStorage.getItem(LS_SC_OFFSETS_AT) || 0) || 0; } catch (e) {}
+                function scNormOff(x) {
+                    x = Math.round(Number(x));
+                    if (!Number.isFinite(x)) return SC_OFF_DEF;
+                    if (x < 1) return 1;
+                    if (x > 99) return 99;
+                    return x;
+                }
+                function scLoadOffsets() {
+                    let arr = null;
+                    try { arr = JSON.parse(localStorage.getItem(LS_SC_OFFSETS) || 'null'); } catch (e) { arr = null; }
+                    const out = [];
+                    for (let k = 0; k < 10; k++) out.push(arr && arr.length === 10 ? scNormOff(arr[k]) : SC_OFF_DEF);
+                    scOffsets = out;
+                    return out;
+                }
+                function scOffsetAt(k) {
+                    if (!scOffsets) scLoadOffsets();
+                    k = Math.round(Number(k));
+                    if (!Number.isFinite(k)) k = 0;
+                    if (k < 0) k = 0;
+                    if (k > 9) k = 9;
+                    return scNormOff(scOffsets[k]);
+                }
+                function scSaveOffsets(push) {
+                    if (!scOffsets) scLoadOffsets();
+                    if (push) scOffsetsAt = Date.now();
+                    try { localStorage.setItem(LS_SC_OFFSETS, JSON.stringify(scOffsets)); } catch (e) {}
+                    try { localStorage.setItem(LS_SC_OFFSETS_AT, String(scOffsetsAt || 0)); } catch (e) {}
+                    if (push) scPushOffsets();
+                }
+                // Đẩy x lên Firebase để các thiết bị khác dùng chung.
+                // Chỉ đẩy khi user SỬA (push=true) — không đẩy khi đang nhận từ xa, không đẩy lúc mới mở trang.
+                function scPushOffsets() {
+                    if (!fbDB || applyingRemote) return;
+                    if (!scOffsets) scLoadOffsets();
+                    try {
+                        fbDB.collection(FB_COLLECTION).doc(FB_DOC).set({
+                            scOffsets: scOffsets.slice(),
+                            scOffsetsUpdatedAt: scOffsetsAt || Date.now(),
+                            lastUpdated: Date.now()
+                        }, { merge: true }).catch(function () {});
+                    } catch (e) {}
+                }
+                // x dùng cho 1 kỳ = x đã chốt của ô mang kỳ đó trong loạt đang chạy / loạt kế.
+                // (Ngoài loạt → x của vị trí kỳ đó trong dãy 10 ô; vẫn ngoài → 40.)
+                function rbOffsetForIssue(issue, seq) {
+                    if (!issue) return SC_OFF_DEF;
+                    const st = rb.chain;
+                    const pools = st ? [st.batch, st.next] : [];
+                    for (let p = 0; p < pools.length; p++) {
+                        const b = pools[p];
+                        if (!b || !Array.isArray(b.cells)) continue;
+                        for (let k = 0; k < b.cells.length; k++) {
+                            if (b.cells[k] && b.cells[k].i === issue) return scNormOff(b.cells[k].off);
+                        }
+                    }
+                    const s = seq || rbRowSeq();
+                    for (let k = 0; k < s.length; k++) {
+                        if (s[k] && s[k].issue === issue) return scOffsetAt(k);
+                    }
+                    return SC_OFF_DEF;
+                }
+                // Gọi mỗi khi x thay đổi: chốt lại ô nguồn của loạt đang chạy rồi vẽ lại dãy tín hiệu,
+                // ô đối chiếu trên bảng và khung cược thật.
+                function scOffsetsChanged() {
+                    scSeqKey = '';
+                    try { rbChainResign(); } catch (e) {}          // đổi x → loạt đang chạy tính lại ô nguồn theo x mới
+                    try { scRender(); } catch (e) {}
+                    try { applyRunHighlight({ flash: true }); } catch (e) {}
+                    try { rbRender(); } catch (e) {}
+                }
+                // Mở nhiều tab: tab kia vừa tự gia hạn token → tab này nạp lại token mới.
+                window.addEventListener('storage', function (event) {
+                    if (!event) return;
+                    if (event.key !== 'vn168_token' && event.key !== LS_REFRESH_TOKEN && event.key !== LS_TOKEN_AT) return;
+                    const before = getToken();
+                    try { loadToken(); } catch (e) {}
+                    if (getToken() !== before) { try { rbTokenChanged(); } catch (e) {} }
+                });
+
+                // Mở nhiều tab: tab kia sửa x thì tab này nạp lại và vẽ lại theo.
+                window.addEventListener('storage', function (event) {
+                    if (!event) return;
+                    if (event.key === LS_SC_OFFSETS_AT) {
+                        try { scOffsetsAt = Number(localStorage.getItem(LS_SC_OFFSETS_AT) || 0) || 0; } catch (e) {}
+                        return;
+                    }
+                    if (event.key !== LS_SC_OFFSETS) return;
+                    scLoadOffsets();
+                    scOffsetsChanged();
+                });
+
+                // ----- Khung sửa x (chạm vào ô trong dãy tín hiệu để mở) -----
+                const scEditEl = document.getElementById('scEdit');
+                const scEditTitle = document.getElementById('scEditTitle');
+                const scEditInput = document.getElementById('scEditInput');
+                const scEditNote = document.getElementById('scEditNote');
+                const scEditSaveBtn = document.getElementById('scEditSave');
+                const scEditCloseBtn = document.getElementById('scEditClose');
+                const scEditResetBtn = document.getElementById('scEditReset');
+                let scEditK = -1;                     // ô đang sửa trong DÃY (0..9), -1 = đang đóng
+                let scEditPos = -1;                   // vị trí x tương ứng trong loạt (0..9)
+                // Ô thứ k của dãy ứng với vị trí x nào của loạt: dãy bắt đầu từ ô đang dùng
+                // nên khi loạt đã chạy tới ô 4 thì ô đầu dãy là vị trí x số 4.
+                function scPosOf(k) {
+                    const plan = rbChainPlan();
+                    if (!plan) return k;
+                    return (plan.ri + k) % 10;
+                }
+                function scEditNote2(text, kind) {
+                    if (!scEditNote) return;
+                    scEditNote.textContent = text;
+                    if (kind) scEditNote.setAttribute('data-kind', kind);
+                    else if (scEditNote.hasAttribute('data-kind')) scEditNote.removeAttribute('data-kind');
+                }
+                function scMarkEdit() {
+                    if (!scLast) return;
+                    for (let k = 0; k < scLast.children.length; k++) {
+                        const box = scLast.children[k];
+                        if (k === scEditK && scEditEl && !scEditEl.hidden) box.setAttribute('data-edit', '1');
+                        else if (box.hasAttribute('data-edit')) box.removeAttribute('data-edit');
+                    }
+                }
+                // Xem trước: với số đang gõ thì ô này sẽ tra tới STT nào, ra gì.
+                function scEditPreview() {
+                    if (scEditK < 0 || !scEditEl || scEditEl.hidden) return;
+                    const seq = rbSeqPlan();
+                    const e = seq[scEditK] || {};
+                    const raw = String(scEditInput.value || '').trim();
+                    const okNum = /^\d{1,2}$/.test(raw) && Number(raw) >= 1 && Number(raw) <= 99;
+                    if (!okNum) { scEditNote2('Nhập số 1–99 (đủ 2 số tự lưu).', 'err'); return; }
+                    const x = Number(raw);
+                    const autoHint = (raw.length === 1) ? ' Gõ thêm 1 số sẽ tự lưu.' : '';
+                    if (!e.issue || !Number.isFinite(e.n)) { scEditNote2('Ô này chưa có kỳ.' + autoHint, ''); return; }
+                    const refN = Math.round(e.n) - x;
+                    const cell = rbCellOfN(refN);
+                    const kind = cell ? pdKind(cell.value) : '';
+                    if (!cell || !kind) scEditNote2('→ sẽ tra ô STT ' + String(((refN % 1000) + 1000) % 1000).padStart(3, '0') + ': ô này chưa có số trên bảng.' + autoHint, '');
+                    else scEditNote2('→ sẽ tra ô STT ' + String(cell.sttFull).slice(-3) + ' (ra ' + cell.value + ' → ' + (kind === 'B' ? 'LỚN' : 'NHỎ') + ').' + autoHint, 'ok');
+                }
+                function scRefreshEdit(seqArg) {
+                    if (scEditK < 0 || !scEditEl || scEditEl.hidden) return;
+                    const seq = seqArg || rbSeqPlan();
+                    const e = seq[scEditK] || {};
+                    const t = Number.isFinite(e.n) ? (((Math.round(e.n) % 10) + 10) % 10) : NaN;
+                    if (scEditTitle) scEditTitle.textContent = e.issue
+                        ? ('Ô ' + (scPosOf(scEditK) + 1) + '/10 · kỳ ' + pdShort(e.issue) + ' · tận cùng ' + t)
+                        : ('Ô ' + (scPosOf(scEditK) + 1) + '/10 · chưa có kỳ');
+                    scEditPreview();
+                }
+                function scOpenEdit(k) {
+                    if (!scEditEl || !scEditInput) return;
+                    scEditK = k;
+                    scEditPos = scPosOf(k);
+                    scEditEl.hidden = false;
+                    scEditInput.value = String(scOffsetAt(scEditPos));
+                    scRefreshEdit();
+                    scMarkEdit();
+                    try { scEditInput.focus(); scEditInput.select(); } catch (e) {}
+                }
+                function scCloseEdit() {
+                    scEditK = -1;
+                    scEditPos = -1;
+                    if (scEditEl) scEditEl.hidden = true;
+                    scMarkEdit();
+                }
+                function scToggleEdit(k) {
+                    if (scEditK === k && scEditEl && !scEditEl.hidden) scCloseEdit();
+                    else scOpenEdit(k);
+                }
+                function scSaveEdit() {
+                    if (scEditK < 0 || !scEditInput) return;
+                    const raw = String(scEditInput.value || '').trim();
+                    if (!/^\d{1,2}$/.test(raw) || Number(raw) < 1 || Number(raw) > 99) {
+                        scEditPreview();
+                        try { scEditInput.focus(); scEditInput.select(); } catch (e) {}
+                        return;
+                    }
+                    if (!scOffsets) scLoadOffsets();
+                    if (scEditPos < 0) scEditPos = scPosOf(scEditK);
+                    scOffsets[scEditPos] = Number(raw);
+                    scSaveOffsets(true);
+                    const k = scEditK;
+                    if (k < 9) { scOffsetsChanged(); scOpenEdit(k + 1); }   // lưu xong tự qua ô kế để nhập nhanh
+                    else { scCloseEdit(); scOffsetsChanged(); }
+                }
+                if (scEditSaveBtn) scEditSaveBtn.addEventListener('click', scSaveEdit);
+                if (scEditCloseBtn) scEditCloseBtn.addEventListener('click', scCloseEdit);
+                if (scEditInput) {
+                    scEditInput.addEventListener('input', function () {
+                        scEditPreview();
+                        // Nhập đủ 2 số (10–99) → tự lưu và nhảy sang ô tiếp, khỏi bấm Lưu.
+                        if (/^\d{2}$/.test(String(scEditInput.value || '').trim())) scSaveEdit();
+                    });
+                    scEditInput.addEventListener('keydown', function (event) {
+                        if (event.key === 'Enter') { event.preventDefault(); scSaveEdit(); }
+                        else if (event.key === 'Escape') { event.preventDefault(); scCloseEdit(); }
+                    });
+                }
+                if (scEditResetBtn) scEditResetBtn.addEventListener('click', function () {
+                    scOffsets = [SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF];
+                    scSaveOffsets(true);
+                    scOffsetsChanged();
+                    if (scEditK >= 0 && scEditEl && !scEditEl.hidden && scEditInput) { scEditInput.value = String(scOffsetAt(scPosOf(scEditK))); scRefreshEdit(); }
+                });
+
+                // =====================================================================
                 // =====================================================================
                 // DÃY 10 Ô TÍN HIỆU — dóng thẳng cột với hàng 10 của bảng
-                //   10 ô = 10 kỳ SẮP đánh (kỳ ngay sau kỳ mới nhất, rồi nối tiếp).
+                //   10 ô = 10 kỳ CÒN LẠI của loạt đang chạy (ô đầu = kỳ sắp đánh), nối tiếp bằng
+                //   các ô đã chốt của loạt kế; chạy hết ô 10 thì cả dãy sang loạt mới.
                 //   Mỗi ô: STT (3 số cuối) + chữ L / N theo luật; ô của kỳ kế tiếp sáng lên.
                 // =====================================================================
                 const scPanel = document.getElementById('scPanel');
@@ -5919,265 +6582,67 @@ function openTokenDialog() {
                         ch.push(Math.round(r.height * 100) / 100);
                         cx.push(Math.round((r.left - base) * 100) / 100);
                     }
-                    const gap = 2;                                                       // khoảng cách giữa các ô trong bảng
-                    const extraH = 2;                                                    // ô rotor chỉ nhô hơn ô bảng 2px (bớt khoảng trống)
-                    const rows = Math.ceil(scLast.children.length / COLS) || 1;
-                    scLast.style.height = ((ch[0] + extraH) * rows + gap * (rows - 1)) + 'px';
-                    // Cột 10 lấy theo bảng; 9 cột đầu dóng đúng cột của bảng (cột cuối tự co để vừa khung)
+                    scLast.style.height = ch[0] + 'px';
                     const list = scLast.children;
-                    let maxRight = 0;
                     for (let k = 0; k < list.length; k++) {
                         const st = list[k].style;
-                        const c = k % COLS;
-                        const rIdx = Math.floor(k / COLS);
-                        st.display = '';
-                        st.width = cw[c] + 'px';
-                        st.height = (ch[c] + extraH) + 'px';
-                        st.left = cx[c] + 'px';
-                        st.top = ((ch[0] + gap) * rIdx) + 'px';
-                        maxRight = Math.max(maxRight, cx[c] + cw[c]);
-                    }
-                    // 10 rotor: chỉ thu nhỏ khi tràn THẬT (tránh lệch cột vì co đều từng ô)
-                    const box = scLast.getBoundingClientRect().width;
-                    if (maxRight > box + 2) {
-                        const k2 = box / maxRight;
-                        for (let k = 0; k < list.length; k++) {
-                            const c = k % COLS;
-                            list[k].style.width = (cw[c] * k2) + 'px';
-                            list[k].style.left = (cx[c] * k2) + 'px';
+                        if (k < COLS) {
+                            st.width = cw[k] + 'px';
+                            st.height = ch[k] + 'px';
+                            st.left = cx[k] + 'px';
+                        } else {                                 // ô dư (nếu có) — ẩn, không chen vào hàng
+                            st.display = 'none';
                         }
                     }
                 }
 
-                // ----- Panel nhập dãy số cho 10 rotor -----
-                const scCfg = document.getElementById('scCfg');
-                const scCfgGrid = document.getElementById('scCfgGrid');
-                const scCfgNote = document.getElementById('scCfgNote');
-                let scCfgInputs = [];
-
-                function rotorCfgRender() {
-                    if (!scCfgGrid) return;
-                    const st = rb.rotor || (rb.rotor = rotorBlank());
-                    if (!Array.isArray(st.list)) st.list = rotorNormalizeList(null);
-                    scCfgGrid.textContent = '';
-                    scCfgInputs = [];
-                    for (let k = 0; k < 10; k++) {
-                        const cell = document.createElement('label');
-                        cell.className = 'rot-cell';
-                        const cap = document.createElement('span');
-                        cap.textContent = 'Rotor ' + (k + 1);
-                        const inp = document.createElement('input');
-                        inp.type = 'text';
-                        inp.inputMode = 'numeric';
-                        inp.autocomplete = 'off';
-                        inp.spellcheck = false;
-                        inp.placeholder = 'gõ liền: 13804';
-                        inp.value = String(st.list[k] || '');
-                        inp.setAttribute('data-filled', inp.value.trim() ? '1' : '0');
-                        const hint = document.createElement('small');
-                        hint.className = 'rot-hint';
-                        inp.addEventListener('input', function () {
-                            const v = String(inp.value || '');
-                            inp.setAttribute('data-filled', v.trim() ? '1' : '0');
-                            if (!rb.rotor) rb.rotor = rotorBlank();
-                            rb.rotor.list[k] = v.slice(0, ROTOR_MAX_LEN * 4);
-                            rotorPending = rotorNormalizeList(rb.rotor.list);
-                            hint.textContent = rotorHintText(rb.rotor.list[k]);
-                            scCfgNote.textContent = rotorCfgFilled();
-                            scSeqKey = '';
-                            try { scRender(); } catch (e) {}
-                            rotorCfgSave();
-                        });
-                        // rời ô / dán xong → lưu ngay, không đợi hết 350ms
-                        inp.addEventListener('change', function () { rotorCfgSave(0); });
-                        inp.addEventListener('blur', function () { rotorCfgSave(0); });
-                        inp.addEventListener('paste', function () { setTimeout(function () { rotorCfgSave(0); }, 30); });
-                        cell.appendChild(cap);
-                        cell.appendChild(inp);
-                        cell.appendChild(hint);
-                        hint.textContent = rotorHintText(st.list[k]);
-                        scCfgGrid.appendChild(cell);
-                        scCfgInputs.push(inp);
-                    }
-                    scCfgNote.textContent = rotorCfgFilled();
-                }
-
-                // Dòng nhỏ dưới ô nhập: cho thấy máy đã tách dãy thành những số nào
-                function rotorHintText(text) {
-                    const got = rotorParse(text);
-                    if (!got.length) return 'trống';
-                    return got.length + ' số: ' + got.join(' · ');
-                }
-
-                // "6/10 rotor có dãy số"
-                // Dòng trạng thái đồng bộ: Firebase có dùng được không + đã ghi được chưa
-                function rotorCfgSyncNote(force) {
-                    const el = document.getElementById('scSync');
-                    if (!el) return;
-                    let kind;
-                    let text;
-                    if (!fbDB) {
-                        kind = 'off';
-                        text = rotorSavedAt
-                            ? ('💾 đã lưu trên máy này · ' + rbClock(rotorSavedAt) + ' · ☁ chưa kết nối Firebase')
-                            : '☁ chưa kết nối Firebase — dãy số chỉ lưu trên máy này';
-                    } else if (rotorFbErr) {
-                        kind = 'err';
-                        text = '⚠ lỗi Firebase: ' + String(rotorFbErr).slice(0, 90);
-                    } else if (!rotorFbReady) {
-                        kind = 'wait';
-                        text = '☁ đang tải dãy số từ Firebase…';
-                    } else if (rotorFbAt) {
-                        kind = 'ok';
-                        text = '☁ đã đồng bộ Firebase · ' + rbClock(rotorFbAt);
-                    } else {
-                        kind = 'wait';
-                        text = '☁ Firebase sẵn sàng — nhập dãy số là tự đồng bộ';
-                    }
-                    if (el.textContent !== text) el.textContent = text;
-                    if (el.getAttribute('data-kind') !== kind) el.setAttribute('data-kind', kind);
-                }
-
-                function rotorCfgFilled() {
-                    const st = rb.rotor || rotorBlank();
-                    let n = 0;
-                    for (let k = 0; k < 10; k++) if (rotorParse(st.list[k]).length) n++;
-                    return n ? (n + '/10 rotor có dãy số') : 'chưa nhập';
-                }
-
-                let rotorCfgTimer = 0;
-                let rotorSavedAt = 0;                   // lần lưu thành công gần nhất
-
-                // delay = 0 → lưu NGAY (dùng khi rời ô, đóng trang); mặc định chờ 350ms để khỏi ghi liên tục khi đang gõ
-                // Ghi thật: 3 nơi — trạng thái chính (rb) · localStorage · cookie
-                function rotorCfgFlush() {
-                    rotorCfgTimer = 0;
-                    if (!rb.rotor) rb.rotor = rotorBlank();
-                    const list = rotorNormalizeList(rb.rotor.list);
-                    try { rbSave(); } catch (e) {}
-                    try { localStorage.setItem(LS_ROTOR, JSON.stringify(list)); } catch (e) {}
-                    try {
-                        document.cookie = ROTOR_COOKIE + '=' + encodeURIComponent(JSON.stringify(list))
-                            + '; max-age=31536000; path=/; SameSite=Lax'
-                            + (location.protocol === 'https:' ? '; Secure' : '');
-                    } catch (e) {}
-                    rotorSavedAt = Date.now();
-                    rotorPending = null;
-                    try { rotorCfgSyncNote(); } catch (e) {}
-                    try { rotorFbWrite(0); } catch (e) {}
-                }
-
-                function rotorCfgSave(delay) {
-                    // delay = 0 → ghi NGAY, đồng bộ (đóng trang / ẩn tab thì setTimeout không kịp chạy)
-                    if (delay === 0) {
-                        if (rotorCfgTimer) clearTimeout(rotorCfgTimer);
-                        rotorCfgFlush();
-                        return;
-                    }
-                    if (rotorCfgTimer) clearTimeout(rotorCfgTimer);
-                    rotorCfgTimer = setTimeout(rotorCfgFlush, 350);
-                }
-
-                // Đọc bản dự phòng: localStorage trước, rồi cookie
-                function rotorCfgKeptList() {
-                    try {
-                        const got = JSON.parse(localStorage.getItem(LS_ROTOR) || 'null');
-                        if (Array.isArray(got) && got.some(function (t) { return rotorParse(t).length; })) return got;
-                    } catch (e) {}
-                    try {
-                        const m = /(?:^|;\s*)vn168_rotor=([^;]*)/.exec(document.cookie || '');
-                        if (m) {
-                            const got = JSON.parse(decodeURIComponent(m[1]));
-                            if (Array.isArray(got)) return got;
-                        }
-                    } catch (e) {}
-                    return null;
-                }
-
-                // Nút «⬇ Tải lại»: đọc lại bản trên Firebase và ÉP áp dụng (kể cả bản cũ hơn)
-                async function rotorFbPull() {
-                    const btn = document.getElementById('scFbLoad');
-                    if (btn) { btn.disabled = true; btn.textContent = '… đang tải'; }
-                    let ok = false;
-                    try { ok = await rotorFbLoad(true); } catch (e) { ok = false; }
-                    if (!ok) {
-                        const n = rotorFbErr ? ('lỗi: ' + String(rotorFbErr).slice(0, 80)) : 'trên Firebase chưa có dãy số nào';
-                        try { rbFlash('Không tải được dãy rotor — ' + n, 'err'); } catch (e) {}
-                    } else {
-                        try { rbFlash('Đã tải dãy rotor từ Firebase.', 'ok'); } catch (e) {}
-                    }
-                    if (btn) { btn.disabled = false; btn.textContent = '⬇ Tải lại'; }
-                    try { rotorCfgSyncNote(); } catch (e) {}
-                }
-
-                // Mở trang: chưa có dãy số nào trong trạng thái → lấy bản dự phòng riêng
-                function rotorCfgLoad() {
-                    if (!rb.rotor) rb.rotor = rotorBlank();
-                    if (!Array.isArray(rb.rotor.list)) rb.rotor.list = rotorNormalizeList(null);
-                    const empty = !rb.rotor.list.some(function (t) { return rotorParse(t).length; });
-                    if (empty) {
-                        const got = rotorCfgKeptList();
-                        if (got) {
-                            rb.rotor.list = rotorNormalizeList(got);
-                            rotorSavedAt = Math.max(rotorSavedAt, Date.now());
-                        }
-                    }
-                    rotorCfgRender();
-                    scSeqKey = '';
-                    try { scRender(); } catch (e) {}
-                }
-
-                // Vẽ dãy rotor: mỗi ô = 1 rotor (số đang hiện to) + 1 chấm báo đang đánh.
                 function scRender() {
-                    try { rotorRepairFromInputs(); } catch (e) {}
-                    const st = rb.rotor || rotorBlank();
-                    const n = rotorListLen();
-                    const plan = rbSeqPlan();
-                    const on = st.on === true;
-                    const col = Math.min(Math.max(Number(st.col) || 0, 0), n - 1);
-                    // chữ ký: đổi số / đổi rotor đang đánh / đổi bật-tắt → vẽ lại
-                    const key = plan.map(function (e) { return e.val + ':' + e.side; }).join(',') + '|' + n + '|' + col + '|' + (on ? 1 : 0) + '|' + rotorAtGet();
+                    const seq = rbSeqPlan();                 // 10 kỳ sắp đánh, mọi ô đều đánh thuận
+                    const key = seq.map(function (e) { return e.n + ':' + e.side + ':' + e.off; }).join(',');
+                    const on = !!(rb.chain && rb.chain.on);       // chỉ khi đang BẬT mới có ô "đang dùng" phát sáng
                     if (key !== scSeqKey) {
                         scSeqKey = key;
                         scLast.textContent = '';
-                        const nodes = [];
-                        for (let k = 0; k < n; k++) {
-                            const e = plan[k] || {};
+                        for (let k = 0; k < seq.length; k++) {
+                            const e = seq[k];
                             const box = document.createElement('div');
                             box.className = 'srb';
-                            box.setAttribute('data-rotor', String(k));
+                            const side = e.side;
                             const nb = document.createElement('span');
                             nb.className = 'srb-n';
-                            nb.textContent = String(k + 1);                       // số thứ tự rotor
+                            // chỉ ghi CHỮ SỐ CUỐI của STT (911 → 1)
+                            nb.textContent = Number.isFinite(e.n) ? String(((Math.round(e.n) % 10) + 10) % 10) : '-';
                             const vb = document.createElement('span');
                             vb.className = 'srb-v';
-                            vb.textContent = (e.val === undefined || e.val === '') ? '·' : String(e.val);
-                            if (e.side) box.setAttribute('data-kind', e.side);
-                            box.title = 'Rotor ' + (k + 1) + ' · số đang hiện: ' + (e.val === '' ? 'trống' : e.val)
-                                + (e.side ? ' → ' + (e.side === 'B' ? 'LỚN' : 'NHỎ') : ' · không cược')
-                                + (e.issue ? ' · kỳ ' + e.issue : '');
+                            vb.textContent = side === 'B' ? 'L' : (side === 'S' ? 'N' : '?');
+                            if (side) box.setAttribute('data-kind', side);
+                            const tl = Number.isFinite(e.n) ? ((Math.round(e.n) % 10) + 10) % 10 : NaN;
+                            box.setAttribute('data-sub', '1');   // mọi kỳ đều tra ô STT−x
+                            box.title = e.issue
+                                ? ('Ô ' + (e.pos || (k + 1)) + '/10 · kỳ ' + e.issue + ' · tận cùng ' + tl + ' → ' + (side === 'B' ? 'LỚN' : side === 'S' ? 'NHỎ' : 'chưa xác định')
+                                    + (e.ref ? ' · tra ô ' + String(e.ref).padStart(3, '0') + ' (−' + e.off + ')' : ' · tra STT−' + e.off)
+                                    + ' · chạm để sửa x')
+                                : 'Chưa có kỳ';
                             box.appendChild(nb);
                             box.appendChild(vb);
-                            nodes.push(box);
+                            (function (kk) { box.addEventListener('click', function () { try { scToggleEdit(kk); } catch (err) {} }); })(k);
                             scLast.appendChild(box);
                         }
-                        // dãy quá 10 rotor → xuống dòng (lưới), 10 rotor đầu vẫn dóng cột với bảng
-                        if (n > COLS) scLast.setAttribute('data-wrap', '1');
-                        else scLast.removeAttribute('data-wrap');
                     }
-                    const list = scLast.children;
-                    for (let k = 0; k < list.length; k++) {
-                        const box = list[k];
-                        const isCur = on && k === col;
-                        if (isCur) { if (!box.hasAttribute('data-now')) box.setAttribute('data-now', '1'); }
+                    // ô đang dùng để cược = ô đầu dãy (kỳ sắp đánh) — sáng đứng yên, không nhảy
+                    for (let k = 0; k < scLast.children.length; k++) {
+                        const box = scLast.children[k];
+                        if (on && k === 0) box.setAttribute('data-now', '1');
                         else if (box.hasAttribute('data-now')) box.removeAttribute('data-now');
                     }
+                    scMarkEdit();
                     scAlign();
 
-                    // nhãn + câu phụ
-                    const cur = plan[col] || {};
-                    const side = rotorSideOf(cur.val);
-                    if (!on) {
+                    // câu trạng thái + nút bên phải
+                    const first = seq[0] || {};
+                    const side = first.side || '';
+                    const t = Number.isFinite(first.n) ? ((first.n % 10) + 10) % 10 : NaN;
+                    if (!(rb.chain && rb.chain.on)) {
                         pdAttr(scPanel, 'data-state', 'empty');
                         if (scHint.hasAttribute('data-kind')) scHint.removeAttribute('data-kind');
                         pdText(scHint, 'CHƯA CHẠY');
@@ -6191,13 +6656,20 @@ function openTokenDialog() {
                         pdText(scHint, 'CHỜ SỐ');
                     }
                     let sub;
-                    if (!cur.issue) sub = 'chưa có kỳ — cần bảng có kết quả';
-                    else {
-                        sub = 'kỳ ' + pdShort(cur.issue) + ' · rotor ' + (col + 1) + '/10 đang là '
-                            + (cur.val === '' ? 'trống' : '«' + cur.val + '»')
-                            + (side ? ' → ' + (side === 'B' ? 'LỚN' : 'NHỎ') : ' → không cược');
-                    }
+                    if (!first.issue) sub = 'chưa có kỳ — cần bảng có kết quả';
+                    else if (Number.isFinite(t)) {
+                        const off0 = first.off || SC_OFF_DEF;
+                        const planNow = rbChainPlan();
+                        const pos = planNow ? (planNow.ri + 1) : 1;
+                        const refKey = first.ref || '';
+                        const src = refKey ? rbCellOfN(Number(refKey)) : null;
+                        sub = 'loạt ô ' + pos + '/10 · kỳ ' + String(first.n).padStart(3, '0') + ' · tận cùng ' + t
+                            + (src && pdKind(src.value)
+                                ? (' · ô ' + String(refKey).padStart(3, '0') + ' (−' + off0 + ') ra ' + String(src.value) + ' → ' + pdKindName(pdKind(src.value)))
+                                : (' · chờ ô ' + (refKey ? String(refKey).padStart(3, '0') : 'STT−' + off0) + ' có số'));
+                    } else sub = '10 ô tín hiệu';
                     pdText(scSub, sub);
+                    scRefreshEdit(seq);
                 }
 
                 initGrid();
@@ -6205,35 +6677,28 @@ function openTokenDialog() {
                 const hasLocalBoard = loadBoardLocal();
                 try { applyRunHighlight(); } catch (e) {}
                 rbInit();
-                try { rotorCfgLoad(); } catch (e) {}
-                try {
-                    const _fbBtn = document.getElementById('scFbLoad');
-                    if (_fbBtn) _fbBtn.addEventListener('click', function () { rotorFbPull(); });
-                } catch (e) {}
-                try { rotorFbLoad(false).then(function () { rotorCfgSyncNote(); }); } catch (e) {}
                 pdInit();
                 startRealtimeSync();
                 if (hasLocalBoard) setStatus('Đã mở bảng đã lưu · đang kiểm tra kết quả mới…');
                 else if (!getToken()) setStatus('Bấm “Token” để nhập token và nạp 100 kỳ vào bảng.');
                 else setStatus('Đang chuẩn bị nạp 100 kỳ…');
             
-                // Đóng trang / ẩn tab / chuyển trang → lưu rotor ngay (không mất dãy đang gõ dở)
-                window.addEventListener('pagehide', function () { try { rotorCfgSave(0); } catch (e) {} });
-                window.addEventListener('beforeunload', function () { try { rotorCfgSave(0); } catch (e) {} });
-                document.addEventListener('visibilitychange', function () {
-                    if (document.visibilityState === 'hidden') { try { rotorCfgSave(0); } catch (e) {} }
-                });
                 window.addEventListener('resize', function () { try { scAlign(); } catch (e) {} });
                 setTimeout(function () { try { scAlign(); } catch (e) {} }, 600);
                 setTimeout(function () { refreshResults(false, false); }, 400);
                 setInterval(function () {
                     if (!fetchInProgress && getToken() && (tokenAlive() || getRefreshToken())) refreshResults(false, false);
                 }, 5000);
-                setInterval(function () {
-                    if (getToken() && getRefreshToken()) ensureFreshToken(120000).catch(function () {});
-                }, 30000);
+                // Tự gia hạn token: kiểm tra mỗi 20 giây (còn <10 phút là thay mới; đang cược thì luôn tươi).
+                setInterval(function () { autoRenewTick(); }, RENEW_CHECK_MS);
+                setTimeout(function () { autoRenewTick(); }, 1200);
+                window.addEventListener('online', function () { renewKick(500); });
+                document.addEventListener('visibilitychange', function () {
+                    if (!document.hidden) renewKick(800);              // quay lại tab là kiểm tra token ngay
+                });
+                window.addEventListener('focus', function () { renewKick(1500); });
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c13b35bd28848a',t:'MTc5NDk0NDY3OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c13b35bd28848a',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c09fccec4e2442',t:'MTc5NDkzODMxMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c09fccec4e2442',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c7aeac78338588',t:'MTc5NTAxMjMyMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c7aeac78338588',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
