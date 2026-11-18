@@ -1630,7 +1630,7 @@
             <section class="scan-panel" id="scPanel" data-state="empty" aria-label="Dãy 10 ô tín hiệu">
                 <div class="sc-head">
                     <span class="sc-title">Dãy tín hiệu</span>
-                    <span class="sc-hint" id="scHint" role="status" aria-live="polite" title="Mỗi ô là 1 kỳ sắp đánh, dóng thẳng cột với hàng 10 của bảng. Mỗi ô tra ô STT−x (chạm vào ô để sửa x, mặc định 40) rồi đánh THUẬN đúng như ô đó: ô ra 0-4 → NHỎ · 5-9 → LỚN. Ô vàng nhấp nháy: đang cược ô đó.">CHƯA CHẠY</span>
+                    <span class="sc-hint" id="scHint" role="status" aria-live="polite" title="Mỗi ô là 1 kỳ sắp đánh, dóng thẳng cột với hàng 10 của bảng. Mỗi ô hiện STT và chữ L/N. CHỮ SỐ CUỐI STT chọn x để tra ô STT−x: 0→70 · 1→60 · 2→40 · 3→40 · 4→70 · 5→90 · 6→50 · 7→60 · 8→40 · 9→80. Rồi đánh THUẬN đúng như ô tra được (0-4 → NHỎ · 5-9 → LỚN). Chạm vào ô để sửa x của chữ số đó.: ô ra 0-4 → NHỎ · 5-9 → LỚN. Ô vàng nhấp nháy: đang cược ô đó.">CHƯA CHẠY</span>
                 </div>
                 <span class="sc-sub-line" id="scSub">10 kỳ sắp đánh</span>
                 <div class="sc-row" id="scLast" aria-hidden="false"></div>
@@ -1638,7 +1638,7 @@
                     <div class="sc-edit-head"><span id="scEditTitle">Ô 1</span><button type="button" class="sc-edit-x" id="scEditClose" aria-label="Đóng">✕</button></div>
                     <div class="sc-edit-row">
                         <span class="sc-edit-lab">STT −</span>
-                        <input class="sc-edit-input" id="scEditInput" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="2" placeholder="40">
+                        <input class="sc-edit-input" id="scEditInput" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="2" placeholder="1–99">
                         <button type="button" class="sc-edit-save" id="scEditSave">Lưu &amp; ô tiếp</button>
                     </div>
                     <div class="sc-edit-note" id="scEditNote"></div>
@@ -1646,7 +1646,7 @@
                         <button type="button" class="sc-edit-tool" id="scEditCopyX" title="Sao chép bộ x đang dùng (1 dòng) để dán sang bản khác/thiết bị khác">📋 Sao chép bộ x</button>
                         <button type="button" class="sc-edit-tool" id="scEditPasteX" title="Dán dòng bộ x đã sao chép để khôi phục">📥 Nhập bộ x</button>
                     </div>
-                    <button type="button" class="sc-edit-reset" id="scEditReset">↺ Tất cả về 40</button>
+                    <button type="button" class="sc-edit-reset" id="scEditReset">↺ Tất cả về mặc định</button>
                 </div>
             </section>
 
@@ -1678,7 +1678,7 @@
                         <div class="rb-actions">
                             <button type="button" class="rb-save" id="rbSave">Lưu &amp; thu gọn</button>
                         </div>
-                        <p class="rb-rule">Bấm BẬT là đánh theo ô STT<b>−x</b> của từng kỳ (mặc định x = 40; chạm vào từng ô trong Dãy tín hiệu để sửa x): ô đó ra 0-4 → cược <b>NHỎ</b> · 5-9 → cược <b>LỚN</b> (<b>luôn đánh thuận</b> — không đảo ngược dù thắng hay thua). Tiền cược theo thang: thua lên mức kế, thắng về mức 1.</p>
+                        <p class="rb-rule">Bấm BẬT là đánh theo ô STT<b>−x</b> của từng kỳ (x chọn theo chữ số cuối STT: 0→70 · 1→60 · 2→40 · 3→40 · 4→70 · 5→90 · 6→50 · 7→60 · 8→40 · 9→80; chạm vào từng ô trong Dãy tín hiệu để sửa): ô đó ra 0-4 → cược <b>NHỎ</b> · 5-9 → cược <b>LỚN</b> (<b>luôn đánh thuận</b> — không đảo ngược dù thắng hay thua). Tiền cược theo thang: thua lên mức kế, thắng về mức 1.</p>
                         <div class="rb-tokeninfo" id="rbToken">Chưa có token</div>
                     </div>
                 </details>
@@ -2577,7 +2577,7 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         if (data && Array.isArray(data.scOffsets) && data.scOffsets.length === 10) {
                             const remoteAt = Number(data.scOffsetsUpdatedAt || 0) || 0;
                             const norm = [];
-                            for (let k = 0; k < 10; k++) norm.push(scNormOff(data.scOffsets[k]));
+                            for (let k = 0; k < 10; k++) norm.push(scNormOff(data.scOffsets[k], scDefAt(k)));
                             const same = scOffsets && norm.every(function (v, k) { return v === scOffsets[k]; });
                             if (!same && (!scOffsetsAt || !remoteAt || remoteAt > scOffsetsAt)) {
                                 scOffsets = norm;
@@ -4385,7 +4385,7 @@ async function rbCopyText(text) {
                 // =====================================================================
                 // TÍN HIỆU THEO SỐ KỲ (STT) — chỉ dùng cho CƯỢC THẬT ở khung trên
                 //   MỌI kỳ sắp đánh đều lấy ô có STT = n − x (n = 3 số cuối của STT kỳ,
-                //   x = số trừ lùi của ô đó trong dãy tín hiệu, mặc định 40):
+                //   x = số trừ lùi của ô đó trong dãy tín hiệu, mặc định riêng từng ô):
                 //         ô đó ra 0-4 → đánh NHỎ · ô đó ra 5-9 → đánh LỚN
                 //     LUÔN ĐÁNH THUẬN — không đảo ngược, không theo dõi thắng/thua.
                 //   • Dãy tín hiệu là LOẠT 10 Ô CỐ ĐỊNH: ô thứ k của loạt = kỳ (base+k), tra ô
@@ -4422,9 +4422,13 @@ async function rbCopyText(text) {
                 }
 
                 // Ô của bảng ứng với số kỳ n−x — tra trong 100 ô (không có → chờ).
+                // STT chạy vòng 000→999 rồi về 000, nên (n − x) ÂM vẫn là ô hợp lệ của vòng trước:
+                //   kỳ 000 − 70 = −70  →  ô 930 của vòng trước (KHÔNG phải "chưa có số").
+                // Bọc y hệt rbRefKey để khoá ghi nhớ và ô tra được luôn khớp nhau.
                 function rbCellOfN(n) {
-                    if (!Number.isFinite(n) || n < 0 || n > 999) return null;
-                    const want = String(Math.round(n)).padStart(3, '0');
+                    if (!Number.isFinite(n)) return null;
+                    n = ((Math.round(n) % 1000) + 1000) % 1000;
+                    const want = String(n).padStart(3, '0');
                     for (let i = TOTAL - 1; i >= 0; i--) {
                         const stt = String(cells[i].sttFull || '');
                         if (!stt) continue;
@@ -4454,9 +4458,9 @@ async function rbCopyText(text) {
                     const out = [];
                     let issue = String(baseIssue || '');
                     for (let k = 0; k < 10; k++) {
-                        if (!issue) { out.push({ i: '', n: NaN, off: scOffsetAt(k), ref: '', side: '' }); continue; }
+                        if (!issue) { out.push({ i: '', n: NaN, off: SC_OFF_DEF, ref: '', side: '' }); continue; }
                         const n = rbN(issue);
-                        const off = scOffsetAt(k);
+                        const off = scOffsetForIssue(issue);      // x chọn theo chữ số cuối STT
                         const refN = n - off;
                         const cell = rbCellOfN(refN);
                         const kind = cell ? pdKind(cell.value) : '';
@@ -4576,7 +4580,7 @@ async function rbCopyText(text) {
                             if (d <= 9 && st.batch) c = st.batch.cells[d];
                             else if (rbChainBatchOk(st.next)) c = st.next.cells[d - 10];
                         }
-                        if (!c) { out.push({ issue: '', n: NaN, inv: false, off: scOffsetAt(k), side: '' }); continue; }
+                        if (!c) { out.push({ issue: '', n: NaN, inv: false, off: SC_OFF_DEF, side: '', pos: 0 }); continue; }
                         out.push({ issue: c.i, n: c.n, inv: false, off: c.off, side: c.side, ref: c.ref, pos: (plan.ri + k) % 10 + 1 });
                     }
                     return out;
@@ -7202,7 +7206,7 @@ async function rbCopyText(text) {
                 }
 
                 // =====================================================================
-                // SỐ TRỪ LÙI x CHO TỪNG Ô TÍN HIỆU (STT−x, mặc định x = 40)
+                // SỐ TRỪ LÙI x CHO TỪNG Ô TÍN HIỆU (STT−x, mặc định riêng từng ô)
                 //   · Mỗi vị trí 0..9 trong dãy 10 kỳ sắp đánh có 1 số x riêng (1..99).
                 //   · Mọi kỳ đều dùng x của ô mình để tra ô STT−x.
                 //   · Cược thật luôn đánh kỳ ở vị trí 0 nên dùng x của ô đầu dãy.
@@ -7210,22 +7214,48 @@ async function rbCopyText(text) {
                 // =====================================================================
                 const LS_SC_OFFSETS = 'vn168_sc_offsets_v1';
                 const LS_SC_OFFSETS_AT = 'vn168_sc_offsets_at';
-                const SC_OFF_DEF = 40;
+                // MẶC ĐỊNH RIÊNG CHO TỪNG Ô — đọc theo VỊ TRÍ trong dãy (0..9 = ô 1..ô 10):
+                //   vị trí 9 = 80 · 0 = 70 · 1 = 60 · 2 = 40 · 3 = 40
+                //   vị trí 4 = 70 · 5 = 90 · 6 = 50 · 7 = 60 · 8 = 40
+                const SC_OFF_DEFAULTS = [70, 60, 40, 40, 70, 90, 50, 60, 40, 80];
+                const SC_OFF_DEF = 40;              // chỉ dùng khi vị trí ra ngoài 0..9
+                function scDefAt(k) {
+                    k = Math.round(Number(k));
+                    if (!Number.isFinite(k) || k < 0 || k > 9) return SC_OFF_DEF;
+                    return SC_OFF_DEFAULTS[k];
+                }
                 let scOffsets = null;                 // mảng 10 số, nạp lười từ localStorage
                 let scOffsetsAt = 0;                  // giờ sửa x lần cuối (để so với Firebase)
                 try { scOffsetsAt = Number(localStorage.getItem(LS_SC_OFFSETS_AT) || 0) || 0; } catch (e) {}
-                function scNormOff(x) {
+                function scNormOff(x, fallback) {
+                    const fb = Number.isFinite(Number(fallback)) ? Number(fallback) : SC_OFF_DEF;
+                    // Trống hẳn (null / undefined / chuỗi rỗng) = CHƯA CÓ GIÁ TRỊ → dùng mặc định của ô đó.
+                    // (Khác với số 0 do người dùng nhập — cái đó kẹp về 1.)
+                    if (x === null || x === undefined || String(x).trim() === '') return fb;
                     x = Math.round(Number(x));
-                    if (!Number.isFinite(x)) return SC_OFF_DEF;
+                    if (!Number.isFinite(x)) return fb;
                     if (x < 1) return 1;
                     if (x > 99) return 99;
                     return x;
                 }
+                const LS_SC_OFF_MIGRATED = 'vn168_sc_offsets_migrated_v2';
+                // Bản trước mặc định TẤT CẢ ô = 40. Nếu máy đang lưu đúng bộ 40 ấy (tức là
+                // người dùng chưa từng sửa gì) thì nâng lên bộ mặc định riêng từng ô MỚI —
+                // nếu không, mặc định mới sẽ không bao giờ hiện ra trên máy đã dùng bản cũ.
+                function scMaybeMigrateOffsets(arr) {
+                    if (!Array.isArray(arr) || arr.length !== 10) return arr;
+                    try { if (localStorage.getItem(LS_SC_OFF_MIGRATED) === '1') return arr; } catch (e) { return arr; }
+                    const allForty = arr.every(function (v) { return Math.round(Number(v)) === 40; });
+                    try { localStorage.setItem(LS_SC_OFF_MIGRATED, '1'); } catch (e) {}
+                    return allForty ? SC_OFF_DEFAULTS.slice() : arr;
+                }
                 function scLoadOffsets() {
                     let arr = null;
                     try { arr = JSON.parse(localStorage.getItem(LS_SC_OFFSETS) || 'null'); } catch (e) { arr = null; }
+                    arr = scMaybeMigrateOffsets(arr);
+                    if (arr && arr.length === 10) { try { localStorage.setItem(LS_SC_OFFSETS, JSON.stringify(arr)); } catch (e) {} }
                     const out = [];
-                    for (let k = 0; k < 10; k++) out.push(arr && arr.length === 10 ? scNormOff(arr[k]) : SC_OFF_DEF);
+                    for (let k = 0; k < 10; k++) out.push(arr && arr.length === 10 ? scNormOff(arr[k], scDefAt(k)) : scDefAt(k));
                     scOffsets = out;
                     return out;
                 }
@@ -7235,7 +7265,20 @@ async function rbCopyText(text) {
                     if (!Number.isFinite(k)) k = 0;
                     if (k < 0) k = 0;
                     if (k > 9) k = 9;
-                    return scNormOff(scOffsets[k]);
+                    return scNormOff(scOffsets[k], scDefAt(k));
+                }
+                // KHOÁ CHỌN x = CHỮ SỐ CUỐI của STT kỳ — đúng như bảng tra:
+                //   0→70 · 1→60 · 2→40 · 3→40 · 4→70 · 5→90 · 6→50 · 7→60 · 8→40 · 9→80
+                // (911 → tận cùng 1 → x=60;  937 → tận cùng 7 → x=60.)
+                function scKeyOfIssue(issue) {
+                    const n = rbN(issue);
+                    if (!Number.isFinite(n)) return -1;
+                    return ((Math.round(n) % 10) + 10) % 10;
+                }
+                // x của 1 kỳ = x của ô mang CHỮ SỐ CUỐI STT đó (tra ô STT n−x).
+                function scOffsetForIssue(issue) {
+                    const key = scKeyOfIssue(issue);
+                    return key < 0 ? SC_OFF_DEF : scOffsetAt(key);
                 }
                 function scSaveOffsets(push) {
                     if (!scOffsets) scLoadOffsets();
@@ -7248,7 +7291,7 @@ async function rbCopyText(text) {
                                 const arr = JSON.parse(localStorage.getItem(LS_SC_OFFSETS) || 'null');
                                 if (Array.isArray(arr) && arr.length === 10) {
                                     const merged = [];
-                                    for (let k = 0; k < 10; k++) merged.push(scNormOff(arr[k]));
+                                    for (let k = 0; k < 10; k++) merged.push(scNormOff(arr[k], scDefAt(k)));
                                     scOffsets = merged;
                                 }
                             }
@@ -7270,7 +7313,7 @@ async function rbCopyText(text) {
                     const found = raw.match(/\d{1,3}/g) || [];
                     if (!found.length) return false;
                     if (found.length !== 10) return false;
-                    scOffsets = found.map(function (v) { return scNormOff(v); });
+                    scOffsets = found.map(function (v, i) { return scNormOff(v, scDefAt(i)); });
                     scSaveOffsets(true);
                     scOffsetsChanged();
                     return true;
@@ -7301,11 +7344,8 @@ async function rbCopyText(text) {
                             if (b.cells[k] && b.cells[k].i === issue) return scNormOff(b.cells[k].off);
                         }
                     }
-                    const s = seq || rbRowSeq();
-                    for (let k = 0; k < s.length; k++) {
-                        if (s[k] && s[k].issue === issue) return scOffsetAt(k);
-                    }
-                    return SC_OFF_DEF;
+                    // Không có trong loạt → x theo chữ số cuối STT của chính kỳ đó.
+                    return scOffsetForIssue(issue);
                 }
                 // Gọi mỗi khi x thay đổi: chốt lại ô nguồn của loạt đang chạy rồi vẽ lại dãy tín hiệu,
                 // ô đối chiếu trên bảng và khung cược thật.
@@ -7346,13 +7386,17 @@ async function rbCopyText(text) {
                 const scEditCloseBtn = document.getElementById('scEditClose');
                 const scEditResetBtn = document.getElementById('scEditReset');
                 let scEditK = -1;                     // ô đang sửa trong DÃY (0..9), -1 = đang đóng
-                let scEditPos = -1;                   // vị trí x tương ứng trong loạt (0..9)
-                // Ô thứ k của dãy ứng với vị trí x nào của loạt: dãy bắt đầu từ ô đang dùng
-                // nên khi loạt đã chạy tới ô 4 thì ô đầu dãy là vị trí x số 4.
+                let scEditPos = -1;                   // khoá x của ô đang sửa (0..9 = chữ số cuối STT)
+                // Ô thứ k của dãy dùng x của ô nào? = CHỮ SỐ CUỐI STT của kỳ hiện trên ô đó.
+                //   911 → tận cùng 1 → sửa ô x số 1 (=60) · 937 → tận cùng 7 → x số 7 (=60)
                 function scPosOf(k) {
-                    const plan = rbChainPlan();
-                    if (!plan) return k;
-                    return (plan.ri + k) % 10;
+                    const seq = rbSeqPlan();
+                    const e = seq[k] || null;
+                    if (e && e.issue) {
+                        const key = scKeyOfIssue(e.issue);
+                        if (key >= 0) return key;
+                    }
+                    return (k >= 0 && k <= 9) ? k : 0;             // ô chưa có kỳ → tạm theo thứ tự dãy
                 }
                 function scEditNote2(text, kind) {
                     if (!scEditNote) return;
@@ -7391,8 +7435,8 @@ async function rbCopyText(text) {
                     const e = seq[scEditK] || {};
                     const t = Number.isFinite(e.n) ? (((Math.round(e.n) % 10) + 10) % 10) : NaN;
                     if (scEditTitle) scEditTitle.textContent = e.issue
-                        ? ('Ô ' + (scPosOf(scEditK) + 1) + '/10 · kỳ ' + pdShort(e.issue) + ' · tận cùng ' + t)
-                        : ('Ô ' + (scPosOf(scEditK) + 1) + '/10 · chưa có kỳ');
+                        ? ('Kỳ ' + pdShort(e.issue) + ' · tận cùng ' + t + ' → sửa x số ' + t + ' (đang ' + e.off + ')')
+                        : ('Ô chưa có kỳ · sửa x số ' + (scPosOf(scEditK)) + '');
                     scEditPreview();
                 }
                 function scOpenEdit(k) {
@@ -7478,7 +7522,7 @@ async function rbCopyText(text) {
                     });
                 }
                 if (scEditResetBtn) scEditResetBtn.addEventListener('click', function () {
-                    scOffsets = [SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF, SC_OFF_DEF];
+                    scOffsets = SC_OFF_DEFAULTS.slice();
                     scSaveOffsets(true);
                     scOffsetsChanged();
                     if (scEditK >= 0 && scEditEl && !scEditEl.hidden && scEditInput) { scEditInput.value = String(scOffsetAt(scPosOf(scEditK))); scRefreshEdit(); }
@@ -7530,7 +7574,7 @@ async function rbCopyText(text) {
 
                 function scRender() {
                     const seq = rbSeqPlan();                 // 10 kỳ sắp đánh, mọi ô đều đánh thuận
-                    const key = seq.map(function (e) { return e.n + ':' + e.side + ':' + e.off; }).join(',');
+                    const key = seq.map(function (e) { return e.n + ':' + e.side + ':' + e.off + ':' + (e.pos || ''); }).join(',');
                     const on = !!(rb.chain && rb.chain.on);       // chỉ khi đang BẬT mới có ô "đang dùng" phát sáng
                     if (key !== scSeqKey) {
                         scSeqKey = key;
@@ -7550,8 +7594,10 @@ async function rbCopyText(text) {
                             if (side) box.setAttribute('data-kind', side);
                             const tl = Number.isFinite(e.n) ? ((Math.round(e.n) % 10) + 10) % 10 : NaN;
                             box.setAttribute('data-sub', '1');   // mọi kỳ đều tra ô STT−x
+                            // Vị trí x mà ô này đang dùng (0..9) — đúng chỉ số của bảng mặc định
+                            // v0=70 · v1=60 · v2=40 · v3=40 · v4=70 · v5=90 · v6=50 · v7=60 · v8=40 · v9=80
                             box.title = e.issue
-                                ? ('Ô ' + (e.pos || (k + 1)) + '/10 · kỳ ' + e.issue + ' · tận cùng ' + tl + ' → ' + (side === 'B' ? 'LỚN' : side === 'S' ? 'NHỎ' : 'chưa xác định')
+                                ? ('Kỳ ' + e.issue + ' · tận cùng ' + tl + ' → x=' + e.off + ' → ' + (side === 'B' ? 'LỚN' : side === 'S' ? 'NHỎ' : 'chưa xác định')
                                     + (e.ref ? ' · tra ô ' + String(e.ref).padStart(3, '0') + ' (−' + e.off + ')' : ' · tra STT−' + e.off)
                                     + ' · chạm để sửa x')
                                 : 'Chưa có kỳ';
@@ -7641,6 +7687,6 @@ async function rbCopyText(text) {
                 window.addEventListener('focus', function () { renewKick(1500); });
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c8595dfa35ddc3',t:'MTc5NTAxOTMxNA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c8595dfa35ddc3',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c877767b9bd509',t:'MTc5NTAyMDU0Nw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c877767b9bd509',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
