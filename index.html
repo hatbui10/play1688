@@ -1765,7 +1765,7 @@
                 <p>Dán access token hoặc toàn bộ JSON gồm token, refreshToken và tokenHeader. Token dùng để đọc kết quả; khi bạn bật CƯỢC THẬT, trang dùng chính token này để đặt cược bằng tiền thật trên tài khoản đó.</p>
                 <p style="margin-top:6px; font-size:12px;"><b>Không cần đăng xuất game nữa:</b> nếu cụm dán vào có <b>refreshToken</b>, trang tự gia hạn token liền tay (còn ~10 phút là làm mới) → token không bao giờ hết. Chỉ cần lấy đủ cụm 1 lần đầu bằng nút bên dưới.</p>
                 <div style="margin:8px 0 10px; display:flex; flex-wrap:wrap; gap:6px;">
-                    <button type="button" class="dialog-btn" id="btnCopySnippet" title="Sao chép 1 dòng, dán vào Console (F12) của trang game để tạo nút lấy token">📎 Lấy mã lấy token</button>
+                    <button type="button" class="dialog-btn" id="btnCopySnippet" title="Sao chép 1 dòng ngắn — dán vào Console (F12) của trang game là cụm token vào bộ nhớ tạm">⚡ Dòng lệnh lấy token</button>
                     <button type="button" class="dialog-btn" id="btnRenewNow" title="Gia hạn token ngay lập tức">↻ Gia hạn ngay</button>
                     <button type="button" class="dialog-btn" id="btnRenewDiag" title="Chạy thử nhiều kiểu yêu cầu rồi sao chép kết quả để gửi hỗ trợ">🩺 Chẩn đoán</button>
                     <button type="button" class="dialog-btn" id="btnRenewRaw" title="Xem thân phản hồi thật của máy chủ khi gia hạn token">📄 Phản hồi thô</button>
@@ -2707,6 +2707,9 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         'Ar-Origin': CFG.arOrigin
                     };
                     if (isRefreshCall) headers['AR-REAL-IP'] = '';
+                    // Trang game LUÔN gửi X-App-Type (PC khi mở bằng trình duyệt) + Ar-Origin.
+                    // Thiếu nó máy chủ coi yêu cầu là lạ → dễ trả "Failed"/"Wrong signature".
+                    if (!headers['X-App-Type']) headers['X-App-Type'] = 'PC';
                     // opts.realHeaders: dùng ĐÚNG bộ header của trang game (dán từ tab Network).
                     // Đây là cách chắc chắn nhất: máy chủ thấy y hệt trình duyệt thật.
                     if (opts.realHeaders && typeof opts.realHeaders === 'object') {
@@ -3437,16 +3440,22 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                                 }
                                 const code = res && res.code !== undefined ? Number(res.code) : 0;
                                 if (Number.isFinite(code) && code !== 0 && code !== 1) {
-                                    if ((code === 3 || code === 4) && attempt < combos.length - 1) {
-                                        lastError = new Error(res.msg || res.message || ('Mã ' + code));
-                                        await sleep(800);
+                                    // BẢNG MÃ LỖI THẬT của game (lấy từ chính bundle index-beOb1mva.js):
+                                    //   3 = chữ ký sai · 4 = token/phiên hết hiệu lực · 5 = sai URL
+                                    //   6 = tham số sai · 10 = phiên đăng nhập hết hạn · 22 = token hết hạn
+                                    // Chữ ký sai (3) mà CHỮ KÝ ĐÃ ĐÚNG THEO GAME thì đổi kiểu cũng vô ích →
+                                    // chỉ thử tiếp nếu còn cách khác; còn 4/10/22 = refresh token chết thật.
+                                    if (code === 4 || code === 10 || code === 22 || code === 400 || code === 401 || code === 403) {
+                                        throw apiError('session', 'Refresh token đã hết hiệu lực (' + (res.msg || res.message || ('mã ' + code)) + ')');
+                                    }
+                                    if (code === 3 && attempt < combos.length - 1) {
+                                        lastError = apiError('signature', res.msg || res.message || 'Wrong signature');
+                                        await sleep(400);
                                         continue;
                                     }
-                                    // Refresh token hết hiệu lực → thử nữa cũng vô ích, báo rõ để người dùng lấy lại cụm.
-                                    if ([10, 22, 400, 401, 403].indexOf(code) >= 0) {
-                                        throw apiError('session', 'Refresh token hết hiệu lực (' + (res.msg || res.message || ('mã ' + code)) + ')');
-                                    }
-                                    throw new Error(res.msg || res.message || ('Không gia hạn được token, mã ' + code));
+                                    if (code === 3) lastError = apiError('signature', res.msg || res.message || 'Wrong signature');
+                                    else lastError = new Error(res.msg || res.message || ('Không gia hạn được token, mã ' + code));
+                                    throw lastError;
                                 }
                                 const data = res && typeof res === 'object' && 'data' in res ? res.data : res;
                                 const harvested = harvestTokenFromResponse(res);
@@ -7034,55 +7043,45 @@ async function rbCopyText(text) {
                     // Nút «📋 Dán»: ưu tiên nội dung đang có trong ô nhập; nếu ô trống thì đọc bộ nhớ tạm.
                     // Đọc được → lưu thật rồi mới đóng; không đọc được thì giữ dialog mở và báo lỗi ngay trong dialog.
                 function tokenSnippet() {
-                    // Dòng dán vào Console (F12) của TRANG GAME. Nó:
-                    //   • quét localStorage + sessionStorage + cookie tìm mọi chuỗi JWT,
-                    //   • phân loại theo claim TokenType/role (Refresh_Token → refresh, còn lại → access),
-                    //   • nhặt thêm mã "sign" (64 ký tự hex) nếu có,
-                    //   • IN KẾT QUẢ ra Console (không còn "undefined"),
-                    //   • mở trang cược kèm đủ cụm: #?token=…&refreshToken=…&sign=…
-                    // Hết hạn thì chạy lại — không cần đăng xuất game.
-                    const js = [
+                    // Dòng dán vào Console (F12) của TRANG GAME.
+                    // Đọc THẲNG 3 khoá mà chính trang game dùng (lấy từ bundle game):
+                    //   localStorage.token         → access token
+                    //   localStorage.tokenHeader   → thường là "Bearer "
+                    //   localStorage.refreshToken  → refresh token
+                    // Nếu trang game đổi khoá thì tự quét mọi JWT trong localStorage/sessionStorage.
+                    // Cuối cùng: sao chép CỤM JSON vào bộ nhớ tạm + in ra Console + mở trang cược.
+                    var js = [
                         '(function(){',
+                        'var LS=window.localStorage||{};',
+                        // getItem là chuẩn ở mọi trình duyệt; đọc kiểu thuộc tính chỉ là dự phòng.
+                        'function rg(k){try{var v=LS.getItem?LS.getItem(k):LS[k];return v==null?"":String(v);}catch(e){return "";}}',
+                        'var tok=rg("token"),hdr=rg("tokenHeader"),ref=rg("refreshToken"),sign="";',
+                        // Nếu 3 khoá chuẩn trống → quét mọi giá trị trong localStorage/sessionStorage
+                        'if(!tok&&!ref){',
                         'var o={},keys=[];',
-                        'function sc(st,label){try{for(var i=0;i<st.length;i++){var k=st.key(i);var v=st.getItem(k);keys.push(label+":"+k);',
-                        'if(!(k in o)&&v&&v.length<6000)o[k]=v;}}catch(e){}}',
+                        'function sc(st,label){try{for(var i=0;i<st.length;i++){var k=st.key(i);var v=st.getItem(k);keys.push(label+":"+k);if(!(k in o)&&v&&v.length<6000)o[k]=v;}}catch(e){}}',
                         'sc(localStorage,"LS");sc(sessionStorage,"SS");',
-                        'try{document.cookie.split(/;\\s*/).forEach(function(c){var p=c.split("=");if(p[0]&&p[1])o["cookie:"+p[0]]=decodeURIComponent(p[1]);});}catch(e){}',
                         'function payload(t){try{var p=t.split(".")[1];if(!p)return null;p=p.replace(/-/g,"+").replace(/_/g,"/");while(p.length%4)p+="=";return JSON.parse(decodeURIComponent(escape(atob(p))));}catch(e){return null;}}',
                         'function kind(t){var p=payload(t);if(!p)return "";var role=p["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]||p.role||"";return String(p.TokenType||role||"");}',
-                        'var jw=[],sign="",hdr="";',
+                        'var jw=[];',
                         'for(var k in o){var v=o[k];if(!hdr&&/header/i.test(k)&&v&&v.length<40&&!/^eyJ/.test(v))hdr=v;',
                         'var m=v.match(/eyJ[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+){1,3}/g)||[];',
                         'for(var i2=0;i2<m.length;i2++)if(jw.indexOf(m[i2])<0)jw.push(m[i2]);',
                         'var sg=v.match(/[A-Fa-f0-9]{64}/);if(sg&&!sign)sign=sg[0];}',
-                        'var ref="",tok="";',
                         'jw.forEach(function(j){if(/refresh/i.test(kind(j))){if(!ref)ref=j;}else if(!tok)tok=j;});',
-                        'if(!tok&&!ref){',
-                        'console.log("%c✖ Không thấy token trong trang này","color:#f87171;font-weight:bold");',
-                        'console.log("Các khoá đã quét:",keys.join(", ")||"(trống)");',
-                        'console.log("→ Hãy chắc bạn đang chạy dòng này ở TAB CỦA TRANG GAME (đã đăng nhập), không phải tab trang cược.");',
-                        'return "KHÔNG_THẤY_TOKEN";',
+                        'if(!tok&&!ref){console.log("%c✖ Không thấy token","color:#f87171;font-weight:bold");console.log("Khoá đã quét:",keys.join(", ")||"(trống)");console.log("→ Hãy chắc bạn đang ở TAB CỦA TRANG GAME và đã đăng nhập.");return "KHÔNG_THẤY_TOKEN";}',
                         '}',
-                        'var out={access:tok?tok.slice(0,24)+"…":"",refresh:ref?ref.slice(0,24)+"…":"",sign:sign?sign.slice(0,16)+"…":""};',
-                        'console.log("%c✔ Đã tìm thấy","color:#4ade80;font-weight:bold",out);',
-                        'console.log("access token:",tok?"có ("+tok.length+" ký tự)":"KHÔNG CÓ","· refresh token:",ref?"có ("+ref.length+" ký tự)":"KHÔNG CÓ","· sign:",sign||"không có");',
-                        'if(!ref)console.log("%c⚠ Không thấy refresh token — hết hạn sẽ phải chạy lại dòng này.","color:#fbbf24");',
-                        'var parts=[];if(tok)parts.push("token="+encodeURIComponent(tok));if(ref)parts.push("refreshToken="+encodeURIComponent(ref));',
-                        'if(/\\S/.test(hdr||""))parts.push("tokenHeader="+encodeURIComponent(hdr));if(sign)parts.push("sign="+encodeURIComponent(sign));',
-                        'var bundle="{"+(tok?"\\"token\\":\\""+tok+"\\"":"")+(ref?(tok?",":"")+"\\"refreshToken\\":\\""+ref+"\\"":"")+(sign?",\\"sign\\":\\""+sign+"\\"":"")+"}";',
+                        'var H=/^\\s*$/.test(hdr)?"Bearer ":hdr;',
+                        'var bundle=JSON.stringify({token:tok,tokenHeader:H,refreshToken:ref});',
+                        'try{copy(bundle);console.log("%c✔ Đã sao chép CỤM TOKEN vào bộ nhớ tạm.","color:#4ade80;font-weight:bold");}catch(e){console.log("%c(Không tự sao chép được — bôi đen dòng bên dưới, Ctrl+C)","color:#fbbf24");}',
+                        'console.log("access token:",tok?("có ("+tok.length+" ký tự)"):"KHÔNG CÓ","· refreshToken:",ref?("có ("+ref.length+" ký tự)"):"KHÔNG CÓ","· tokenHeader:",JSON.stringify(hdr||"Bearer "));',
+                        'if(!ref)console.log("%c⚠ Không có refreshToken — hết hạn sẽ phải chạy lại dòng này.","color:#fbbf24");',
+                        'console.log("%cCỤM TOKEN (đã ở bộ nhớ tạm):","color:#93c5fd;font-weight:bold",bundle);',
+                        'var parts=[];if(tok)parts.push("token="+encodeURIComponent(tok));if(ref)parts.push("refreshToken="+encodeURIComponent(ref));if(/\\S/.test(H))parts.push("tokenHeader="+encodeURIComponent(H));',
                         'var url="__HUB__#?"+parts.join("&");',
-                        'try{copy(bundle);console.log("%c✔ Đã sao chép CỤM TOKEN vào bộ nhớ tạm.","color:#4ade80;font-weight:bold");}catch(e){console.log("%c(Không tự sao chép được — hãy bôi đen dòng cụm bên dưới, Ctrl+C)","color:#fbbf24");}',
-                        'console.log("%cCỤM TOKEN:","color:#93c5fd;font-weight:bold",bundle);',
-                        'var hubBad=/^(blob|about|data|chrome|devtools|view-source):/i.test(url);',
-                        'if(hubBad){',
-                        'console.log("%c⚠ Trang cược đang chạy ở địa chỉ tạm (blob:) nên Chrome chặn mở từ tab game.","color:#fbbf24;font-weight:bold");',
-                        'console.log("→ Không sao: cụm đã được sao chép ở trên. Quay lại tab trang cược → bấm Token → dán vào ô trống → bấm 💾 Lưu token.");',
-                        'console.log("   (Muốn dùng kiểu tự mở thì tải file index-…html về máy và mở trực tiếp bằng trình duyệt.)");',
-                        'return out;',
-                        '}',
-                        'console.log("Đang mở trang cược…");',
-                        'location.href=url;',
-                        'return out;',
+                        'var bad=/^(blob|about|data|chrome|devtools|view-source):/i.test(url);',
+                        'if(bad){console.log("%c⚠ Trang cược đang chạy ở địa chỉ tạm nên không tự mở được.","color:#fbbf24;font-weight:bold");console.log("→ Cụm đã ở bộ nhớ tạm: quay lại tab trang cược → bấm Token → dán → 💾 Lưu token.");return bundle;}',
+                        'console.log("Đang mở trang cược…");location.href=url;return bundle;',
                         '})();'
                     ].join('');
                     return js.split('__HUB__').join(window.__HUB_URL || '');
@@ -7832,6 +7831,6 @@ async function rbCopyText(text) {
                 window.addEventListener('focus', function () { renewKick(1500); });
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c82178ba874bac',t:'MTc5NTAxNzAyNQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c82178ba874bac',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c83c491eb309f0',t:'MTc5NTAxODEyMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c83c491eb309f0',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
