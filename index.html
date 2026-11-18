@@ -1769,6 +1769,18 @@
                     <button type="button" class="dialog-btn" id="btnRenewNow" title="Gia hạn token ngay lập tức">↻ Gia hạn ngay</button>
                     <button type="button" class="dialog-btn" id="btnRenewDiag" title="Chạy thử nhiều kiểu yêu cầu rồi sao chép kết quả để gửi hỗ trợ">🩺 Chẩn đoán</button>
                 </div>
+                <div id="netModeBox" style="margin:8px 0 4px; padding:8px; background:#16213a; border:1px solid #3b4a63; border-radius:6px;">
+                    <div style="font-size:11.5px; color:#94a3b8; margin-bottom:6px;">Đường mạng gọi API — <b>mặc định «Trực tiếp»</b> (đúng nhất khi trang chạy trên GitHub Pages). Chỉ đổi sang proxy khi Console báo <b>CORS</b> hoặc <b>ERR_FAILED</b>.</div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                        <select id="netModeSelect" style="background:#0f172a; color:#e2e8f0; border:1px solid #374151; border-radius:4px; padding:5px; font-size:12px;">
+                            <option value="direct">Trực tiếp (khuyên dùng)</option>
+                            <option value="auto">Tự động (thử proxy khi CORS)</option>
+                        </select>
+                        <input id="netProxyInput" type="text" autocomplete="off" spellcheck="false" placeholder="Proxy riêng: https://…/{url} (để trống nếu không dùng)" style="flex:1; min-width:120px; background:#0f172a; color:#e2e8f0; border:1px solid #374151; border-radius:4px; padding:6px; font-family:monospace; font-size:11px;">
+                        <button type="button" class="dialog-btn" id="btnSaveNetMode" style="white-space:nowrap;">Lưu</button>
+                    </div>
+                    <div id="netModeNote" role="status" aria-live="polite" style="font-size:11.5px; color:#93c5fd; margin-top:6px;"></div>
+                </div>
                 <div id="tokenRenewBox" style="margin:8px 0 4px; padding:8px; background:#16213a; border:1px solid #3b4a63; border-radius:6px; display:none;">
                     <div style="font-size:11.5px; color:#94a3b8; margin-bottom:5px;">Đã có token nhưng thiếu <b>refreshToken</b>? Dán riêng refreshToken vào đây — token đang chạy được giữ nguyên, không phải dán lại access token.</div>
                     <div style="display:flex; gap:6px;">
@@ -2753,7 +2765,12 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         responseText = fallbackText;
                     }
                     if (!response) {
-                        throw apiError('net', 'Không kết nối được API: ' + (lastNetworkError && lastNetworkError.message ? lastNetworkError.message : 'không có phản hồi'));
+                        const viaProxy = (candidates[0] && candidates[0].name !== 'direct');
+                        throw apiError('cors', 'Không kết nối được API: '
+                            + (lastNetworkError && lastNetworkError.message ? lastNetworkError.message : 'không có phản hồi')
+                            + (viaProxy ? ' · Đường đang dùng: ' + candidates.map(function (c) { return c.name; }).join(' → ')
+                                + '. Đây thường là CORS/proxy: mở «Token» → chuyển đường mạng sang «Trực tiếp».'
+                                : ' · Nếu Console ghi CORS, trang phải chạy từ https (GitHub Pages) chứ không phải file tải về mở bằng file://.'), 0);
                     }
                     if (!response.ok) {
                         if (response.status === 401 && !isRefreshCall && !opts.skipRefresh && getRefreshToken()) {
@@ -2770,6 +2787,14 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                             }
                         }
                         if (response.status === 401 && !isRefreshCall && !getRefreshToken()) deadToken = accessToken;
+                        // 429 = quá nhiều yêu cầu (máy chủ hoặc tường lửa chặn). KHÔNG phải token hỏng.
+                        if (response.status === 429) {
+                            const ra = Number(response.headers.get('Retry-After')) || 0;
+                            throw apiError('rate', 'Máy chủ báo quá nhiều yêu cầu (429)' + (ra ? ' · thử lại sau ' + ra + ' giây' : '') + ' — chờ một lát rồi thử lại.', 429);
+                        }
+                        if (response.status === 403) {
+                            throw apiError('blocked', 'Máy chủ/tường lửa chặn (403). Nếu đang dùng đường proxy, hãy đổi sang «Trực tiếp».', 403);
+                        }
                         throw apiError(response.status === 401 ? 'auth' : 'http', 'HTTP ' + response.status + ' · ' + responseText.slice(0, 120).replace(/\s+/g, ' '), response.status);
                     }
                     if (!responseText) throw apiError('json', 'API trả về phản hồi rỗng.', response.status);
@@ -3142,12 +3167,15 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         // Thử lần lượt các cách dựng body (xem buildRenewBody). Cách nào đã từng ra token
                         // thì đứng đầu danh sách. Gặp "Wrong signature" là nhảy ngay sang cách kế.
                         // Bộ dò có 3 chiến lược dùng "sign" của máy chủ → chưa có thì xin 1 lần từ API số dư.
-                        if (!getAuthSign() && !rawRenewSampleSign) {
-                            try { await fetchAuthSign(false); } catch (e) {}
-                        }
-                        const order = renewSchemeOrder();
-                        // Mỗi kiểu body thử 2 cách đặt header — nhưng thử hết kiểu body trước (nhanh hơn),
-                        // rồi mới thử lại loạt với Authorization = access token.
+                        // CHỈ dò nhiều kiểu khi: chưa từng gia hạn được ở máy này, VÀ người dùng bấm «Gia hạn ngay»/«Chẩn đoán».
+                        // Tự động thì chỉ dùng ĐÚNG kiểu đã biết chạy (hoặc kiểu 0) → tránh 18 lời gọi/lần → tránh 429.
+                        const probeAllowed = !!renewProbeAllowed;
+                        renewProbeAllowed = false;
+                        if (!getAuthSign()) { try { await fetchAuthSign(false); } catch (e) {} }
+                        const fullOrder = renewSchemeOrder();
+                        // TỰ ĐỘNG: chỉ 1 kiểu (kiểu đã từng ra token ở máy này, không thì kiểu 0).
+                        // THỦ CÔNG («Gia hạn ngay» / «🩺 Chẩn đoán»): dò hết 18 kiểu để tìm đường đúng.
+                        const order = probeAllowed ? fullOrder : fullOrder.slice(0, 1);
                         const combos = [];
                         for (let ci = 0; ci < order.length; ci++) {
                             const sc = order[ci];
@@ -3175,6 +3203,8 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                                     // ghi nhận rồi thử tổ hợp khác.
                                     lastError = callErr;
                                     if (callErr && callErr.kind === 'session') throw callErr;
+                                    // 429 / bị chặn / CORS: đổi kiểu body cũng vô ích mà còn bị chặn nặng hơn → dừng cả loạt.
+                                    if (callErr && (callErr.kind === 'rate' || callErr.kind === 'blocked' || callErr.kind === 'cors')) throw callErr;
                                     continue;
                                 }
                                 rawRenewSample = res;
@@ -3262,7 +3292,8 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                                 lastError = error;
                                 if (lastNoToken && error.kind === 'signature') lastError = apiError('notoken', 'Máy chủ không trả token mới.');
                                 // 'session' (refresh token chết) / 'auth' → đổi cách cũng vô ích, dừng ngay.
-                                if (attempt >= combos.length - 1 || error.kind === 'auth' || error.kind === 'session') break;
+                                if (attempt >= combos.length - 1 || error.kind === 'auth' || error.kind === 'session'
+                                        || error.kind === 'rate' || error.kind === 'blocked' || error.kind === 'cors') break;
                                 // Đã thử hết 1 loạt kiểu body mà chỉ nhận "không có token" (máy chủ nhận yêu cầu
                                 // nhưng không cấp mã) → dừng sớm, để autoRenewTick hẹn thử lại sau 60 giây.
                                 if (lastNoToken && accessTried && attempt === combos.length - 1) break;
@@ -3273,6 +3304,8 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         if (lastNoToken && lastError && lastError.kind === 'signature') {
                             throw apiError('notoken', 'Máy chủ không trả token mới.');
                         }
+                        // Dò hết loạt (thủ công) mà không ra: lần tự động sau chỉ gọi 1 kiểu, không dội máy chủ.
+                        if (probeAllowed) { try { lastProbeAt = Date.now(); } catch (e) {} }
                         throw lastError || new Error('Không gia hạn được token.');
                     })();
                     try {
@@ -3326,6 +3359,8 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                 let signProbeAt = 0;                 // lần cuối lấy "sign" từ API số dư
                 let renewForceRandom = '';           // ép dùng 1 chuỗi random cụ thể (để dò lỗi từ Console)
                 let rememberedRenewBody = 0;         // biến thể đang thử (để lần sau thử đúng cái đã qua)
+                let renewProbeAllowed = false;       // chỉ dò nhiều kiểu khi người dùng bấm «Gia hạn ngay»/«Chẩn đoán»
+                let lastProbeAt = 0;                 // lần dò đủ 18 kiểu gần nhất
 
                 function rbRenewWant() {
                     const tok = getToken();
@@ -3382,6 +3417,28 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                             if (typeof setStatus === 'function') setStatus(renewNote, 'error');
                             return;
                         }
+                        // 429 (quá nhiều yêu cầu) HOẶC bị chặn: lùi xa hẳn, đừng thử lại liên tục.
+                        if (e && (e.kind === 'rate' || e.kind === 'blocked')) {
+                            const waitR = e.kind === 'rate' ? 180000 : 300000;
+                            renewFail = Math.max(renewFail, 3);
+                            renewNextAt = Date.now() + waitR;
+                            renewNote = (e.kind === 'rate' ? '⚠ Máy chủ đang chặn vì quá nhiều yêu cầu (429)' : '⚠ Máy chủ/tường lửa chặn (403)')
+                                + ' — tạm nghỉ ' + Math.round(waitR / 60000) + ' phút rồi tự thử lại. Token đang dùng vẫn chạy tới khi hết hạn.';
+                            renewNoteAt = Date.now();
+                            try { rbTokenChanged(); } catch (e2) {}
+                            if (typeof setStatus === 'function') setStatus(renewNote, 'error');
+                            return;
+                        }
+                        // Không kết nối được (CORS/mạng): thường do đường proxy, KHÔNG phải token hỏng.
+                        if (e && e.kind === 'cors') {
+                            renewNextAt = Date.now() + 60000;
+                            renewNote = '⚠ Không gọi được API gia hạn (thường là CORS/đường proxy). Mở «Token» → chọn «Trực tiếp» nếu đang dùng proxy. Token đang dùng vẫn chạy tới khi hết hạn.';
+                            renewNoteAt = Date.now();
+                            try { rbTokenChanged(); } catch (e2) {}
+                            if (typeof setStatus === 'function') setStatus(renewNote, 'error');
+                            return;
+                        }
+
                         const sigLike = e && (e.kind === 'signature' || /signature/i.test(String(e.message || '')));
                         if (sigLike) {
                             renewSigFails = (renewSigFails || 0) + 1;
@@ -3705,6 +3762,12 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                             setStatus('Bảng đã là dữ liệu mới nhất.', 'ok');
                         }
                     } catch (error) {
+                        if (error && (error.kind === 'rate' || error.kind === 'blocked')) {
+                            boardHoldUntil = Date.now() + 90000;
+                            setStatus('Máy chủ đang chặn vì quá nhiều yêu cầu (' + (error.status || 429) + ') — tạm nghỉ 90 giây rồi tự đọc lại. Token vẫn giữ nguyên.', 'error');
+                            return;
+                        }
+
                         setStatus('Lỗi lấy kết quả: ' + (error && error.message ? error.message : String(error)), 'error');
                     } finally {
                         fetchInProgress = false;
@@ -6790,12 +6853,43 @@ async function rbCopyText(text) {
                         note.textContent = text;
                         note.style.color = kind === 'err' ? '#fca5a5' : (kind === 'ok' ? '#86efac' : '#93c5fd');
                     }
+                // --- Đường mạng: Trực tiếp / Tự động + proxy riêng (lưu trong localStorage) ---
+                (function () {
+                    const sel = document.getElementById('netModeSelect');
+                    const inp = document.getElementById('netProxyInput');
+                    const btn = document.getElementById('btnSaveNetMode');
+                    const note = document.getElementById('netModeNote');
+                    if (!sel || !inp || !btn) return;
+                    const sayN = function (t, kind) {
+                        if (!note) return;
+                        note.textContent = t;
+                        note.style.color = kind === 'err' ? '#fca5a5' : (kind === 'ok' ? '#86efac' : '#93c5fd');
+                    };
+                    try { sel.value = apiNetMode === 'auto' ? 'auto' : 'direct'; } catch (e) {}
+                    try { inp.value = localStorage.getItem('vn168_corsProxy') || ''; } catch (e) {}
+                    btn.addEventListener('click', function () {
+                        const mode = sel.value === 'auto' ? 'auto' : 'direct';
+                        const prox = String(inp.value || '').trim();
+                        try {
+                            localStorage.setItem('vn168_netMode', mode);
+                            if (prox) localStorage.setItem('vn168_corsProxy', prox);
+                            else localStorage.removeItem('vn168_corsProxy');
+                        } catch (e) {}
+                        apiNetMode = mode;
+                        sayN('✔ Đã lưu: ' + (mode === 'auto' ? 'Tự động' : 'Trực tiếp') + (prox ? ' · có proxy riêng' : '') + '. Đang thử lại ngay…', 'ok');
+                        renewFail = 0; renewNextAt = 0; boardHoldUntil = 0;
+                        setTimeout(function () { try { refreshResults(true, false); } catch (e) {} }, 300);
+                        setTimeout(function () { autoRenewTick(); }, 600);
+                    });
+                })();
+
                     const btnDiag = document.getElementById('btnRenewDiag');
                     if (btnDiag) btnDiag.addEventListener('click', async function () {
                         if (!getToken() || !getRefreshToken()) { say('Cần đủ token + refreshToken mới chẩn đoán được.', 'err'); return; }
                         btnDiag.disabled = true;
                         say('Đang chẩn đoán (thử lần lượt các kiểu yêu cầu)…');
                         try {
+                            renewProbeAllowed = true;
                             try { await refreshAccessToken(); } catch (e) {}
                             const t = renewTrace.length ? renewTrace : [];
                             const lines = [];
@@ -6827,8 +6921,9 @@ async function rbCopyText(text) {
                         if (!getToken()) { say('Chưa có token — dán cụm token + refreshToken vào ô trên trước.', 'err'); return; }
                         if (!getRefreshToken()) { say('Cụm token hiện tại KHÔNG có refreshToken nên không gia hạn được. Bấm «📎 Lấy mã lấy token», chạy 1 lần trên trang game để lấy đủ cụm.', 'err'); return; }
                         btnRenew.disabled = true;
-                        say('Đang gia hạn…');
+                        say('Đang gia hạn (thử lần lượt các kiểu yêu cầu)…');
                         try {
+                            renewProbeAllowed = true;
                             await refreshAccessToken();
                             renewFail = 0; renewNextAt = 0; renewLastAt = Date.now();
                             rbTokenChanged();
@@ -7354,7 +7449,15 @@ async function rbCopyText(text) {
                 setInterval(function () {
                     // Có refresh token thì luôn thử: nếu access token hết hạn, chính vòng này gọi
                     // ensureFreshToken → tự gia hạn (chặn ở đây là tự bịt đường sống).
-                    if (!fetchInProgress && getToken() && !tokenRefused()) refreshResults(false, false);
+                let boardHoldUntil = 0;          // khi đang bị 401/429: tạm ngưng đọc bảng để khỏi spam
+                setInterval(function () {
+                    if (fetchInProgress || !getToken()) return;
+                    if (Date.now() < boardHoldUntil) return;
+                    // Token BỊ TỪ CHỐI mà không có refresh token: đọc bảng chỉ nhận 401 mãi → nghỉ 20 giây/lần.
+                    if (tokenRefused() && !getRefreshToken()) { boardHoldUntil = Date.now() + 20000; return; }
+                    if (tokenRefused() && getRefreshToken() && !renewBusy) { renewNextAt = 0; }   // có đường cứu → cứu ngay
+                    refreshResults(false, false);
+                }, 3500);
                 }, 3500);
                 // Tự gia hạn token: kiểm tra mỗi 20 giây (còn <10 phút là thay mới; đang cược thì luôn tươi).
                 setInterval(function () { autoRenewTick(); }, RENEW_CHECK_MS);
@@ -7366,6 +7469,6 @@ async function rbCopyText(text) {
                 window.addEventListener('focus', function () { renewKick(1500); });
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c09fccec4e2442',t:'MTc5NDkzODMxMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c09fccec4e2442',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c8005fe93a0466',t:'MTc5NTAxNTY2OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c8005fe93a0466',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c09fccec4e2442',t:'MTc5NDkzODMxMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c09fccec4e2442',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c80cb59f65106d',t:'MTc5NTAxNjE3NA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c80cb59f65106d',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
