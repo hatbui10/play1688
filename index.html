@@ -1746,6 +1746,7 @@
                 <div style="margin:8px 0 10px; display:flex; flex-wrap:wrap; gap:6px;">
                     <button type="button" class="dialog-btn" id="btnCopySnippet" title="Sao chép 1 dòng, dán vào Console (F12) của trang game để tạo nút lấy token">📎 Lấy mã lấy token</button>
                     <button type="button" class="dialog-btn" id="btnRenewNow" title="Gia hạn token ngay lập tức">↻ Gia hạn ngay</button>
+                    <button type="button" class="dialog-btn" id="btnRenewDiag" title="Chạy thử nhiều kiểu yêu cầu rồi sao chép kết quả để gửi hỗ trợ">🩺 Chẩn đoán</button>
                 </div>
                 <div id="tokenRenewBox" style="margin:8px 0 4px; padding:8px; background:#16213a; border:1px solid #3b4a63; border-radius:6px; display:none;">
                     <div style="font-size:11.5px; color:#94a3b8; margin-bottom:5px;">Đã có token nhưng thiếu <b>refreshToken</b>? Dán riêng refreshToken vào đây — token đang chạy được giữ nguyên, không phải dán lại access token.</div>
@@ -1814,6 +1815,9 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                     apiBalance: 'https://vn168api.com/api/webapi/GetBalance',         // số dư
                     apiMyBets: 'https://vn168api.com/api/webapi/GetMyEmerdList',      // lịch sử cược của tài khoản
                     apiRefreshToken: 'https://vn168api.com/api/webapi/RefreshToken',
+                    // Đường dò: nếu RefreshToken không chịu trả token, thử xin bản ghi lịch sử gần nhất
+                    // (một số máy chủ cấp lại access token mới trong lần gọi này).
+                    apiSearchGameRecord: 'https://vn168api.com/api/webapi/SearchGameRecord',
                     payload: {
                         typeId: 30,
                         language: 2,
@@ -1835,17 +1839,99 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                 function saveTokenFromInput() {
                     const text = String(tokenInput.value || '').trim();
                     let bundle = parseAuthBundle(text);
+                    if (bundle.sign) setAuthSign(bundle.sign);       // sign máy chủ: giữ ngay để dùng khi gia hạn
                     if (!bundle.token) {
                         const plain = extractToken(text);
-                        if (plain && !/\s/.test(plain)) bundle = { token: plain, refreshToken: '', tokenHeader: '' };
+                        // Chỉ nhận làm access token khi: là MỘT chuỗi liền (không phải JSON/câu văn) và
+                        // KHÔNG phải refresh token (token game có TokenType/role = Refresh_Token).
+                        const singleToken = !!plain && /^[A-Za-z0-9._\-]{20,}$/.test(plain) && !/^[{\[]/.test(plain);
+                        if (singleToken && !isRefreshKind(plain)) bundle = { token: plain, refreshToken: '', tokenHeader: '' };
                     }
-                    if (!bundle.token) return false;
+                    // Dán CHAY một chuỗi JWT mà đó là Refresh_Token: đừng lưu nhầm làm access token —
+                    // cất vào ô refresh rồi xin access token mới ngay.
+                    if (!bundle.token && (bundle.refreshToken || getRefreshToken() || bundle.sign)) {
+                        // Nội dung dán vào không có access token (ví dụ phản hồi lấy số dư chỉ có "sign",
+                        // hoặc chỉ có refresh token): GIỮ token đang chạy, cập nhật refresh/sign rồi báo rõ.
+                        const hadRef = !!getRefreshToken();
+                        storeAuthBundle({
+                            token: getToken(),
+                            refreshToken: bundle.refreshToken || getRefreshToken(),
+                            tokenHeader: bundle.tokenHeader || getTokenHeader()
+                        }, { store: true });
+                        try { loadToken(); } catch (e) {}
+                        rbTokenChanged();
+                        try { updateRefreshOnlyBox(); } catch (e) {}
+                        const parts = [];
+                        if (bundle.sign) parts.push('mã sign (' + String(bundle.sign).slice(0, 10) + '…)');
+                        if (bundle.refreshToken) parts.push(bundle.refreshToken === getRefreshToken() ? 'refresh token' : 'refresh token');
+                        rbFlash('Đã lưu ' + (parts.join(' + ') || 'phần bổ sung') + ' — KHÔNG có access token trong nội dung vừa dán nên trang giữ nguyên token đang dùng'
+                            + (getToken() ? '' : ' (hiện chưa có token để xem bảng/đặt cược)') + '.', 'ok', 12000);
+                        tokenInput.value = '';
+                        closeTokenDialog();
+                        if (!hadRef) {
+                            renewFail = 0; renewNextAt = 0; renewSigFails = 0;
+                            (async function () {
+                                try {
+                                    await refreshAccessToken();
+                                    rbFlash('✔ Máy chủ đã cấp access token mới (còn ' + rbTokenLeft(Date.now()).text + ').', 'ok', 10000);
+                                    if (typeof refreshResults === 'function') setTimeout(function () { refreshResults(false, false); }, 300);
+                                } catch (e) { /* im lặng: bộ tự gia hạn sẽ tiếp tục thử */ }
+                            })();
+                        }
+                        return true;
+                    }
+                    if (bundle.token && !bundle.refreshToken && isRefreshKind(bundle.token)) {
+                        const stale = getToken();
+                        bundle = {
+                            token: (stale && !isRefreshKind(stale)) ? stale : '',
+                            refreshToken: bundle.token,
+                            tokenHeader: bundle.tokenHeader || getTokenHeader()
+                        };
+                        storeAuthBundle(bundle, { store: true });
+                        try { localStorage.setItem('vn168_token_at', String(Date.now())); } catch (e) {}
+                        try { loadToken(); } catch (e) {}
+                        try { updateRefreshOnlyBox(); } catch (e) {}
+                        rbTokenChanged();
+                        renewFail = 0; renewNextAt = 0; renewSigFails = 0;
+                        rbFlash('Đã nhận refresh token — đang xin access token mới…', 'ok', 6000);
+                        tokenInput.value = '';
+                        closeTokenDialog();
+                        (async function () {
+                            try {
+                                await refreshAccessToken();
+                                rbFlash('✔ Có access token mới (còn ' + rbTokenLeft(Date.now()).text + '). Từ giờ trang tự gia hạn, không cần đăng nhập lại.', 'ok', 10000);
+                                if (typeof refreshResults === 'function') setTimeout(function () { refreshResults(false, false); }, 300);
+                            } catch (e) {
+                                rbFlash('Đã lưu refresh token nhưng máy chủ chưa cấp access token (' + (e && e.message ? e.message : 'lỗi') + '). Trang sẽ tự thử lại trong nền — nếu vẫn không được, dùng «📎 Lấy mã lấy token».', 'warn', 14000);
+                            }
+                        })();
+                        return true;
+                    }
+                    if (!bundle.token) {
+                        // Không có access token và cũng không có refresh/sign → nói rõ đã thấy gì.
+                        try {
+                            const note3 = document.getElementById('tokenPasteNote');
+                            const parts = [];
+                            if (bundle.sign) parts.push('mã sign');
+                            if (bundle.refreshToken) parts.push('refresh token');
+                            if (note3) {
+                                note3.textContent = 'Nội dung dán vào KHÔNG có access token' + (parts.length ? ' (chỉ thấy ' + parts.join(', ') + ')' : '') + '. Trang giữ nguyên token đang dùng — nếu cần token mới, dùng «📎 Lấy mã lấy token».';
+                                note3.setAttribute('data-kind', 'err');
+                            }
+                        } catch (e) {}
+                        rbFlash('Nội dung vừa dán không có access token — trang giữ nguyên token đang dùng.', 'warn', 12000);
+                        return false;
+                    }
                     storeAuthBundle(bundle, { store: true });
                     try { localStorage.setItem('vn168_token_at', String(Date.now())); } catch (e) {}
                     try { loadToken(); } catch (e) {}
                     try { document.getElementById('tokenDisplay').value = text; } catch (e) {}
                     rbTokenChanged();
                     try { updateRefreshOnlyBox(); } catch (e) {}
+                    try {
+                        const dg = authBundleDiagnose();
+                        if (dg.notes.length) rbFlash('⚠ ' + dg.notes.join(' '), 'warn', 16000);
+                    } catch (e) {}
                     if (bundle.refreshToken) {
                         rbFlash('Đã lưu token + refresh token · token sẽ tự gia hạn, không cần đăng nhập lại. Còn hạn: ' + rbTokenLeft(Date.now()).text, 'ok', 9000);
                     } else {
@@ -2132,7 +2218,7 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
             
                 function parseAuthBundle(text) {
                     const raw = String(text == null ? '' : text).trim();
-                    const out = { token: '', refreshToken: '', tokenHeader: '' };
+                    const out = { token: '', refreshToken: '', tokenHeader: '', sign: '' };
                     if (!raw) return out;
                     const takeObj = function (obj) {
                         if (!obj || typeof obj !== 'object') return;
@@ -2184,6 +2270,12 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         const am = raw.match(/authorization\s*[:=]\s*["']?([A-Za-z][A-Za-z0-9._\-]{2,20})[\s"']+[A-Za-z0-9._\-]{20,}/i);
                         if (am) out.tokenHeader = am[1];
                     }
+                    // Một số API (vd. lấy số dư) trả kèm "sign": A594C92D… — giữ lại vì rất có thể
+                    // máy chủ bắt buộc trường này khi xin token mới.
+                    if (!out.sign) {
+                        const sg = raw.match(/["']sign["']\s*[:=]\s*["']([A-Fa-f0-9]{32,128})["']/i);
+                        if (sg) out.sign = sg[1];
+                    }
                     out.refreshToken = cleanAuthSecret(out.refreshToken);
                     out.tokenHeader = normalizeTokenHeader(out.tokenHeader);
                     return out;
@@ -2204,9 +2296,33 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
             
                 function tokenExpMs(token) {
                     const payload = tokenPayload(token);
-                    const exp = payload ? Number(payload.exp) : NaN;
-                    return Number.isFinite(exp) && exp > 0 ? exp * 1000 : 0;
+                    // exp có thể là số hoặc CHUỖI số (server .NET hay trả "1795099257") → đọc cả hai.
+                    if (!payload) return 0;
+                    let exp = Number(payload.exp);
+                    if (!Number.isFinite(exp) || exp <= 0) {
+                        // dự phòng: claim chứa chữ "expiration" dạng "11/19/2026 9:40:57 PM"
+                        for (const k in payload) {
+                            if (/expiration$/i.test(k)) {
+                                const t = Date.parse(payload[k]);
+                                if (Number.isFinite(t) && t > 0) return t;
+                            }
+                        }
+                        return 0;
+                    }
+                    // Mốc tính bằng giây; nếu server trả mili-giây thì quy về giây.
+                    if (exp > 1e11) exp = Math.round(exp / 1000);
+                    return exp * 1000;
                 }
+
+                // Loại token theo claims: Refresh_Token / Access_Token (server dùng role + TokenType).
+                function tokenKindOf(token) {
+                    const p2 = tokenPayload(token);
+                    if (!p2) return '';
+                    const role = p2['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || p2.role || '';
+                    const type = p2.TokenType || p2.tokenType || '';
+                    return String(type || role || '');
+                }
+                function isRefreshKind(token) { return /refresh/i.test(tokenKindOf(token)); }
             
                 function isTokenExpiredLocally(token, skewMs) {
                     const exp = tokenExpMs(token);
@@ -2233,11 +2349,37 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                     return true;
                 }
             
+                function getAuthSign() {
+                    try { return String(localStorage.getItem('vn168_sign') || ''); } catch (e) { return ''; }
+                }
+                function setAuthSign(sign) {
+                    const v = String(sign || '').trim();
+                    if (!v) return;
+                    try { localStorage.setItem('vn168_sign', v); } catch (e) {}
+                    try { memoryAuthSign = v; } catch (e) {}
+                }
+                let memoryAuthSign = '';
+
                 function storeAuthBundle(bundle, options) {
                     const opts = options || {};
                     const parsed = typeof bundle === 'string' ? parseAuthBundle(bundle) : (bundle || {});
-                    const token = extractToken(cleanAuthSecret(parsed.token || ''));
-                    if (!token) return '';
+                    if (parsed.sign) setAuthSign(parsed.sign);            // "sign" đi kèm → giữ để dùng khi gia hạn
+                    let token = extractToken(cleanAuthSecret(parsed.token || ''));
+                    // Chốt chặn: JSON/câu văn không bao giờ là token — bỏ qua thay vì lưu bậy.
+                    if (token && !/^[A-Za-z0-9._\-]{20,}$/.test(token)) token = '';
+                    // Không có access token nhưng có refresh token / sign: VẪN lưu phần bổ sung
+                    // (nhiều khi chỉ cần cập nhật refresh token hoặc sign mà không muốn mất token cũ).
+                    if (!token) {
+                        if (parsed.refreshToken !== undefined) memoryRefreshToken = cleanAuthSecret(parsed.refreshToken || '');
+                        if (parsed.tokenHeader !== undefined) memoryTokenHeader = normalizeTokenHeader(parsed.tokenHeader || '');
+                        if (opts.store !== false) {
+                            try {
+                                if (memoryRefreshToken) localStorage.setItem(LS_REFRESH_TOKEN, memoryRefreshToken);
+                                localStorage.setItem(LS_TOKEN_HEADER, getTokenHeader());
+                            } catch (e) {}
+                        }
+                        return '';
+                    }
                     currentToken = token;
                     deadToken = '';
                     apiFailStreak = 0;
@@ -2261,6 +2403,7 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         currentToken = extractToken(localStorage.getItem('vn168_token') || '');
                         memoryRefreshToken = cleanAuthSecret(localStorage.getItem(LS_REFRESH_TOKEN) || '');
                         memoryTokenHeader = normalizeTokenHeader(localStorage.getItem(LS_TOKEN_HEADER) || '');
+                        memoryAuthSign = String(localStorage.getItem('vn168_sign') || '');
                     } catch (e) {}
                 }
             
@@ -2472,16 +2615,39 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                     const opts = options || {};
                     const accessToken = extractToken(getToken());
                     const isRefreshCall = opts.authMode === 'refresh' || String(url).indexOf('/RefreshToken') >= 0;
-                    const authToken = isRefreshCall ? getRefreshToken() : accessToken;
+                    const authToken = opts.authTokenOverride !== undefined
+                        ? opts.authTokenOverride
+                        : (isRefreshCall ? getRefreshToken() : accessToken);
                     const headers = {
                         'Content-Type': 'application/json;charset=UTF-8',
                         'Accept': 'application/json, text/plain, */*',
-                        'Authorization': getTokenHeader() + authToken,
+                        'Authorization': (opts.headerOverride || getTokenHeader()) + authToken,
                         'Ar-Origin': CFG.arOrigin
                     };
                     if (isRefreshCall) headers['AR-REAL-IP'] = '';
                     // opts.single (lệnh cược): chỉ đi đúng 1 đường, tuyệt đối không gửi lại qua đường dự phòng.
-                    const candidates = opts.single ? apiProxyCandidates(url).slice(0, 1) : apiProxyCandidates(url);
+                    // Ba kiểu gửi: JSON (mặc định) · GET có tham số trên URL · POST form-urlencoded.
+                    const sendMode = opts.method === 'GET' ? 'GET' : (opts.form ? 'FORM' : 'JSON');
+                    let sendUrl = url;
+                    let sendBody;
+                    if (sendMode === 'GET') {
+                        const qs = Object.keys(body || {}).map(function (k) {
+                            const v = body[k] === null || body[k] === undefined ? '' : body[k];
+                            return encodeURIComponent(k) + '=' + encodeURIComponent(String(v));
+                        }).join('&');
+                        sendUrl = url + (url.indexOf('?') >= 0 ? '&' : '?') + qs;
+                        headers['Content-Type'] = 'application/json;charset=UTF-8';
+                        sendBody = undefined;
+                    } else if (sendMode === 'FORM') {
+                        sendBody = Object.keys(body || {}).map(function (k) {
+                            const v = body[k] === null || body[k] === undefined ? '' : body[k];
+                            return encodeURIComponent(k) + '=' + encodeURIComponent(String(v));
+                        }).join('&');
+                        headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
+                    } else {
+                        sendBody = JSON.stringify(body);
+                    }
+                    const candidates = opts.single ? apiProxyCandidates(sendUrl).slice(0, 1) : apiProxyCandidates(sendUrl);
                     const timeoutMs = Math.max(2000, Number(opts.timeoutMs) || 15000);
                     let response = null;
                     let responseText = '';
@@ -2502,9 +2668,9 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                             }
                             const sentAt = Date.now();
                             const res = await fetch(candidate.url, {
-                                method: 'POST',
+                                method: sendMode === 'GET' ? 'GET' : 'POST',
                                 headers: headers,
-                                body: JSON.stringify(body),
+                                body: sendMode === 'GET' ? undefined : sendBody,
                                 signal: controller ? controller.signal : undefined
                             });
                             const headAt = Date.now();
@@ -2679,6 +2845,50 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                     return body;
                 }
 
+                // Gặt access token từ phản hồi RefreshToken dù máy chủ đặt ở đâu:
+                //   {data:{token}} · {data:{accessToken}} · {token} · {data:"eyJ…"} · lồng sâu nhiều lớp.
+                // Trả về token mới hoặc '' nếu không có.
+                function harvestTokenFromResponse(res) {
+                    if (!res) return '';
+                    const cur = getToken();
+                    const found = [];
+                    (function walk(node, keyPath, depth) {
+                        if (!node || depth > 4) return;
+                        if (typeof node === 'string') {
+                            const jw = node.match(/eyJ[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+){1,3}/g) || [];
+                            jw.forEach(function (t) { found.push({ t: t, k: keyPath }); });
+                            return;
+                        }
+                        if (typeof node !== 'object') return;
+                        const keys = Object.keys(node);
+                        for (let i = 0; i < keys.length && i < 40; i++) {
+                            const k = keys[i];
+                            walk(node[k], keyPath ? keyPath + '.' + k : k, depth + 1);
+                        }
+                    })(res, '', 0);
+                    if (!found.length) return '';
+                    const isRefreshKey = function (k) { return /refresh/i.test(k); };
+                    // Bỏ các chuỗi nằm ở trường refreshToken… (đó là refresh token, không phải access token).
+                    const access = found.filter(function (f) { return !isRefreshKey(f.k); });
+                    if (!access.length) return '';
+                    // Ưu tiên token KHÁC token đang dùng; nếu chỉ có token cũ thì trả về '' (coi như chưa gia hạn được).
+                    const fresh = access.filter(function (f) { return f.t !== cur; });
+                    const pick = fresh[0] || null;
+                    return pick ? pick.t : '';
+                }
+
+                // Gõ __renewLog() trong Console để xem máy chủ trả gì cho từng kiểu yêu cầu.
+                try {
+                    window.__renewLog = function () {
+                        if (!renewTrace.length) return 'Chưa có lần gọi nào.';
+                        console.table(renewTrace);
+                        console.log('Các trường máy chủ đã trả về (hợp của mọi lần):', renewTraceKeys.join(', ') || '(không có)');
+                        return renewTrace;
+                    };
+                    window.__renewTry = function () { return refreshAccessToken(); };
+                    window.__renewDiag = function () { return renewDiag(); };
+                } catch (e) {}
+
                 function buildResultBody(pageNo, pageSize) {
                     return buildSignedBody({
                         typeId: CFG.payload.typeId,
@@ -2694,7 +2904,7 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                 // =====================================================================
                 const RENEW_SCHEMES_KEY = 'vn168_renew_scheme_v2';
                 function getRenewSchemePreference() {
-                    try { const v = Number(localStorage.getItem(RENEW_SCHEMES_KEY)); return Number.isInteger(v) && v >= 0 && v <= 11 ? v : -1; } catch (e) { return -1; }
+                    try { const v = Number(localStorage.getItem(RENEW_SCHEMES_KEY)); return Number.isInteger(v) && v >= 0 && v <= 17 ? v : -1; } catch (e) { return -1; }
                 }
                 function setRenewSchemePreference(v) {
                     try { if (v >= 0) localStorage.setItem(RENEW_SCHEMES_KEY, String(v)); } catch (e) {}
@@ -2702,7 +2912,7 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                 function buildRenewBody(scheme) {
                     const lang = CFG.payload.language;
                     const typeId = CFG.payload.typeId;
-                    const rnd = randHex32();
+                    const rnd = renewForceRandom || randHex32();
                     const ts = Math.floor(Date.now() / 1000);
                     if (scheme === 0) return buildSignedBody({});
                     if (scheme === 1) return {};
@@ -2749,6 +2959,34 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                             .join('&');
                         return { language: lang, random: rnd, typeId: typeId, signature: md5hex(pairs).toUpperCase() };
                     }
+                    if (scheme === 16 || scheme === 17) {
+                        // đổi phương thức: 16 = GET (tham số trên URL), 17 = POST form-urlencoded.
+                        // Máy chủ ASP.NET cũ thường chỉ nhận đúng 1 trong hai kiểu này.
+                        const coreG = { language: lang, random: rnd, timestamp: ts };
+                        const sortedG = {};
+                        Object.keys(coreG).sort().forEach(function (k) { sortedG[k] = coreG[k]; });
+                        coreG.signature = md5hex(JSON.stringify(sortedG)).toUpperCase();
+                        return coreG;
+                    }
+                    if (scheme === 13 || scheme === 14 || scheme === 15) {
+                        // Dùng "sign" do máy chủ trả trong phản hồi lấy số dư (nếu đã có).
+                        const sg = (rawRenewSampleSign || getAuthSign() || '');
+                        if (!sg) return buildSignedBody({});
+                        const core13 = { language: lang, random: rnd, sign: sg, timestamp: ts };
+                        const core14 = Object.assign({}, core13, { typeId: typeId });
+                        const core15 = Object.assign({}, core13, { sign: CFG.payload.signature, typeId: typeId });
+                        const core = scheme === 13 ? core13 : (scheme === 14 ? core14 : core15);
+                        const sortedSign = {};
+                        Object.keys(core).sort().forEach(function (k) { sortedSign[k] = core[k]; });
+                        return Object.assign({}, core, { signature: md5hex(JSON.stringify(sortedSign)).toUpperCase() });
+                    }
+                    if (scheme === 12) {
+                        // thử xin lịch sử cá nhân — một số máy chủ tự cấp access token mới trong phản hồi này
+                        const core = { day: 1, language: lang, pageNo: 1, pageSize: 1, random: rnd, timestamp: ts, typeId: typeId };
+                        const sorted12 = {};
+                        Object.keys(core).sort().forEach(function (k) { sorted12[k] = core[k]; });
+                        return Object.assign({}, core, { signature: md5hex(JSON.stringify(sorted12)).toUpperCase() });
+                    }
                     // 11: dùng lại nguyên bộ tham số tĩnh của trang (giống lúc máy chủ cấp token đầu tiên).
                     // Đây là bộ đã được máy chủ chấp nhận một lần → rất đáng thử khi mọi cách tự ký đều hỏng.
                     if (scheme === 11) {
@@ -2764,34 +3002,159 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                 }
                 function renewSchemeOrder() {
                     const pref = getRenewSchemePreference();
-                    const all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+                    const all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
                     if (pref >= 0) return [pref].concat(all.filter(function (v) { return v !== pref; }));
                     return all;
+                }
+
+                // ---------------------------------------------------------------------
+                // CHẨN ĐOÁN (chạy 1 lần, không đụng token đang dùng):
+                //   __renewDiag()  → gọi thử nhiều biến thể, in bảng kết quả ra Console.
+                //   Dùng khi máy chủ trả "không có token" mà không nói lý do.
+                // ---------------------------------------------------------------------
+                // Lấy "sign" thật từ máy chủ: gọi API số dư (endpoint NHẸ) rồi đọc trường sign trong phản hồi.
+                // Chỉ chạy khi bộ dò cần tới chiến lược dùng sign, tối đa 1 lần / 10 phút.
+                async function fetchAuthSign(force) {
+                    if (!force && Date.now() - signProbeAt < 600000) return getAuthSign();
+                    signProbeAt = Date.now();
+                    try {
+                        const res = await apiPost(CFG.apiBalance, buildSignedBody({}), { noBreaker: true, timeoutMs: 8000 });
+                        const sg = res && typeof res === 'object' ? extractSignFromResponse(res) : '';
+                        if (sg) { setAuthSign(sg); rawRenewSampleSign = sg; }
+                        return sg || getAuthSign();
+                    } catch (e) { return getAuthSign(); }
+                }
+                function extractSignFromResponse(res) {
+                    let found = '';
+                    (function walk(n, depth) {
+                        if (found || !n || typeof n !== 'object' || depth > 4) return;
+                        Object.keys(n).forEach(function (k) {
+                            if (found) return;
+                            const v = n[k];
+                            if (/^sign$/i.test(k) && typeof v === 'string' && /^[A-Fa-f0-9]{32,128}$/.test(v)) { found = v; return; }
+                            walk(v, depth + 1);
+                        });
+                    })(res, 0);
+                    return found;
+                }
+
+                async function renewDiag() {
+                    const out = [];
+                    const rnds = [randHex32(), (CFG.payload && CFG.payload.random) || '', '', '0'.repeat(32)];
+                    const headers = [getTokenHeader(), 'Bearer ', 'Bearer '];
+                    for (let si = 0; si <= 11; si++) {
+                        for (let ri = 0; ri < rnds.length; ri++) {
+                            for (let hi = 0; hi < headers.length; hi++) {
+                                renewForceRandom = rnds[ri];
+                                const body = buildRenewBody(si);
+                                let res = null, err = null;
+                                try {
+                                    res = await apiPost(CFG.apiRefreshToken, body, {
+                                        skipRefresh: true, authMode: 'refresh', timeoutMs: 6000,
+                                        headerOverride: headers[hi]
+                                    });
+                                } catch (e) { err = e; }
+                                out.push({
+                                    scheme: si, rnd: rnds[ri] ? rnds[ri].slice(0, 8) : '(rỗng)',
+                                    hdr: JSON.stringify(headers[hi]),
+                                    code: res && res.code !== undefined ? res.code : '-',
+                                    msg: (res && (res.msg || res.message)) || (err && err.message) || '',
+                                    keys: res && typeof res === 'object' ? Object.keys(res).join(',') : ''
+                                });
+                                renewForceRandom = '';
+                                if (res && (res.data && res.data.token || res.token)) {
+                                    console.log('✔ kiểu này RA TOKEN:', out[out.length - 1]);
+                                    console.table(out);
+                                    return { ok: out[out.length - 1], tried: out.length };
+                                }
+                            }
+                        }
+                    }
+                    renewForceRandom = '';
+                    console.table(out);
+                    return { ok: null, tried: out.length, detail: out };
                 }
 
                 async function refreshAccessToken() {
                     const refresh = getRefreshToken();
                     if (!refresh) return '';
                     if (refreshTokenPromise) return refreshTokenPromise;
+                    const prevToken = getToken();
                     refreshTokenPromise = (async function () {
                         let lastError = null;
                         // Thử lần lượt các cách dựng body (xem buildRenewBody). Cách nào đã từng ra token
                         // thì đứng đầu danh sách. Gặp "Wrong signature" là nhảy ngay sang cách kế.
+                        // Bộ dò có 3 chiến lược dùng "sign" của máy chủ → chưa có thì xin 1 lần từ API số dư.
+                        if (!getAuthSign() && !rawRenewSampleSign) {
+                            try { await fetchAuthSign(false); } catch (e) {}
+                        }
                         const order = renewSchemeOrder();
-                        const MAX_TRY = order.length;
-                        for (let attempt = 0; attempt < MAX_TRY; attempt++) {
+                        // Mỗi kiểu body thử 2 cách đặt header — nhưng thử hết kiểu body trước (nhanh hơn),
+                        // rồi mới thử lại loạt với Authorization = access token.
+                        const combos = [];
+                        for (let ci = 0; ci < order.length; ci++) {
+                            const sc = order[ci];
+                            combos.push({ scheme: sc, auth: 'refresh', mode: sc === 16 ? 'get' : (sc === 17 ? 'form' : 'json') });
+                        }
+                        const MAX_CHEAP = order.length;
+                        let accessTried = false;
+                        let lastNoToken = null;
+                        for (let attempt = 0; attempt < combos.length; attempt++) {
                             try {
-                                const variant = order[attempt];
+                                const combo = combos[attempt];
+                                const variant = combo.scheme;
                                 const body = buildRenewBody(variant);
                                 rememberedRenewBody = variant;
-                                const res = await apiPost(CFG.apiRefreshToken, body, { skipRefresh: true, authMode: 'refresh', timeoutMs: 8000 });
+                                const callOpts = { skipRefresh: true, authMode: 'refresh', timeoutMs: 8000 };
+                                if (combo.auth === 'access') callOpts.authTokenOverride = getToken();
+                                if (combo.mode === 'get') callOpts.method = 'GET';
+                                if (combo.mode === 'form') callOpts.form = true;
+                                const callUrl = variant === 12 ? CFG.apiSearchGameRecord : CFG.apiRefreshToken;
+                                let res = null;
+                                try {
+                                    res = await apiPost(callUrl, body, callOpts);
+                                } catch (callErr) {
+                                    // Lỗi mạng/HTTP ở tổ hợp NÀY không nên làm hỏng cả quá trình:
+                                    // ghi nhận rồi thử tổ hợp khác.
+                                    lastError = callErr;
+                                    if (callErr && callErr.kind === 'session') throw callErr;
+                                    continue;
+                                }
+                                rawRenewSample = res;
+                                // nhật ký kỹ thuật: xem được bằng __renewLog() trong Console để biết máy chủ trả gì
+                                try {
+                                    renewTrace.push({
+                                        at: new Date().toISOString().slice(11, 19),
+                                        scheme: variant,
+                                        bodyKeys: Object.keys(body || {}).sort().join(','),
+                                        http: res && res.httpStatus !== undefined ? res.httpStatus : '-',
+                                        kind: res && res.__rawText ? 'text' : 'json',
+                                        code: res && res.code !== undefined ? res.code : '-',
+                                        msg: res && (res.msg || res.message) ? String(res.msg || res.message).slice(0, 120) : '',
+                                        auth: combo.auth,
+                                        gotToken: !!harvestTokenFromResponse(res),
+                                        keys: res && typeof res === 'object' ? Object.keys(res).slice(0, 12).join(',') : ''
+                                    });
+                                    if (renewTrace.length > 40) renewTrace.shift();
+                                    // Ghi lại mọi khoá đã thấy trong phản hồi (kể cả lồng trong data) để biết
+                                    // máy chủ đặt token ở trường nào.
+                                    (function walk(node, path, depth) {
+                                        if (!node || typeof node !== 'object' || depth > 3) return;
+                                        Object.keys(node).forEach(function (k) {
+                                            const p3 = path ? path + '.' + k : k;
+                                            if (renewTraceKeys.indexOf(p3) < 0) renewTraceKeys.push(p3);
+                                            walk(node[k], p3, depth + 1);
+                                        });
+                                    })(res, '', 0);
+                                    if (renewTraceKeys.length > 60) renewTraceKeys.splice(0, renewTraceKeys.length - 60);
+                                } catch (e) {}
                                 if (res && res.msg && /signature/i.test(String(res.msg))) {
                                     lastError = apiError('signature', String(res.msg));
                                     continue;
                                 }
                                 const code = res && res.code !== undefined ? Number(res.code) : 0;
                                 if (Number.isFinite(code) && code !== 0 && code !== 1) {
-                                    if ((code === 3 || code === 4) && attempt < MAX_TRY - 1) {
+                                    if ((code === 3 || code === 4) && attempt < combos.length - 1) {
                                         lastError = new Error(res.msg || res.message || ('Mã ' + code));
                                         await sleep(800);
                                         continue;
@@ -2803,12 +3166,35 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                                     throw new Error(res.msg || res.message || ('Không gia hạn được token, mã ' + code));
                                 }
                                 const data = res && typeof res === 'object' && 'data' in res ? res.data : res;
+                                const harvested = harvestTokenFromResponse(res);
                                 const token = storeAuthBundle({
-                                    token: data && data.token,
-                                    refreshToken: (data && data.refreshToken) || getRefreshToken(),
+                                    token: (data && (data.token || data.accessToken || data.access_token)) || harvested,
+                                    refreshToken: (data && (data.refreshToken || data.refresh_token)) || getRefreshToken(),
                                     tokenHeader: (data && data.tokenHeader) || getTokenHeader()
                                 }, { store: true });
-                                if (!token) throw new Error('Máy chủ không trả token mới.');
+                                if (!token) {
+                                    // code = 0 nhưng không có token → server đã nhận yêu cầu, chỉ là chưa trả mã mới.
+                                    lastNoToken = { msg: res && (res.msg || res.message) || '', code: code };
+                                    lastError = apiError('notoken', 'Máy chủ không trả token mới.');
+                                    // Hết 1 loạt kiểu body mà vẫn "không có token": thử thêm vài tổ hợp đặt
+                                    // access token ở header (3 lời gọi) rồi thôi, để bộ tự gia hạn hẹn lại 60 giây.
+                                    if (attempt >= MAX_CHEAP - 1) {
+                                        if (!accessTried) {
+                                            accessTried = true;
+                                            [0, 1, 2].forEach(function (sc) {
+                                                const scheme2 = order.indexOf(sc) >= 0 ? sc : order[0];
+                                                combos.push({ scheme: scheme2, auth: 'access' });
+                                            });
+                                        } else break;
+                                    }
+                                    continue;
+                                }
+                                if (prevToken && token === prevToken) {
+                                    // Trả lại ĐÚNG token cũ: coi như chưa gia hạn được (tránh vòng lặp gọi liên tục).
+                                    lastNoToken = { msg: 'trả lại đúng token cũ', code: code };
+                                    lastError = apiError('notoken', 'Máy chủ trả lại token cũ.');
+                                    continue;
+                                }
                                 renewBodyOk = variant;                // cách dựng body đã qua → lần sau dùng luôn
                                 setRenewSchemePreference(variant);
                                 renewEverOkAt = Date.now();
@@ -2817,11 +3203,18 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                                 return token;
                             } catch (error) {
                                 lastError = error;
+                                if (lastNoToken && error.kind === 'signature') lastError = apiError('notoken', 'Máy chủ không trả token mới.');
                                 // 'session' (refresh token chết) / 'auth' → đổi cách cũng vô ích, dừng ngay.
-                                if (attempt >= MAX_TRY - 1 || error.kind === 'auth' || error.kind === 'session') break;
+                                if (attempt >= combos.length - 1 || error.kind === 'auth' || error.kind === 'session') break;
+                                // Đã thử hết 1 loạt kiểu body mà chỉ nhận "không có token" (máy chủ nhận yêu cầu
+                                // nhưng không cấp mã) → dừng sớm, để autoRenewTick hẹn thử lại sau 60 giây.
+                                if (lastNoToken && accessTried && attempt === combos.length - 1) break;
                                 // Lỗi chữ ký: thử ngay cách kế (không chờ). Lỗi khác: chờ ngắn rồi làm lại.
                                 await sleep(error && error.kind === 'signature' ? 120 : (attempt === 0 ? 1200 : 3000));
                             }
+                        }
+                        if (lastNoToken && lastError && lastError.kind === 'signature') {
+                            throw apiError('notoken', 'Máy chủ không trả token mới.');
                         }
                         throw lastError || new Error('Không gia hạn được token.');
                     })();
@@ -2868,7 +3261,13 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                 let rbRenewStopped = null;           // { lvl } khi cược thật bị tắt chỉ vì token → tự bật lại sau khi gia hạn
                 let renewSigFails = 0;               // số lần liên tiếp máy chủ báo "Wrong signature"
                 let renewEverOkAt = 0;               // lần gia hạn THÀNH CÔNG gần nhất (0 = chưa từng được)
-                let renewBodyOk = -1;                // biến thể body đã gia hạn được (0/1/2)
+                let renewBodyOk = -1;                // cách dựng body đã gia hạn được
+                const renewTrace = [];               // nhật ký kỹ thuật các lần gọi RefreshToken (xem bằng __renewLog())
+                const renewTraceKeys = [];           // hợp các khoá máy chủ đã trả về (để biết token nằm ở đâu)
+                let rawRenewSample = null;           // phản hồi thô gần nhất của RefreshToken (để hiện đúng lý do)
+                let rawRenewSampleSign = '';         // "sign" thấy trong phản hồi gần nhất (nếu máy chủ trả kèm)
+                let signProbeAt = 0;                 // lần cuối lấy "sign" từ API số dư
+                let renewForceRandom = '';           // ép dùng 1 chuỗi random cụ thể (để dò lỗi từ Console)
                 let rememberedRenewBody = 0;         // biến thể đang thử (để lần sau thử đúng cái đã qua)
 
                 function rbRenewWant() {
@@ -2906,6 +3305,22 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         // "Wrong signature": máy chủ từ chối chữ ký của yêu cầu xin token, KHÔNG có nghĩa
                         // refresh token đã chết. Thử lại bằng kiểu body khác, và tuyệt đối không đụng
                         // tới access token đang dùng được.
+                        const notoken = e && e.kind === 'notoken';
+                        if (notoken) {
+                            // Server đã nhận yêu cầu nhưng chưa trả token mới (thường do vừa dùng/token còn mới,
+                            // hoặc phiên vừa được cấp ở tab khác). Không phải lỗi chết → thử lại sau 60 giây.
+                            renewNextAt = Date.now() + 60000;
+                            const shown = rawRenewSample && typeof rawRenewSample === 'object'
+                                ? ('mã ' + (rawRenewSample.code !== undefined ? rawRenewSample.code : '?')
+                                    + (rawRenewSample.msg ? ' · ' + String(rawRenewSample.msg).slice(0, 80) : '')
+                                    + (rawRenewSample.data && typeof rawRenewSample.data === 'object' ? ' · dữ liệu: ' + Object.keys(rawRenewSample.data).slice(0, 8).join(',') : ''))
+                                : 'không có dữ liệu';
+                            renewNote = '⚠ Máy chủ đã nhận yêu cầu gia hạn nhưng chưa trả token mới (' + shown + ') — thử lại sau 60 giây. Token đang dùng vẫn chạy bình thường.';
+                            renewNoteAt = Date.now();
+                            try { rbTokenChanged(); } catch (e2) {}
+                            if (typeof setStatus === 'function') setStatus(renewNote, 'error');
+                            return;
+                        }
                         const sigLike = e && (e.kind === 'signature' || /signature/i.test(String(e.message || '')));
                         if (sigLike) {
                             renewSigFails = (renewSigFails || 0) + 1;
@@ -3390,7 +3805,26 @@ async function rbCopyText(text) {
     rbFlash(ok ? 'Đã sao chép vào bộ nhớ tạm.' : 'Không sao chép được.', ok ? '' : 'warn');
 }
 
-function updateRefreshOnlyBox() {
+// Kiểm tra cụm token ngay sau khi lưu: đúng vai (access ↔ refresh) hay bị lẫn.
+                function authBundleDiagnose() {
+                    const tok = getToken();
+                    const ref = getRefreshToken();
+                    const tokKind = tokenKindOf(tok);
+                    const refKind = tokenKindOf(ref);
+                    const out = { ok: true, notes: [] };
+                    if (tok && /refresh/i.test(tokKind)) {
+                        out.ok = false;
+                        out.notes.push('Ô access token đang chứa refresh token' + (ref ? ' — trang sẽ dùng mã kia để đặt cược và bị từ chối.' : ' — thiếu access token nên chưa xem được bảng, chưa cược được.'));
+                    }
+                    if (ref && refKind && !/refresh/i.test(refKind)) {
+                        out.notes.push('Refresh token đang lưu không phải loại Refresh_Token (server ghi "' + refKind + '").');
+                    }
+                    if (ref && ref === tok) { out.ok = false; out.notes.push('Access token và refresh token đang là CÙNG một chuỗi.'); }
+                    if (!ref) { out.ok = false; out.notes.push('Chưa có refresh token.'); }
+                    return out;
+                }
+
+                function updateRefreshOnlyBox() {
                     try {
                         const box = document.getElementById('tokenRenewBox');
                         if (!box) return;
@@ -3401,6 +3835,18 @@ function updateRefreshOnlyBox() {
 
                 function openTokenDialog() {
                     updateRefreshOnlyBox();
+                    try {
+                        if (getAuthSign()) {
+                            const n0 = document.getElementById('tokenRenewNote');
+                            if (n0 && !n0.textContent) { n0.textContent = 'Đã có mã sign của máy chủ (' + getAuthSign().slice(0, 10) + '…) — sẽ dùng khi xin token mới.'; n0.style.color = '#93c5fd'; }
+                        }
+                        const d = authBundleDiagnose();
+                        const note0 = document.getElementById('tokenRenewNote');
+                        if (note0 && d.notes.length) {
+                            note0.textContent = '⚠ ' + d.notes.join(' ');
+                            note0.style.color = '#fca5a5';
+                        }
+                    } catch (e) {}
                     tokenInput.value = currentToken || '';
                     try {
                         var _note = document.getElementById('tokenPasteNote');
@@ -6234,6 +6680,39 @@ function updateRefreshOnlyBox() {
                         note.textContent = text;
                         note.style.color = kind === 'err' ? '#fca5a5' : (kind === 'ok' ? '#86efac' : '#93c5fd');
                     }
+                    const btnDiag = document.getElementById('btnRenewDiag');
+                    if (btnDiag) btnDiag.addEventListener('click', async function () {
+                        if (!getToken() || !getRefreshToken()) { say('Cần đủ token + refreshToken mới chẩn đoán được.', 'err'); return; }
+                        btnDiag.disabled = true;
+                        say('Đang chẩn đoán (thử lần lượt các kiểu yêu cầu)…');
+                        try {
+                            try { await refreshAccessToken(); } catch (e) {}
+                            const t = renewTrace.length ? renewTrace : [];
+                            const lines = [];
+                            lines.push('CHẨN ĐOÁN GIA HẠN TOKEN — ' + new Date().toISOString());
+                            lines.push('Token còn hạn: ' + rbTokenLeft(Date.now()).text + ' · refreshToken: ' + (getRefreshToken() ? 'có (' + getRefreshToken().length + ' ký tự)' : 'KHÔNG'));
+                            lines.push('Phản hồi mẫu: ' + JSON.stringify(rawRenewSample).slice(0, 400));
+                            lines.push('Các trường máy chủ trả: ' + (renewTraceKeys.join(', ') || '(không có)'));
+                            lines.push('');
+                            t.forEach(function (r) {
+                                lines.push('#' + r.at + ' cách ' + r.scheme + ' [' + r.auth + '] · ' + (r.msg || '(không lời nhắn)') + ' · code ' + r.code + ' · trường: ' + r.keys);
+                            });
+                            const text = lines.join('\n');
+                            // Sao chép qua nhiều đường (clipboard → execCommand → hộp thoại dán tay).
+                            let copied = false;
+                            try { await navigator.clipboard.writeText(text); copied = true; } catch (e) {
+                                try {
+                                    const ta = document.createElement('textarea');
+                                    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                                    document.body.appendChild(ta); ta.select();
+                                    copied = document.execCommand('copy');
+                                    document.body.removeChild(ta);
+                                } catch (e2) { copied = false; }
+                            }
+                            if (!copied) window.prompt('Chưa sao chép tự động được — bôi đen toàn bộ rồi Ctrl+C để gửi hỗ trợ:', text);
+                            say(copied ? '✔ Đã chạy thử và sao chép kết quả — dán vào tin nhắn gửi hỗ trợ.' : 'Đã chạy thử. Kết quả đang mở trong hộp để bạn chép gửi hỗ trợ.', copied ? 'ok' : '');
+                        } finally { btnDiag.disabled = false; }
+                    });
                     if (btnRenew) btnRenew.addEventListener('click', async function () {
                         if (!getToken()) { say('Chưa có token — dán cụm token + refreshToken vào ô trên trước.', 'err'); return; }
                         if (!getRefreshToken()) { say('Cụm token hiện tại KHÔNG có refreshToken nên không gia hạn được. Bấm «📎 Lấy mã lấy token», chạy 1 lần trên trang game để lấy đủ cụm.', 'err'); return; }
@@ -6699,6 +7178,6 @@ function updateRefreshOnlyBox() {
                 window.addEventListener('focus', function () { renewKick(1500); });
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c09fccec4e2442',t:'MTc5NDkzODMxMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c09fccec4e2442',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c7aeac78338588',t:'MTc5NTAxMjMyMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c7aeac78338588',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c09fccec4e2442',t:'MTc5NDkzODMxMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c09fccec4e2442',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c7e16b496ee5d4',t:'MTc5NTAxNDQwMQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c7e16b496ee5d4',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
