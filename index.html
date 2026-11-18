@@ -1783,6 +1783,7 @@
                     <div style="font-size:11px; color:#94a3b8; margin-bottom:6px;">Nội dung token (1 dãy)</div>
                     <textarea id="tokenDisplay" readonly spellcheck="false" style="width:100%; min-height:90px; background:#0f172a; color:#e2e8f0; border:1px solid #374151; border-radius:4px; padding:6px; font-family:monospace; font-size:12px; resize:vertical;"></textarea>
                     <div style="font-size:11px; color:#64748b; margin-top:6px;">Bấm «Dán» để lấy từ bộ nhớ tạm, hoặc tự dán vào ô trên rồi bấm «Dán» để lưu.</div>
+                            <div id="tokenBlobHint" style="display:none; font-size:11.5px; color:#fbbf24; margin-top:6px; line-height:1.5;"></div>
                 </div>
 
                 <div class="token-paste-note" id="tokenPasteNote" role="status" aria-live="polite"></div>
@@ -1814,11 +1815,17 @@
     var m = hash.match(/[?&]token=([^&]*)/);
     var rToken = hash.match(/[?&]refreshToken=([^&]*)/);
     var hToken = hash.match(/[?&]tokenHeader=([^&]*)/);
-    if (m && m[1]) {
-        try { localStorage.setItem('vn168_token', decodeURIComponent(m[1])); } catch (e) {}
-        try { localStorage.setItem(LS_REFRESH_TOKEN, rToken ? decodeURIComponent(rToken[1]) : ''); } catch (e) {}
-        try { localStorage.setItem(LS_TOKEN_HEADER, hToken ? decodeURIComponent(hToken[1]) : 'Bearer '); } catch (e) {}
+    var sSign = hash.match(/[?&]sign=([^&]*)/);
+    var anyToken = (m && m[1]) || (rToken && rToken[1]);
+    if (anyToken) {
+        if (m && m[1]) { try { localStorage.setItem('vn168_token', decodeURIComponent(m[1])); } catch (e) {} }
+        if (rToken && rToken[1]) { try { localStorage.setItem(LS_REFRESH_TOKEN, decodeURIComponent(rToken[1])); } catch (e) {} }
+        if (hToken && hToken[1]) { try { localStorage.setItem(LS_TOKEN_HEADER, decodeURIComponent(hToken[1])); } catch (e) {} }
+        if (sSign && sSign[1]) { try { localStorage.setItem('vn168_sign', decodeURIComponent(sSign[1])); } catch (e) {} }
         window.__tokenFromHash = true;
+        try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    } else if (sSign && sSign[1]) {
+        try { localStorage.setItem('vn168_sign', decodeURIComponent(sSign[1])); } catch (e) {}
         try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
     }
 })();
@@ -1883,10 +1890,14 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         rbTokenChanged();
                         try { updateRefreshOnlyBox(); } catch (e) {}
                         const parts = [];
-                        if (bundle.sign) parts.push('mã sign (' + String(bundle.sign).slice(0, 10) + '…)');
+                        if (bundle.sign) parts.push('mã sign ' + String(bundle.sign).slice(0, 10) + '…');
+                        if (bundle.token && bundle.token !== getToken() && !isRefreshKind(bundle.token)) parts.push('access token mới');
                         if (bundle.refreshToken) parts.push(bundle.refreshToken === getRefreshToken() ? 'refresh token' : 'refresh token');
-                        rbFlash('Đã lưu ' + (parts.join(' + ') || 'phần bổ sung') + ' — KHÔNG có access token trong nội dung vừa dán nên trang giữ nguyên token đang dùng'
-                            + (getToken() ? '' : ' (hiện chưa có token để xem bảng/đặt cược)') + '.', 'ok', 12000);
+                        const keptOld = !(bundle.token && bundle.token !== getToken() && !isRefreshKind(bundle.token));
+                        rbFlash('Đã lưu ' + (parts.join(' + ') || 'phần bổ sung')
+                            + (keptOld ? ' — nội dung vừa dán không có access token mới nên trang giữ token đang dùng' : '')
+                            + (getToken() ? '' : ' (hiện chưa có token để xem bảng/đặt cược)')
+                            + (!bundle.refreshToken && !getRefreshToken() ? ' · LƯU Ý: vẫn chưa có refreshToken nên khi hết hạn sẽ phải lấy lại.' : '') + '.', keptOld ? 'ok' : 'ok', 12000);
                         tokenInput.value = '';
                         closeTokenDialog();
                         if (!hadRef) {
@@ -2297,6 +2308,19 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                     if (!out.sign) {
                         const sg = raw.match(/["']sign["']\s*[:=]\s*["']([A-Fa-f0-9]{32,128})["']/i);
                         if (sg) out.sign = sg[1];
+                    }
+                    // Dán cả LINK do «📎 Lấy mã lấy token» mở ra (…#?token=…&refreshToken=…) → tách tham số.
+                    if (!out.token) {
+                        const um = raw.match(/[?#&]token=([^&\s]+)/);
+                        if (um) out.token = extractToken(decodeURIComponent(um[1]));
+                    }
+                    if (!out.refreshToken) {
+                        const urm = raw.match(/[?#&]refreshToken=([^&\s]+)/i);
+                        if (urm) out.refreshToken = cleanAuthSecret(decodeURIComponent(urm[1]));
+                    }
+                    if (!out.sign) {
+                        const usm = raw.match(/[?#&]sign=([0-9A-Fa-f]{32,128})/);
+                        if (usm) out.sign = usm[1];
                     }
                     out.refreshToken = cleanAuthSecret(out.refreshToken);
                     out.tokenHeader = normalizeTokenHeader(out.tokenHeader);
@@ -6653,17 +6677,57 @@ async function rbCopyText(text) {
                     // Nút «📋 Dán»: ưu tiên nội dung đang có trong ô nhập; nếu ô trống thì đọc bộ nhớ tạm.
                     // Đọc được → lưu thật rồi mới đóng; không đọc được thì giữ dialog mở và báo lỗi ngay trong dialog.
                 function tokenSnippet() {
-                    // Một dòng dán vào Console (F12) của trang game: tự đọc token + refresh token trong
-                    // localStorage/sessionStorage rồi mở trang này kèm đủ cụm (#?token=…&refreshToken=…).
-                    // Cần đúng 1 lần — sau đó trang tự gia hạn mãi mãi, không phải đăng nhập lại.
-                    const js = "(function(){var o={};function sc(s){try{for(var i=0;i<s.length;i++){var k=s.key(i);if(!(k in o)){var v=s.getItem(k);if(v&&v.length<4000)o[k]=v;}}}catch(e){}}"
-                        + "sc(localStorage);sc(sessionStorage);var tok='',ref='',hdr='';"
-                        + "for(var k in o){var kk=k.toLowerCase();var v=o[k];var m=v.match(/eyJ[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+){1,3}/);if(!m)continue;var j=m[0];"
-                        + "if(/header/i.test(kk)){if(!hdr)hdr=v;}else if(/refresh/i.test(kk)){if(!ref)ref=j;}else if(!tok)tok=j;}"
-                        + "if(!tok){var all='';for(var k in o)all+=o[k]+'|';var w=all.match(/eyJ[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+){1,3}/g)||[];tok=w[0]||'';if(!ref)ref=w.filter(function(x){return x!==tok;})[0]||'';}"
-                        + "if(!tok){alert('Không thấy token — hãy F5 đăng nhập lại trang game rồi chạy lại.');return;}"
-                        + "if(!ref&&!confirm('Chỉ thấy access token, KHÔNG thấy refresh token. Vẫn mở trang? (sau này hết hạn sẽ phải dán lại thủ công)'))return;"
-                        + "location.href='__HUB__#?token='+encodeURIComponent(tok)+(ref?'&refreshToken='+encodeURIComponent(ref):'')+(/\\S/.test(hdr||'')?'&tokenHeader='+encodeURIComponent(hdr):'');})();";
+                    // Dòng dán vào Console (F12) của TRANG GAME. Nó:
+                    //   • quét localStorage + sessionStorage + cookie tìm mọi chuỗi JWT,
+                    //   • phân loại theo claim TokenType/role (Refresh_Token → refresh, còn lại → access),
+                    //   • nhặt thêm mã "sign" (64 ký tự hex) nếu có,
+                    //   • IN KẾT QUẢ ra Console (không còn "undefined"),
+                    //   • mở trang cược kèm đủ cụm: #?token=…&refreshToken=…&sign=…
+                    // Hết hạn thì chạy lại — không cần đăng xuất game.
+                    const js = [
+                        '(function(){',
+                        'var o={},keys=[];',
+                        'function sc(st,label){try{for(var i=0;i<st.length;i++){var k=st.key(i);var v=st.getItem(k);keys.push(label+":"+k);',
+                        'if(!(k in o)&&v&&v.length<6000)o[k]=v;}}catch(e){}}',
+                        'sc(localStorage,"LS");sc(sessionStorage,"SS");',
+                        'try{document.cookie.split(/;\\s*/).forEach(function(c){var p=c.split("=");if(p[0]&&p[1])o["cookie:"+p[0]]=decodeURIComponent(p[1]);});}catch(e){}',
+                        'function payload(t){try{var p=t.split(".")[1];if(!p)return null;p=p.replace(/-/g,"+").replace(/_/g,"/");while(p.length%4)p+="=";return JSON.parse(decodeURIComponent(escape(atob(p))));}catch(e){return null;}}',
+                        'function kind(t){var p=payload(t);if(!p)return "";var role=p["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]||p.role||"";return String(p.TokenType||role||"");}',
+                        'var jw=[],sign="",hdr="";',
+                        'for(var k in o){var v=o[k];if(!hdr&&/header/i.test(k)&&v&&v.length<40&&!/^eyJ/.test(v))hdr=v;',
+                        'var m=v.match(/eyJ[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+){1,3}/g)||[];',
+                        'for(var i2=0;i2<m.length;i2++)if(jw.indexOf(m[i2])<0)jw.push(m[i2]);',
+                        'var sg=v.match(/[A-Fa-f0-9]{64}/);if(sg&&!sign)sign=sg[0];}',
+                        'var ref="",tok="";',
+                        'jw.forEach(function(j){if(/refresh/i.test(kind(j))){if(!ref)ref=j;}else if(!tok)tok=j;});',
+                        'if(!tok&&!ref){',
+                        'console.log("%c✖ Không thấy token trong trang này","color:#f87171;font-weight:bold");',
+                        'console.log("Các khoá đã quét:",keys.join(", ")||"(trống)");',
+                        'console.log("→ Hãy chắc bạn đang chạy dòng này ở TAB CỦA TRANG GAME (đã đăng nhập), không phải tab trang cược.");',
+                        'return "KHÔNG_THẤY_TOKEN";',
+                        '}',
+                        'var out={access:tok?tok.slice(0,24)+"…":"",refresh:ref?ref.slice(0,24)+"…":"",sign:sign?sign.slice(0,16)+"…":""};',
+                        'console.log("%c✔ Đã tìm thấy","color:#4ade80;font-weight:bold",out);',
+                        'console.log("access token:",tok?"có ("+tok.length+" ký tự)":"KHÔNG CÓ","· refresh token:",ref?"có ("+ref.length+" ký tự)":"KHÔNG CÓ","· sign:",sign||"không có");',
+                        'if(!ref)console.log("%c⚠ Không thấy refresh token — hết hạn sẽ phải chạy lại dòng này.","color:#fbbf24");',
+                        'var parts=[];if(tok)parts.push("token="+encodeURIComponent(tok));if(ref)parts.push("refreshToken="+encodeURIComponent(ref));',
+                        'if(/\\S/.test(hdr||""))parts.push("tokenHeader="+encodeURIComponent(hdr));if(sign)parts.push("sign="+encodeURIComponent(sign));',
+                        'var bundle="{"+(tok?"\\"token\\":\\""+tok+"\\"":"")+(ref?(tok?",":"")+"\\"refreshToken\\":\\""+ref+"\\"":"")+(sign?",\\"sign\\":\\""+sign+"\\"":"")+"}";',
+                        'var url="__HUB__#?"+parts.join("&");',
+                        'try{copy(bundle);console.log("%c✔ Đã sao chép CỤM TOKEN vào bộ nhớ tạm.","color:#4ade80;font-weight:bold");}catch(e){console.log("%c(Không tự sao chép được — hãy bôi đen dòng cụm bên dưới, Ctrl+C)","color:#fbbf24");}',
+                        'console.log("%cCỤM TOKEN:","color:#93c5fd;font-weight:bold",bundle);',
+                        'var hubBad=/^(blob|about|data|chrome|devtools|view-source):/i.test(url);',
+                        'if(hubBad){',
+                        'console.log("%c⚠ Trang cược đang chạy ở địa chỉ tạm (blob:) nên Chrome chặn mở từ tab game.","color:#fbbf24;font-weight:bold");',
+                        'console.log("→ Không sao: cụm đã được sao chép ở trên. Quay lại tab trang cược → bấm Token → dán vào ô trống → bấm 💾 Lưu token.");',
+                        'console.log("   (Muốn dùng kiểu tự mở thì tải file index-…html về máy và mở trực tiếp bằng trình duyệt.)");',
+                        'return out;',
+                        '}',
+                        'console.log("Đang mở trang cược…");',
+                        'location.href=url;',
+                        'return out;',
+                        '})();'
+                    ].join('');
                     return js.split('__HUB__').join(window.__HUB_URL || '');
                 }
 
@@ -6777,6 +6841,18 @@ async function rbCopyText(text) {
                     });
                 })();
 
+                // Trang đang chạy ở địa chỉ tạm (blob: / GitHub blob) → nút «Lấy mã» không tự mở lại được:
+                // hiện gợi ý dán CỤM token (nó tự sao chép sẵn) thay vì loay hoay với link.
+                (function () {
+                    const el = document.getElementById('tokenBlobHint');
+                    if (!el) return;
+                    const href = String(location.href || '');
+                    const bad = /^(blob|about|data):/i.test(href) || /github\.com\/[^?#]*\/(blob|raw)\//i.test(href);
+                    if (!bad) return;
+                    el.style.display = 'block';
+                    el.innerHTML = '⚠ Trang đang chạy ở <b>địa chỉ xem trước (blob:)</b>. Nút «📎 Lấy mã lấy token» vẫn quét đúng nhưng <b>không tự mở lại trang</b> được — nó chỉ <b>sao chép cụm</b> và in ra Console. '
+                        + 'Cách chuẩn nhất: <b>tải file .html về máy</b> rồi mở bằng trình duyệt, hoặc dùng <b>GitHub Pages</b>. Nếu vẫn muốn dán cụm: chạy mã ở tab game, quay lại đây, dán vào ô trên → <b>💾 Lưu token</b>.';
+                })();
                 document.getElementById('btnPasteToken').addEventListener('click', async function () {
                         const btn = this;
                         const note = document.getElementById('tokenPasteNote');
@@ -7290,6 +7366,6 @@ async function rbCopyText(text) {
                 window.addEventListener('focus', function () { renewKick(1500); });
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c09fccec4e2442',t:'MTc5NDkzODMxMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c09fccec4e2442',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c7edd24e8385b2',t:'MTc5NTAxNDkwOQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c7edd24e8385b2',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c09fccec4e2442',t:'MTc5NDkzODMxMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c09fccec4e2442',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c8005fe93a0466',t:'MTc5NTAxNTY2OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c8005fe93a0466',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
