@@ -1419,6 +1419,23 @@
             .sc-edit-note { margin-top: 7px; min-height: 15px; font-size: 11px; font-weight: 700; line-height: 1.45; color: #94a3b8; }
             .sc-edit-note[data-kind="ok"] { color: #a7f3d0; }
             .sc-edit-note[data-kind="err"] { color: #fca5a5; }
+            .sc-edit-tools {
+                display: flex;
+                gap: 6px;
+                margin: 6px 0 2px;
+            }
+            .sc-edit-tool {
+                flex: 1 1 0;
+                min-height: 32px;
+                border: 1px solid #334a6e;
+                border-radius: 8px;
+                background: #16233a;
+                color: #bfdbfe;
+                font-size: 11.5px;
+                font-weight: 600;
+                cursor: pointer;
+            }
+            .sc-edit-tool:active { background: #1b2b47; }
             .sc-edit-reset { margin-top: 7px; width: 100%; padding: 6px 8px; border: 1px dashed rgba(148, 163, 184, .45); border-radius: 6px; background: transparent; color: #cbd5e1; font-size: 12px; font-weight: 800; cursor: pointer; }
 
             /* ===== Khung tín hiệu cược ===== */
@@ -1625,6 +1642,10 @@
                         <button type="button" class="sc-edit-save" id="scEditSave">Lưu &amp; ô tiếp</button>
                     </div>
                     <div class="sc-edit-note" id="scEditNote"></div>
+                    <div class="sc-edit-tools">
+                        <button type="button" class="sc-edit-tool" id="scEditCopyX" title="Sao chép bộ x đang dùng (1 dòng) để dán sang bản khác/thiết bị khác">📋 Sao chép bộ x</button>
+                        <button type="button" class="sc-edit-tool" id="scEditPasteX" title="Dán dòng bộ x đã sao chép để khôi phục">📥 Nhập bộ x</button>
+                    </div>
                     <button type="button" class="sc-edit-reset" id="scEditReset">↺ Tất cả về 40</button>
                 </div>
             </section>
@@ -1966,6 +1987,7 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                 let memoryTokenHeader = '';
                 let localTokenStoredAt = 0;
                 let deadToken = '';
+                let tokenAheadNeeded = false;      // token còn < 10 phút → cần xin mã mới (kể cả khi máy chủ chưa từ chối)
                 let applyingRemote = false;
                 let remoteUnsub = null;
                 let refreshTokenPromise = null;
@@ -2343,10 +2365,18 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
             
                 function tokenAlive() {
                     const token = getToken();
-                    if (!deadToken) return true;
+                    // Chỉ coi là "không sống" khi đã bị từ chối hoặc ĐÃ hết hạn — token còn vài phút
+                    // vẫn dùng được để đặt cược, không được làm gián đoạn.
+                    if (token) tokenAheadNeeded = isTokenExpiredLocally(token, 0);
+                    if (!deadToken) return !tokenAheadNeeded;
                     if (token === deadToken) return false;
                     deadToken = '';
-                    return true;
+                    return !tokenAheadNeeded;
+                }
+                // "Sắp hết hạn" ≠ "đã bị từ chối": dùng để báo đúng trạng thái trên giao diện.
+                function tokenRefused() {
+                    const token = getToken();
+                    return !!deadToken && !!token && token === deadToken;
                 }
             
                 function getAuthSign() {
@@ -2500,6 +2530,9 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                                 scSaveOffsets(false);
                                 scOffsetsChanged();
                                 setStatus('Đã đồng bộ x từ thiết bị khác.', 'ok');
+                            } else if (!same && scOffsetsAt && remoteAt && remoteAt < scOffsetsAt) {
+                                // Máy này mới hơn → đẩy lại bản của máy này, không nhận bản cũ.
+                                try { scPushOffsets(); } catch (e) {}
                             }
                         }
 
@@ -3229,7 +3262,7 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
             
                 async function ensureFreshToken(skewMs) {
                     let token = getToken();
-                    if (!token || isTokenExpiredLocally(token, skewMs === undefined ? 60000 : skewMs) || !tokenAlive()) {
+                    if (!token || isTokenExpiredLocally(token, skewMs === undefined ? 60000 : skewMs) || tokenRefused()) {
                         if (getRefreshToken()) {
                             try {
                                 const fresh = await refreshAccessToken();
@@ -3275,18 +3308,22 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                     if (!tok || !getRefreshToken()) return false;           // chưa có refresh token → không gia hạn được
                     if (renewBusy) return false;
                     if (Date.now() < renewNextAt) return false;
-                    if (!tokenAlive()) return true;                         // bị từ chối → thay ngay
+                    if (tokenRefused()) return true;                        // bị từ chối → thay ngay
                     if (isTokenExpiredLocally(tok, 0)) return true;         // đã hết hạn
                     if (rb.on || rb.bet) return true;                       // đang chạy tiền thật → luôn có token tươi
                     return isTokenExpiredLocally(tok, RENEW_AHEAD_MS);      // sắp hết hạn
                 }
 
                 async function autoRenewTick() {
+                    // Token bị từ chối (401) mà có refresh: cứu ngay, không đợi điều kiện nào khác.
+                    if (tokenRefused() && getRefreshToken() && !renewBusy) {
+                        renewNextAt = 0;
+                    }
                     if (!rbRenewWant()) return;
                     // Tab khác đang mở và đang hiện: nhường để tránh 2 tab cùng gia hạn.
                     if (document.hidden && !rbRunner && !rb.on) return;
-                    // Chưa có kết quả kỳ nào trên bảng thì không tốn lượt gọi.
-                    if (!pdNewestIssue() && !rb.on) return;
+                    // Lưu ý: KHÔNG chặn theo "bảng đã có kết quả kỳ" nữa — bảng rỗng thường CHÍNH LÀ vì
+                    // token đã hỏng, chặn ở đây thì không bao giờ tự cứu được.
                     renewBusy = true;
                     try {
                         await refreshAccessToken();
@@ -3585,9 +3622,14 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                         if (manual) setStatus('Chưa có token. Bấm “Token” để nhập token lấy kết quả.', 'error');
                         return;
                     }
-                    if (!tokenAlive() && !getRefreshToken()) {
-                        if (manual) setStatus('Token đã hết hạn. Vui lòng nhập token mới.', 'error');
+                    if (tokenRefused() && !getRefreshToken()) {
+                        setStatus('Token bị máy chủ từ chối (401) và không có refresh token → bấm «Token» dán cụm mới (hoặc «📎 Lấy mã lấy token»).', 'error');
                         return;
+                    }
+                    const tk0 = getToken();
+                    if (tk0 && isTokenExpiredLocally(tk0, 0)) {
+                        // Đã hết hạn: có refresh token thì báo đang xin mã mới (và vẫn đi tiếp để tự gia hạn).
+                        if (getRefreshToken()) setStatus('Token đã hết hạn — đang tự xin token mới…', 'warn');
                     }
                     fetchInProgress = true;
                     refreshBtn.disabled = true;
@@ -4534,7 +4576,9 @@ async function rbCopyText(text) {
                 }
             
                 function pdCanPoll() {
-                    return !document.hidden && !fetchInProgress && !!getToken() && (tokenAlive() || !!getRefreshToken());
+                    // Đã hết hạn mà CÓ refresh token vẫn phải đọc bảng — chính vòng này là thứ kích hoạt
+                    // gia hạn (nếu chặn ở đây thì trang "chết im" và không bao giờ tự cứu).
+                    return !document.hidden && !fetchInProgress && !!getToken() && !tokenRefused();
                 }
             
                 // Chạy 10 lần/giây: vẽ lại khung; đầu kỳ mới mà kết quả kỳ vừa rồi chưa về thì hỏi API dồn dập hơn
@@ -5513,7 +5557,7 @@ async function rbCopyText(text) {
                 function rbTokenGuard(now) {
                     if (!rb.on || rbBusy) return;
                     const token = getToken();
-                    if (token && tokenAlive() && !isTokenExpiredLocally(token, 0)) {
+                    if (token && !tokenRefused() && !isTokenExpiredLocally(token, 0)) {
                         rbTokenBadSince = 0;
                         return;
                     }
@@ -5774,7 +5818,9 @@ async function rbCopyText(text) {
                     const token = getToken();
                     if (!token) return { text: 'Chưa có token', kind: 'err' };
                     const refresh = !!getRefreshToken();
-                    if (!tokenAlive()) return { text: refresh ? 'Token bị từ chối · đang thử gia hạn' : 'Token bị từ chối — hãy dán token mới', kind: 'err' };
+                    if (tokenRefused()) return { text: refresh ? 'Token bị từ chối · đang thử gia hạn' : 'Token bị từ chối — hãy dán token mới', kind: 'err' };
+                    if (renewBusy) return { text: 'Đang xin token mới…', kind: 'warn' };
+                    if (refresh && tokenAheadNeeded) return { text: 'Còn ít hạn · chuẩn bị xin mã mới', kind: 'warn' };
                     const exp = tokenExpMs(token);
                     const left = exp ? exp - Date.now() : 0;
                     if (exp && left <= 0) {
@@ -6850,10 +6896,41 @@ async function rbCopyText(text) {
                 }
                 function scSaveOffsets(push) {
                     if (!scOffsets) scLoadOffsets();
-                    if (push) scOffsetsAt = Date.now();
+                    if (push) {
+                        // Tab khác vừa sửa x (mốc thời gian mới hơn) → lấy bản mới nhất rồi mới ghi,
+                        // tránh cảnh 2 tab ghi qua ghi lại làm x "nhảy lung tung".
+                        try {
+                            const otherAt = Number(localStorage.getItem(LS_SC_OFFSETS_AT) || 0) || 0;
+                            if (otherAt > scOffsetsAt) {
+                                const arr = JSON.parse(localStorage.getItem(LS_SC_OFFSETS) || 'null');
+                                if (Array.isArray(arr) && arr.length === 10) {
+                                    const merged = [];
+                                    for (let k = 0; k < 10; k++) merged.push(scNormOff(arr[k]));
+                                    scOffsets = merged;
+                                }
+                            }
+                        } catch (e) {}
+                        scOffsetsAt = Date.now();
+                    }
                     try { localStorage.setItem(LS_SC_OFFSETS, JSON.stringify(scOffsets)); } catch (e) {}
                     try { localStorage.setItem(LS_SC_OFFSETS_AT, String(scOffsetsAt || 0)); } catch (e) {}
                     if (push) scPushOffsets();
+                }
+                // Xuất / nhập bộ x bằng 1 dòng chữ — để đổi sang bản code mới không bị mất cấu hình.
+                function scOffsetsExport() {
+                    if (!scOffsets) scLoadOffsets();
+                    return 'X10:' + scOffsets.join(',');
+                }
+                function scOffsetsImport(text) {
+                    // Nhận dòng dạng "X10:1,2,3,…" hoặc chỉ 10 số cách nhau — đọc mọi số rồi lấy đúng 10 số đầu.
+                    const raw = String(text || '').replace(/^\s*X10\s*[:=]\s*/i, '');
+                    const found = raw.match(/\d{1,3}/g) || [];
+                    if (!found.length) return false;
+                    if (found.length !== 10) return false;
+                    scOffsets = found.map(function (v) { return scNormOff(v); });
+                    scSaveOffsets(true);
+                    scOffsetsChanged();
+                    return true;
                 }
                 // Đẩy x lên Firebase để các thiết bị khác dùng chung.
                 // Chỉ đẩy khi user SỬA (push=true) — không đẩy khi đang nhận từ xa, không đẩy lúc mới mở trang.
@@ -7012,6 +7089,39 @@ async function rbCopyText(text) {
                     else { scCloseEdit(); scOffsetsChanged(); }
                 }
                 if (scEditSaveBtn) scEditSaveBtn.addEventListener('click', scSaveEdit);
+                // Sao chép / nhập bộ x (1 dòng) — để đổi bản code, đổi máy mà không mất cấu hình.
+                const scCopyXBtn = document.getElementById('scEditCopyX');
+                if (scCopyXBtn) scCopyXBtn.addEventListener('click', function () {
+                    const line = scOffsetsExport();
+                    const done = function (ok) {
+                        scEditNote2(ok ? '✔ Đã sao chép bộ x: ' + line : 'Bộ x: ' + line, ok ? 'ok' : '');
+                    };
+                    try {
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(line).then(function () { done(true); }).catch(function () { done(false); });
+                            return;
+                        }
+                    } catch (e) {}
+                    try {
+                        const ta = document.createElement('textarea');
+                        ta.value = line; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                        document.body.appendChild(ta); ta.select();
+                        const ok = document.execCommand('copy');
+                        document.body.removeChild(ta);
+                        done(ok);
+                    } catch (e) { done(false); }
+                });
+                const scPasteXBtn = document.getElementById('scEditPasteX');
+                if (scPasteXBtn) scPasteXBtn.addEventListener('click', async function () {
+                    let text = '';
+                    try { text = await navigator.clipboard.readText(); } catch (e) { text = ''; }
+                    if (!text) {
+                        try { text = window.prompt('Dán dòng bộ x (dạng X10:1,2,3,4,5,6,7,8,9,10):', ''); } catch (e) { text = ''; }
+                    }
+                    if (!text) { scEditNote2('Không đọc được nội dung để nhập.', 'err'); return; }
+                    if (scOffsetsImport(text)) scEditNote2('✔ Đã nhập bộ x mới từ dòng vừa dán.', 'ok');
+                    else scEditNote2('Dòng dán vào không đúng dạng 10 số (1–99).', 'err');
+                });
                 if (scEditCloseBtn) scEditCloseBtn.addEventListener('click', scCloseEdit);
                 if (scEditInput) {
                     scEditInput.addEventListener('input', function () {
@@ -7166,11 +7276,13 @@ async function rbCopyText(text) {
                 setTimeout(function () { try { scAlign(); } catch (e) {} }, 600);
                 setTimeout(function () { refreshResults(false, false); }, 400);
                 setInterval(function () {
-                    if (!fetchInProgress && getToken() && (tokenAlive() || getRefreshToken())) refreshResults(false, false);
-                }, 5000);
+                    // Có refresh token thì luôn thử: nếu access token hết hạn, chính vòng này gọi
+                    // ensureFreshToken → tự gia hạn (chặn ở đây là tự bịt đường sống).
+                    if (!fetchInProgress && getToken() && !tokenRefused()) refreshResults(false, false);
+                }, 3500);
                 // Tự gia hạn token: kiểm tra mỗi 20 giây (còn <10 phút là thay mới; đang cược thì luôn tươi).
                 setInterval(function () { autoRenewTick(); }, RENEW_CHECK_MS);
-                setTimeout(function () { autoRenewTick(); }, 1200);
+                setTimeout(function () { autoRenewTick(); }, 4000);
                 window.addEventListener('online', function () { renewKick(500); });
                 document.addEventListener('visibilitychange', function () {
                     if (!document.hidden) renewKick(800);              // quay lại tab là kiểm tra token ngay
@@ -7178,6 +7290,6 @@ async function rbCopyText(text) {
                 window.addEventListener('focus', function () { renewKick(1500); });
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c09fccec4e2442',t:'MTc5NDkzODMxMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c09fccec4e2442',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c7e16b496ee5d4',t:'MTc5NTAxNDQwMQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c7e16b496ee5d4',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c09fccec4e2442',t:'MTc5NDkzODMxMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c09fccec4e2442',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c7edd24e8385b2',t:'MTc5NTAxNDkwOQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c7edd24e8385b2',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
