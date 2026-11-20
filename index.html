@@ -57,7 +57,7 @@
             /* CÁC KHUNG DƯỚI BẢNG: `contain: inline-size` chặn nội dung bên trong
                (câu thông báo dài, nút nowrap) kéo bề rộng khung cha → mọi khung
                rộng đúng bằng bảng, không còn lệch. */
-            .real-panel, .scan-panel, .toolbar-actions, .fk-unlock-btn, .pd-history {
+            .real-panel, .scan-panel, .board-status-line, .fk-unlock-btn, .pd-history {
                 contain: inline-size;
             }
             .board-toolbar {
@@ -80,15 +80,12 @@
                 color: var(--muted);
                 font-size: 10px;
             }
-            .toolbar-actions {
-                display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-                width: 100%; box-sizing: border-box; min-width: 0;
-                margin-top: 10px; padding: 8px 10px; border-radius: 10px;
-                background: rgba(30, 41, 59, .55); box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .22);
+            /* Dòng trạng thái: chỉ chữ, KHÔNG khung, KHÔNG nền, KHÔNG viền */
+            .board-status-line {
+                display: block; width: 100%; box-sizing: border-box; min-width: 0;
+                margin-top: 8px; padding: 0 2px;
             }
-            /* Nút không bao giờ bị bóp nhỏ hay đẩy tràn ra ngoài khung */
-            .toolbar-actions > .icon-btn { flex: 0 0 auto; white-space: nowrap; }
-            .toolbar-note { flex: 1 1 100%; min-width: 0; color: #93c5fd; font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
+            .toolbar-note { display: block; min-width: 0; color: #93c5fd; font-size: 11.5px; line-height: 1.4; overflow-wrap: anywhere; }
             .icon-btn, .dialog-btn {
                 min-height: 34px;
                 padding: 6px 9px;
@@ -901,6 +898,20 @@
             }
             .real-panel[data-on="true"] .rb-title small { color: #86efac; }
             .real-panel[data-on="true"] .rb-title small[data-kind="err"] { color: #fda4af; }
+            /* Dòng trạng thái trong khung cược thật */
+            .rb-status { margin: 6px 0 2px; padding: 0 2px; }
+            .rb-status[hidden] { display: none; }
+            .rb-status .toolbar-note { color: #fbbf24; }
+
+            /* Nút Token nằm trong khung cược thật (hàng Kỳ / đồng hồ) */
+            .rb-token-btn {
+                flex: 0 0 auto; padding: 5px 10px; border-radius: 8px; cursor: pointer;
+                background: rgba(30, 41, 59, .95); color: #e2e8f0; font: inherit;
+                font-size: 11px; font-weight: 800; white-space: nowrap;
+                border: 1px solid rgba(148, 163, 184, .4);
+                -webkit-tap-highlight-color: transparent;
+            }
+            .rb-token-btn:active { transform: translateY(1px); }
             .rb-issue-row {
                 display: flex;
                 flex-wrap: wrap;
@@ -1335,8 +1346,94 @@
             .rb-pop.is-show { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
             .rb-pop.is-win { background: radial-gradient(circle at 26% 0%, rgba(255, 255, 255, .42), rgba(255, 255, 255, 0) 44%), linear-gradient(180deg, #22c55e 0%, #15803d 58%, #14532d 100%); }
             .rb-pop.is-lose { background: radial-gradient(circle at 26% 0%, rgba(255, 255, 255, .36), rgba(255, 255, 255, 0) 44%), linear-gradient(180deg, #f87171 0%, #dc2626 58%, #7f1d1d 100%); }
-            .rb-pop-title { font-size: 28px; font-weight: 900; line-height: 1.05; letter-spacing: .8px; text-shadow: 0 3px 7px rgba(0, 0, 0, .42); }
+            /* Emoji to: vui thì nảy lên reo, buồn thì rũ xuống lắc */
+            .rb-pop-emoji {
+                font-size: 62px; line-height: 1; margin-bottom: 4px;
+                filter: drop-shadow(0 6px 12px rgba(0, 0, 0, .45));
+            }
+            .rb-pop.is-show.is-win .rb-pop-emoji { animation: rbEmojiHappy .9s cubic-bezier(.34, 1.56, .64, 1) infinite alternate; }
+            @keyframes rbEmojiHappy {
+                0%   { transform: translateY(0) rotate(-7deg) scale(1); }
+                100% { transform: translateY(-11px) rotate(7deg) scale(1.11); }
+            }
+            .rb-pop.is-show.is-lose .rb-pop-emoji { animation: rbEmojiSad 1.5s ease-in-out infinite; }
+            /* Khi hiện CHAI RƠI VỠ thì khối chứa không rung (chai tự có hoạt ảnh riêng) */
+            .rb-pop.is-show.is-lose .rb-pop-emoji.is-bottle { animation: none; }
+
+            /* ===== CHAI RƠI VỠ (khi thua) ===== */
+            .fk-bottle-stage { position: relative; width: 100%; height: 132px; margin: 0 auto 0; }
+            .fk-bottle { position: absolute; left: 50%; bottom: 8px; margin-left: -17px; width: 34px; height: 58px; }
+            /* chai rơi xuống rồi biến mất đúng lúc chạm đất */
+            .fk-bottle-fall { animation: fkBottleFall 1.05s cubic-bezier(.5, 0, .9, .4) forwards; }
+            @keyframes fkBottleFall {
+                0%   { transform: translateY(-56px) rotate(-28deg); opacity: 0; }
+                10%  { opacity: 1; }
+                76%  { transform: translateY(0) rotate(8deg); opacity: 1; }
+                80%  { transform: translateY(0) rotate(12deg) scale(1.07); opacity: 1; }
+                87%  { opacity: 0; }
+                100% { transform: translateY(0) rotate(12deg); opacity: 0; }
+            }
+            /* mảnh vỡ bung ra từ tâm */
+            .fk-shard {
+                position: absolute; left: 50%; bottom: 10px;
+                width: 11px; height: 16px; margin-left: -5px;
+                background: linear-gradient(180deg, #ffffff 0%, #a7f3d0 40%, #34d399 100%);
+                border: 1.5px solid rgba(255, 255, 255, .95);
+                border-radius: 3px 1px 3px 1px;
+                box-shadow: 0 2px 8px rgba(6, 78, 59, .6), 0 0 12px rgba(167, 243, 208, .9);
+                opacity: 0;
+                animation: fkShardFly .85s cubic-bezier(.2, .6, .4, 1) forwards;
+            }
+            @keyframes fkShardFly {
+                0%   { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0; }
+                10%  { transform: translate(calc(var(--dx) * .2), calc(var(--dy) * .2)) rotate(calc(var(--rot) * .2)) scale(1.1); opacity: 1; }
+                55%  { opacity: 1; }
+                100% { transform: translate(var(--dx), calc(var(--dy) + 10px)) rotate(var(--rot)) scale(.66); opacity: 0; }
+            }
+            /* vầng sáng "choang" tại điểm vỡ */
+            .fk-crash {
+                position: absolute; left: 50%; bottom: 6px; width: 18px; height: 18px; margin-left: -9px;
+                border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.95), rgba(125,211,252,.55) 45%, transparent 70%);
+                opacity: 0;
+                animation: fkCrashBurst .5s ease-out forwards;
+            }
+            @keyframes fkCrashBurst {
+                0%   { transform: scale(.2); opacity: 0; }
+                30%  { transform: scale(1.6); opacity: 1; }
+                100% { transform: scale(4.2); opacity: 0; }
+            }
+            /* mặt đất */
+            .fk-ground {
+                position: absolute; left: 50%; bottom: 5px; margin-left: -46px;
+                width: 92px; height: 3px; border-radius: 3px;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+            }
+            @keyframes rbEmojiSad {
+                0%, 100% { transform: translateY(0) rotate(-4deg) scale(.95); opacity: .92; }
+                50%      { transform: translateY(5px) rotate(4deg) scale(.90); opacity: 1; }
+            }
+
+            .rb-pop-title { font-size: 30px; font-weight: 900; line-height: 1.05; letter-spacing: .8px; text-shadow: 0 3px 7px rgba(0, 0, 0, .42); }
+            /* Số tiền thắng/thua — to, vàng */
+            .rb-pop-amount {
+                margin-top: 5px; font-size: 24px; font-weight: 900; letter-spacing: .4px;
+                font-variant-numeric: tabular-nums;
+                color: #fef08a; text-shadow: 0 0 16px rgba(254, 240, 138, .6), 0 2px 5px rgba(0, 0, 0, .5);
+            }
+            .rb-pop.is-lose .rb-pop-amount { color: #fecaca; text-shadow: 0 0 14px rgba(252, 165, 165, .5), 0 2px 5px rgba(0, 0, 0, .5); }
             .rb-pop-detail { margin-top: 6px; font-size: 14px; font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; text-shadow: 0 1px 3px rgba(0, 0, 0, .42); }
+
+            /* Popup bật lên: nảy nhẹ để bắt mắt */
+            @keyframes rbPopIn {
+                0%   { opacity: 0; transform: translate(-50%, -50%) scale(.78); }
+                55%  { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+                100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            }
+            .rb-pop.is-show { animation: rbPopIn .34s cubic-bezier(.34, 1.56, .64, 1); }
+
+            @media (prefers-reduced-motion: reduce) {
+                .rb-pop.is-show, .rb-pop.is-show .rb-pop-emoji { animation: none; }
+            }
             @keyframes rbClockPulse { from { transform: scale(1); filter: brightness(1); } to { transform: scale(1.035); filter: brightness(1.18); } }
             @keyframes rbTokenPulse { from { filter: brightness(1); transform: scale(1); } to { filter: brightness(1.22); transform: scale(1.035); } }
             @keyframes rbRunPulse { from { filter: brightness(1); } to { filter: brightness(1.16); } }
@@ -1582,6 +1679,7 @@
             }
             .fk-ck-snd[data-muted="1"] { color: #64748b; opacity: .7; }
 
+
             /* Thanh tiến trình chạy dưới đáy */
             .fk-ck-bar {
                 position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
@@ -1617,11 +1715,47 @@
                 border: 1px solid rgba(148, 163, 184, .3); text-align: center;
             }
             .fk-chip[data-on="1"] { background: linear-gradient(180deg, #fde047, #eab308); color: #3b1702; border-color: #fef08a; }
-            .fk-log-1 { padding: 5px 8px; border-radius: 8px; background: rgba(15, 23, 42, .7); font-size: 11px; color: #cbd5e1; line-height: 1.35; }
-            .fk-log-1[data-r="W"] { border-left: 3px solid #4ade80; }
-            .fk-log-1[data-r="L"] { border-left: 3px solid #fb7185; }
-            .fk-log-1 b[data-w="1"] { color: #4ade80; }
-            .fk-log-1 b[data-w="0"] { color: #fb7185; }
+            /* ===== LỊCH SỬ CƯỢC ẢO — dạng BẢNG CỘT thẳng hàng ===== */
+            .fk-log-wrap { margin-top: 8px; }
+            .fk-log-head, .fk-log-row {
+                display: grid;
+                grid-template-columns: 34px 40px 22px 58px minmax(56px, 1fr) 1fr;
+                align-items: center; gap: 2px; min-width: 0;
+            }
+            .fk-log-head {
+                padding: 3px 7px; font-size: 9px; font-weight: 800; letter-spacing: .07em;
+                text-transform: uppercase; color: #64748b;
+                border-bottom: 1px solid rgba(148, 163, 184, .28); margin-bottom: 3px;
+            }
+            .fk-log-head span:nth-child(5), .fk-log-head span:nth-child(6) { text-align: right; }
+            .fk-log-head span:nth-child(4) { text-align: center; }
+            .fk-log-body {
+                max-height: 240px; overflow-y: auto; display: grid; gap: 2px;
+                overscroll-behavior: contain; padding-right: 2px;
+            }
+            .fk-log-row {
+                padding: 4px 7px; border-radius: 6px; font-size: 11px; font-weight: 700;
+                background: rgba(15, 23, 42, .62); font-variant-numeric: tabular-nums;
+                border-left: 2px solid transparent;
+            }
+            .fk-log-row > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .fk-log-row > span:nth-child(5), .fk-log-row > span:nth-child(6) { text-align: right; }
+            .fk-log-iss { color: #94a3b8; font-weight: 800; }
+            .fk-log-side { font-weight: 900; }
+            .fk-log-side[data-c="B"] { color: #fb923c; }
+            .fk-log-side[data-c="S"] { color: #38bdf8; }
+            .fk-log-digit { color: #e2e8f0; font-weight: 900; text-align: center; }
+            .fk-log-kq { font-weight: 900; text-align: center; }
+            .fk-log-money { color: #facc15; }
+            .fk-log-bal { color: #94a3b8; }
+            /* dòng VÀO lệnh (chưa có kết quả) — mờ hơn */
+            .fk-log-row[data-r="B"] { border-left-color: #64748b; opacity: .78; }
+            .fk-log-row[data-r="B"] .fk-log-money { color: #cbd5e1; }
+            .fk-log-row[data-r="W"] { border-left-color: #4ade80; }
+            .fk-log-row[data-r="W"] .fk-log-kq, .fk-log-row[data-r="W"] .fk-log-money { color: #4ade80; }
+            .fk-log-row[data-r="L"] { border-left-color: #fb7185; }
+            .fk-log-row[data-r="L"] .fk-log-kq, .fk-log-row[data-r="L"] .fk-log-money { color: #fb7185; }
+            .fk-log-empty { padding: 10px; text-align: center; color: #64748b; font-size: 11.5px; }
             .fake-panel { border-color: rgba(96, 165, 250, .45); }
             .fake-bal { color: #7dd3fc !important; cursor: default; }
             .fk-log-1[data-r="B"] { border-left: 3px solid #38bdf8; color: #bae6fd; }
@@ -1841,7 +1975,7 @@
                 .board-panel { padding: 7px; }
                 /* .board-panel có padding 7px mỗi bên → khung con hụt 14px.
                    Bù lại để MỌI khung rộng đúng bằng khoảng trống bên trong panel. */
-                .real-panel, .scan-panel, .toolbar-actions, .fk-unlock-btn, .pd-history { width: 100%; }
+                .real-panel, .scan-panel, .board-status-line, .fk-unlock-btn, .pd-history { width: 100%; }
                 .board-panel > .grid-table { width: 100%; }
                 .grid-table { --grid-gap: 2px; padding: 6px; }
                 .board-title h1 { font-size: 13px; }
@@ -1851,7 +1985,7 @@
             @media (max-width: 300px) {
                 :root { --cell: 22px; }
                 .grid-cell .val-input { font-size: 12px; }
-                .toolbar-actions { gap: 4px; }
+                .board-status-line { margin-top: 6px; }
             }
             /* Màn hình thấp (điện thoại xoay ngang): thu gọn popup để bàn phím ảo không che mất nút bấm */
             @media (max-height: 430px) {
@@ -1925,7 +2059,12 @@
                 <div class="fk-pop-card">
                     <div class="fk-pop-head"><span>🧾 Lịch sử cược ảo</span><button type="button" class="fk-pop-x" id="fkPopLogX">✕</button></div>
                     <div class="fk-stat" id="fkStat"></div>
-                    <div class="rb-log" id="fkLog" role="list" aria-label="Nhật ký cược ảo"></div>
+                    <div class="fk-log-wrap">
+                        <div class="fk-log-head" aria-hidden="true">
+                            <span>Kỳ</span><span>Cửa</span><span>Ra</span><span>KQ</span><span>Tiền</span><span>Còn</span>
+                        </div>
+                        <div class="fk-log-body" id="fkLog" role="list" aria-label="Nhật ký cược ảo"></div>
+                    </div>
                 </div>
             </div>
 
@@ -1959,6 +2098,11 @@
                     <div class="rb-issue-row">
                         <span class="rb-issue" id="rbIssue">Kỳ: --</span>
                         <span class="rb-clock" id="rbClock" data-kind="syncing">⏳ Chờ kỳ</span>
+                        <button type="button" class="rb-token-btn" id="btnToken" title="Nhập token game">🔑 Token</button>
+                    </div>
+                    <!-- Dòng trạng thái (token hết hạn / đang tải / lỗi) — nằm ngay trong khung cược thật -->
+                    <div class="rb-status" id="rbStatusWrap" hidden aria-hidden="true">
+                        <span class="toolbar-note" id="boardStatus" role="status" aria-live="polite"></span>
                     </div>
                     <div class="rb-chips" id="rbChips" role="group" aria-label="Các mức cược" hidden></div>
                     <div class="rb-msg" id="rbMsg" role="status" aria-live="polite"></div>
@@ -1996,17 +2140,28 @@
                 <span id="pdSync"></span><button id="pdAdjMinus"></button><button id="pdAdjPlus"></button><button id="pdReset"></button>
             </div>
 
-            <!-- Thanh công cụ: nhập token / làm mới bảng -->
-            <div class="toolbar-actions" id="toolbarActions">
-                <span class="toolbar-note" id="boardStatus" role="status" aria-live="polite"></span>
-                <button type="button" class="icon-btn" id="btnToken" title="Nhập token game">🔑 Token</button>
-                <button type="button" class="icon-btn" id="btnRefresh" title="Nạp lại 100 kỳ">↻ Làm mới</button>
+            <!-- Dòng trạng thái đã DỜI vào khung cược thật (#rbPanel).
+                 Giữ #boardCount và #btnRefresh ở đây (ẩn) để JS không gặp null. -->
+            <div class="board-status-line" id="boardStatusLine" hidden aria-hidden="true">
                 <span id="boardCount" hidden>0/100 kỳ</span>
+                <button type="button" id="btnRefresh" hidden aria-hidden="true" tabindex="-1">↻</button>
             </div>
         </main>
 
         <div class="rb-pop-back" id="rbPopBack" aria-hidden="true"></div>
-        <div class="rb-pop" id="rbPop" role="status" aria-live="polite" aria-hidden="true"><div class="rb-pop-title" id="rbPopTitle">THẮNG</div><div class="rb-pop-detail" id="rbPopDetail"></div></div>
+        <div class="rb-pop" id="rbPop" role="status" aria-live="assertive" aria-hidden="true">
+            <div class="rb-pop-emoji" id="rbPopEmoji">
+                <svg viewBox="0 0 100 100" width="72" height="72" aria-hidden="true">
+                    <circle cx="50" cy="50" r="44" fill="#fde047"/>
+                    <circle cx="36" cy="42" r="5.5" fill="#1e293b"/>
+                    <circle cx="64" cy="42" r="5.5" fill="#1e293b"/>
+                    <path d="M32 58 Q50 78 68 58" stroke="#1e293b" stroke-width="6" fill="none" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="rb-pop-title" id="rbPopTitle">THẮNG</div>
+            <div class="rb-pop-amount" id="rbPopAmount"></div>
+            <div class="rb-pop-detail" id="rbPopDetail"></div>
+        </div>
         <div class="dialog-backdrop" id="tokenDialog" aria-hidden="true">
             <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="tokenDialogTitle">
                 <h2 id="tokenDialogTitle">Kết nối API · token game</h2>
@@ -2293,10 +2448,16 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                 }
             
                 function setStatus(message, kind) {
-                    statusEl.textContent = String(message || '');
-                    // GIỮ class toolbar-note: nếu ghi đè className thì CSS bố cục (chữ một dòng
-                    // riêng, nút không tràn) sẽ mất hiệu lực ngay khi có thông báo.
+                    const txt = String(message || '');
+                    statusEl.textContent = txt;
+                    // GIỮ class toolbar-note: nếu ghi đè className thì CSS bố cục sẽ mất hiệu lực
                     statusEl.className = 'toolbar-note board-status' + (kind ? ' ' + kind : '');
+                    // Khung chứa (nằm trong khung cược thật): chỉ hiện khi CÓ chữ
+                    const wrap = document.getElementById('rbStatusWrap');
+                    if (wrap) {
+                        if (txt) { wrap.removeAttribute('hidden'); wrap.setAttribute('aria-hidden', 'false'); }
+                        else { wrap.setAttribute('hidden', ''); wrap.setAttribute('aria-hidden', 'true'); }
+                    }
                 }
             
                 function updateBoardCount() {
@@ -4018,7 +4179,7 @@ window.__HUB_URL = (function () { try { return location.href.split('#')[0]; } ca
                     const tk0 = getToken();
                     if (tk0 && isTokenExpiredLocally(tk0, 0)) {
                         // Đã hết hạn: có refresh token thì báo đang xin mã mới (và vẫn đi tiếp để tự gia hạn).
-                        setStatus('Token đã hết hạn — lấy cụm mới bằng bookmarklet rồi bấm «🔑 Token» dán lại.', 'warn');
+                        setStatus('Token hết hạn — dán token mới.', 'warn');
                     }
                     fetchInProgress = true;
                     refreshBtn.disabled = true;
@@ -5012,6 +5173,14 @@ async function rbCopyText(text) {
                     const locked = sec <= PD_LOCK_SEC;
                     const canPick = synced && !locked;
 
+                    // CƯỢC ẢO: chấm NGAY khi bảng có ô kết quả (không chờ nhịp 1 giây)
+                    //   pdRender chạy 10 lần/giây nên popup/âm thanh hiện gần như tức thì.
+                    if (fkSettledGuard !== newest) {
+                        try {
+                            if (typeof fkSettle === 'function') fkSettle();
+                        } catch (e) {}
+                        fkSettledGuard = newest;
+                    }
                     // Cược thật (nếu đang bật): chấm lệnh đã đặt, rồi đặt lệnh mới khi tới lượt
                     rbTick(now, round, newest, synced);
                     // (Luật L-N-L-N đã bỏ — không còn bước "chờ kết quả rồi chọn vòng kế tiếp".)
@@ -6142,6 +6311,119 @@ async function rbCopyText(text) {
                 function fkFmtVnd(v) {
                     try { return rbFmtVnd(v); } catch (e) { return String(Math.round(v)) + 'đ'; }
                 }
+                // ===== POPUP THẮNG / THUA của CƯỢC ẢO (dùng chung #rbPop với cược thật) =====
+                //   Dùng biến fkPopTimer riêng để không giẫm lên rbPopTimer của cược thật.
+                let fkPopTimer = null;
+                let fkSettledGuard = '';        // kỳ mới nhất đã thử chấm → tránh chấm lặp mỗi 100ms
+                // Khi thắng/thua: tạm NGẮT tiếng tích tắc 1,4 giây để âm kết quả nổi rõ,
+                // không bị tiếng tắc mỗi giây chồng lên.
+                let fkSfxHoldUntil = 0;
+                function fkSfxResult(ok, stake) {
+                    fkSfxHoldUntil = Date.now() + 1400;
+                    try { if (ok) ckWin(); else ckLose(); } catch (e) {}
+                }
+                // Mặt cười vui / mặt mếu — vẽ bằng SVG để KHÔNG phụ thuộc font emoji của máy
+                function fkFaceSvg(happy) {
+                    const bg = happy ? '#fde047' : '#93c5fd';
+                    const eye = '#1e293b';
+                    if (happy) {
+                        return '<svg viewBox="0 0 100 100" width="72" height="72" aria-hidden="true">' +
+                            '<circle cx="50" cy="50" r="44" fill="' + bg + '"/>' +
+                            '<path d="M28 38 Q36 30 44 38" stroke="' + eye + '" stroke-width="6" fill="none" stroke-linecap="round"/>' +
+                            '<path d="M56 38 Q64 30 72 38" stroke="' + eye + '" stroke-width="6" fill="none" stroke-linecap="round"/>' +
+                            '<path d="M30 56 Q50 80 70 56" stroke="' + eye + '" stroke-width="7" fill="none" stroke-linecap="round"/>' +
+                            '<circle cx="24" cy="58" r="6" fill="#fb7185" opacity=".55"/>' +
+                            '<circle cx="76" cy="58" r="6" fill="#fb7185" opacity=".55"/>' +
+                        '</svg>';
+                    }
+                    return '<svg viewBox="0 0 100 100" width="72" height="72" aria-hidden="true">' +
+                        '<circle cx="50" cy="50" r="44" fill="' + bg + '"/>' +
+                        '<circle cx="36" cy="44" r="6" fill="' + eye + '"/>' +
+                        '<circle cx="64" cy="44" r="6" fill="' + eye + '"/>' +
+                        '<path d="M34 70 Q50 56 66 70" stroke="' + eye + '" stroke-width="7" fill="none" stroke-linecap="round"/>' +
+                        '<path d="M72 34 Q76 42 72 48" stroke="#38bdf8" stroke-width="4" fill="none" stroke-linecap="round" opacity=".8"/>' +
+                    '</svg>';
+                }
+                // Dựng hoạt ảnh CHAI RƠI VỠ trong khối emoji (thay cho mặt mếu)
+                function fkBottleShatter() {
+                    const svgBottle =
+                        '<svg viewBox="0 0 34 58" width="34" height="58" aria-hidden="true">' +
+                            '<rect x="13" y="0" width="8" height="12" rx="2" fill="#34d399"/>' +          // nắp
+                            '<rect x="14" y="10" width="6" height="8" fill="#a7f3d0" opacity=".85"/>' +   // cổ
+                            '<path d="M14 17 L9 24 Q6 27 6 32 L6 50 Q6 56 12 56 L22 56 Q28 56 28 50 L28 32 Q28 27 25 24 L20 17 Z" fill="#34d399" opacity=".92"/>' +
+                            '<rect x="9" y="34" width="16" height="12" rx="2" fill="#bbf7d0" opacity=".55"/>' +
+                            '<rect x="11" y="37" width="12" height="2" rx="1" fill="#065f46" opacity=".55"/>' +
+                            '<rect x="11" y="41" width="8" height="2" rx="1" fill="#065f46" opacity=".4"/>' +
+                        '</svg>';
+                    // 14 mảnh vỡ bung theo hướng ngẫu nhiên
+                    let shards = '';
+                    for (let i = 0; i < 18; i++) {
+                        const ang = (Math.PI * 2 * i) / 18 + Math.random() * 0.4;
+                        const dist = 46 + Math.random() * 38;
+                        const dx = Math.round(Math.cos(ang) * dist);
+                        // Luôn bay LÊN (dy âm) để mảnh vỡ không bị chữ "THUA" che
+                        const dy = Math.round(-Math.abs(Math.sin(ang)) * dist - 14);
+                        const rot = Math.round((Math.random() - 0.5) * 500);
+                        const sc = 1.3 + Math.random() * 0.8;
+                        shards += '<span class="fk-shard" style="--dx:' + dx + 'px;--dy:' + dy + 'px;--rot:' + rot + 'deg;' +
+                                  'animation-delay:' + (1.0 + Math.random() * 0.06).toFixed(2) + 's;' +
+                                  'width:' + Math.round(6 * sc) + 'px;height:' + Math.round(10 * sc) + 'px"></span>';
+                    }
+                    return '<div class="fk-bottle-stage">' +
+                                '<span class="fk-ground"></span>' +
+                                '<span class="fk-crash" style="animation-delay:1.02s"></span>' +
+                                '<span class="fk-bottle fk-bottle-fall">' + svgBottle + '</span>' +
+                                shards +
+                            '</div>';
+                }
+
+                function fkPopShow(win, amount, detail) {
+                    const pop = document.getElementById('rbPop');
+                    const back = document.getElementById('rbPopBack');
+                    const emo = document.getElementById('rbPopEmoji');
+                    const ttl = document.getElementById('rbPopTitle');
+                    const amt = document.getElementById('rbPopAmount');
+                    const det = document.getElementById('rbPopDetail');
+                    if (!pop) return;
+                    if (emo) {
+                        emo.innerHTML = win ? fkFaceSvg(true) : fkBottleShatter();
+                        // Gỡ class "buồn" của khối emoji khi dùng hoạt ảnh chai (để chai tự rơi)
+                        emo.classList.toggle('is-bottle', !win);
+                    }
+                    if (ttl) ttl.textContent = win ? 'THẮNG' : 'THUA';
+                    if (amt) {
+                        const n = Number(amount) || 0;
+                        amt.textContent = n ? (win ? '+' : '−') + Math.abs(n).toLocaleString('vi-VN') + 'đ' : '';
+                    }
+                    if (det) det.textContent = detail || '';
+                    pop.classList.remove('is-win', 'is-lose');
+                    pop.classList.add(win ? 'is-win' : 'is-lose');
+                    pop.classList.remove('is-show');
+                    void pop.offsetWidth;                 // buộc chạy lại animation bật lên
+                    pop.classList.add('is-show');
+                    pop.setAttribute('aria-hidden', 'false');
+                    if (back) back.classList.add('is-show');
+                    if (fkPopTimer) clearTimeout(fkPopTimer);
+                    fkPopTimer = setTimeout(function () {
+                        pop.classList.remove('is-show');
+                        pop.setAttribute('aria-hidden', 'true');
+                        if (back) back.classList.remove('is-show');
+                        fkPopTimer = null;
+                    }, 2600);
+                }
+                // Chạm vào popup để tắt sớm
+                (function () {
+                    const pop = document.getElementById('rbPop');
+                    const back = document.getElementById('rbPopBack');
+                    function hide() {
+                        if (pop) { pop.classList.remove('is-show'); pop.setAttribute('aria-hidden', 'true'); }
+                        if (back) back.classList.remove('is-show');
+                        if (fkPopTimer) { clearTimeout(fkPopTimer); fkPopTimer = null; }
+                    }
+                    if (pop) pop.addEventListener('click', hide);
+                    if (back) back.addEventListener('click', hide);
+                })();
+
                 // Mức cược ảo hiện tại (K → đồng)
                 function fkStake() {
                     const k = fk.levels[Math.max(0, Math.min(fk.lvl, fk.levels.length - 1))] || 1;
@@ -6171,7 +6453,14 @@ async function rbCopyText(text) {
                     }
                     fk.last = { issue: b.issue, c: b.c, ok: ok, d: String(cell.value) };
                     // Âm thanh riêng: thắng = 3 nốt đi lên · thua = 2 nốt đi xuống
-                    try { if (ok) ckWin(); else ckLose(); } catch (e) {}
+                    // (kèm tạm ngắt tiếng tích tắc để không bị lẫn)
+                    try { fkSfxResult(ok, stake); } catch (e) {}
+                    // Popup giữa màn hình kèm emoji: vui mừng hay thất vọng
+                    try {
+                        const cua = (b.c === 'B' ? 'Lớn' : 'Nhỏ');
+                        fkPopShow(ok, stake,
+                            'Kỳ ' + b.issue + ' · đánh ' + cua + ' · ra ' + String(cell.value) + ' → ' + kind);
+                    } catch (e) {}
                     fk.logged[b.issue] = ok ? 'W' : 'L';
                     fkLogAdd({ t: Date.now(), i: b.issue, c: b.c, d: String(cell.value), ok: ok, n: stake, bal: fk.bal });
                     fk.bet = null;
@@ -6275,25 +6564,37 @@ async function rbCopyText(text) {
                         logEl.textContent = '';
                         if (!rows.length) {
                             const d = document.createElement('div');
-                            d.className = 'fk-log-1';
+                            d.className = 'fk-log-empty';
                             d.textContent = 'Chưa có lệnh nào.';
                             logEl.appendChild(d);
                         }
+                        // Mỗi dòng = 6 cột thẳng hàng: Kỳ | Cửa | Ra | KQ | Tiền | Còn
+                        const mk = function (cls, txt) {
+                            const sp = document.createElement('span');
+                            sp.className = cls; sp.textContent = txt;
+                            return sp;
+                        };
                         rows.forEach(function (r) {
+                            const isBet = (r.k === 'bet');
                             const d = document.createElement('div');
-                            d.className = 'fk-log-1';
-                            if (r.k === 'bet') {
-                                d.setAttribute('data-r', 'B');
-                                d.textContent = 'Kỳ ' + pdShort(r.i) + ' · vào ' + (r.c === 'B' ? 'LỚN' : 'NHỎ')
-                                    + ' −' + fkFmtVnd(r.n) + ' · còn ' + fkFmtVnd(r.bal);
-                                logEl.appendChild(d);
-                                return;
-                            }
-                            d.setAttribute('data-r', r.ok ? 'W' : 'L');
-                            d.textContent = 'Kỳ ' + pdShort(r.i) + ' · đánh ' + (r.c === 'B' ? 'LỚN' : 'NHỎ')
-                                + ' · ra ' + (r.d != null ? r.d : '?')
-                                + ' · ' + (r.ok ? '✔ THẮNG +' : '✘ THUA −') + fkFmtVnd(r.n)
-                                + ' · còn ' + fkFmtVnd(r.bal);
+                            d.className = 'fk-log-row';
+                            d.setAttribute('data-r', isBet ? 'B' : (r.ok ? 'W' : 'L'));
+                            d.setAttribute('role', 'listitem');
+                            // ① Kỳ
+                            d.appendChild(mk('fk-log-iss', pdShort(r.i)));
+                            // ② Cửa
+                            const side = mk('fk-log-side', r.c === 'B' ? 'LỚN' : 'NHỎ');
+                            side.setAttribute('data-c', r.c);
+                            d.appendChild(side);
+                            // ③ Ra (số kết quả)
+                            d.appendChild(mk('fk-log-digit', isBet ? '·' : (r.d != null ? String(r.d) : '?')));
+                            // ④ KQ
+                            d.appendChild(mk('fk-log-kq', isBet ? 'vào' : (r.ok ? '✓ THẮNG' : '✗ THUA')));
+                            // ⑤ Tiền
+                            d.appendChild(mk('fk-log-money', isBet ? '−' + fkFmtVnd(r.n)
+                                : (r.ok ? '+' : '−') + fkFmtVnd(r.n)));
+                            // ⑥ Còn lại
+                            d.appendChild(mk('fk-log-bal', fkFmtVnd(r.bal)));
                             logEl.appendChild(d);
                         });
                     }
@@ -6319,6 +6620,441 @@ async function rbCopyText(text) {
                     try { scRender(); } catch (e) {}
                     try { applyRunHighlight(); } catch (e) {}
                 }
+                // ============ AM THANH ============
+                // QUAN TRONG: khoi nay PHAI nam o scope ngoai fkInit().
+                // Truoc day no nam ben trong fkInit() nen fkSfxResult() goi ckWin() bi
+                // ReferenceError, bi try/catch nuot -> tieng vo tay khong bao gio keu.
+                // =================================
+                    // ---- MỞ KHOÁ ÂM THANH ----
+                    // Chrome/Safari chặn Web Audio cho tới khi có THAO TÁC THẬT của người dùng.
+                    // Nếu không mở khoá sớm, tiếng thắng đầu tiên sẽ bị NUỐT (im lặng) dù code đúng.
+                    // → Bắt mọi cú chạm/click/phím ĐẦU TIÊN trong trang để tạo & resume AudioContext.
+                    (function () {
+                        let done = false;
+                        function unlock() {
+                            if (done) return;
+                            done = true;
+                            try {
+                                const AC = window.AudioContext || window.webkitAudioContext;
+                                if (!AC) return;
+                                if (!ckAC) ckAC = new AC();
+                                if (ckAC.state === 'suspended') ckAC.resume();
+                                // phát 1 mẫu im lặng để "khởi động" đường ra loa trên iOS
+                                const b = ckAC.createBuffer(1, 1, 22050);
+                                const src = ckAC.createBufferSource();
+                                src.buffer = b;
+                                src.connect(ckAC.destination);
+                                src.start(0);
+                            } catch (e) {}
+                            ['pointerdown', 'touchstart', 'mousedown', 'keydown', 'click'].forEach(function (ev) {
+                                document.removeEventListener(ev, unlock, true);
+                            });
+                        }
+                        ['pointerdown', 'touchstart', 'mousedown', 'keydown', 'click'].forEach(function (ev) {
+                            document.addEventListener(ev, unlock, true);
+                        });
+                    })();
+
+                    // ---- TẢI TRƯỚC TIẾNG VỖ TAY ----
+                    // Giải mã sẵn file MP3 thành AudioBuffer ngay sau khi mở khoá → lúc thắng
+                    // phát được TỨC THÌ (không trễ, không phụ thuộc mạng).
+                    function ckWarmClap() {
+                        try {
+                            const ac = ckAudio(true);
+                            if (!ac) return;
+                            ckLoadClap(ac);
+                        } catch (e) {}
+                    }
+                    // gọi ngay sau cú chạm đầu tiên, và thử lại sau 1,5s phòng khi bị chặn
+                    document.addEventListener('pointerdown', ckWarmClap, { once: true, capture: true });
+                    document.addEventListener('touchstart', ckWarmClap, { once: true, capture: true });
+                    setTimeout(ckWarmClap, 1500);
+
+                    // ---- Bộ phát âm thanh dùng chung ----
+                    // 1 nốt: tấn công (attack) nhanh, tắt dần theo hàm mũ, có thể lọc thông thấp cho mềm
+                    // ===== BUS MASTER DUNG CHUNG =====
+                    // Mọi âm thanh (tích tắc, nốt nhạc, pháo tay, chai vỡ) đều đi qua đây.
+                    // Nhờ vậy: LUÔN to hết cỡ mà KHÔNG BAO GIỜ vỡ tiếng (không mẫu nào > 1.0).
+                    // ---- TIẾNG TÍCH TẮC mỗi giây (Web Audio, không cần file âm thanh) ----
+                    let ckMuted = false;
+                    try { ckMuted = localStorage.getItem('vn168_clock_sound') === '0'; } catch (e) {}
+                    let ckAC = null;                  // AudioContext (tạo muộn để không bị chặn autoplay)
+                    // forResult = true  → LUÔN trả AudioContext (tiếng THẮNG/THUA phải kêu,
+                    //                      không phụ thuộc nút tắt tiếng tích tắc)
+                    // forResult = false → tôn trọng ckMuted (chỉ dùng cho tiếng tích tắc)
+                    function ckAudio(forResult) {
+                        if (!forResult && ckMuted) return null;
+                        try {
+                            const AC = window.AudioContext || window.webkitAudioContext;
+                            if (!AC) return null;
+                            if (!ckAC) ckAC = new AC();
+                            // resume() là BẤT ĐỒNG BỘ: nếu context đang suspended mà ta lên lịch
+                            // âm thanh ngay thì có thể bị nuốt mất. Mở rồi mới trả về.
+                            if (ckAC.state === 'suspended') {
+                                ckAC.resume();
+                                // với âm kết quả: chờ 1 nhịp ngắn cho context kịp chạy
+                                if (forResult && ckAC.state !== 'running') {
+                                    try { ckAC.resume(); } catch (e) {}
+                                }
+                            }
+                            return ckAC;
+                        } catch (e) { return null; }
+                    }
+
+                    function ckBus(ac) {
+                        if (ac.__ckBus) return ac.__ckBus;
+                        const inp = ac.createGain();
+                        inp.gain.setValueAtTime(1.35, 0);      // khuếch đại tổng vừa phải
+                        // Nén nhẹ: chỉ nhúm các đỉnh cao xuống, không bóp nhỏ tiếng
+                        const lim = ac.createDynamicsCompressor();
+                        lim.threshold.setValueAtTime(-4, 0);
+                        lim.knee.setValueAtTime(6, 0);
+                        lim.ratio.setValueAtTime(6, 0);
+                        lim.attack.setValueAtTime(0.002, 0);
+                        lim.release.setValueAtTime(0.14, 0);
+                        // Soft-clip: chốt cứng trần 0.93 → KHÔNG BAO GIỜ vượt 1.0
+                        // oversample = 'none': bản '4x' bị VỌT ĐỈNH khi nội suy (đã kiểm chứng)
+                        const shaper = ac.createWaveShaper();
+                        const N = 4097;
+                        const curve = new Float32Array(N);
+                        const drive = 1.25;
+                        const norm = Math.tanh(drive);
+                        for (let i = 0; i < N; i++) {
+                            const x = (i / (N - 1)) * 2 - 1;
+                            // bão hoà mềm: |x| nhỏ → gần tuyến tính, |x| lớn → kẹp về 0.93
+                            curve[i] = (Math.tanh(x * drive) / norm) * 0.93;
+                        }
+                        shaper.curve = curve;
+                        shaper.oversample = 'none';
+                        inp.connect(lim); lim.connect(shaper); shaper.connect(ac.destination);
+                        ac.__ckBus = inp;
+                        return inp;
+                    }
+                    // Nối vào bus nếu có, không thì ra thẳng (an toàn)
+                    function ckOut(ac, node) {
+                        try { node.connect(ckBus(ac)); } catch (e) { node.connect(ac.destination); }
+                    }
+
+                    function ckNote(ac, t, freq, dur, vol, type, cutoff) {
+                        const osc = ac.createOscillator();
+                        const gain = ac.createGain();
+                        osc.type = type || 'sine';
+                        osc.frequency.setValueAtTime(freq, t);
+                        gain.gain.setValueAtTime(0.0001, t);
+                        gain.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+                        if (cutoff) {
+                            const lp = ac.createBiquadFilter();
+                            lp.type = 'lowpass';
+                            lp.frequency.setValueAtTime(cutoff, t);
+                            osc.connect(lp); lp.connect(gain);
+                        } else {
+                            osc.connect(gain);
+                        }
+                        ckOut(ac, gain);
+                        osc.start(t); osc.stop(t + dur + 0.02);
+                    }
+
+                    // TÍCH TẮC mỗi giây: tiếng gỗ nhẹ (mộc, ấm) thay cho tiếng bíp điện tử chói
+                    //   · gõ "tok" = sóng tam giác lọc thấp 850Hz + tiếng tách rất ngắn
+                    //   · giây cuối (≤5s) cao hơn & to hơn một chút để gấp gáp
+                    function ckBeep(high) {
+                        const ac = ckAudio();
+                        if (!ac) return;
+                        try {
+                            const t = ac.currentTime;
+                            // Tần số RIÊNG cho tích tắc, KHÔNG trùng nốt nào của thắng/thua:
+                            //   440Hz (A4) và 880Hz (A5) — cách đều C5/E5/G5/C6 và G4/C4/C3
+                            ckNote(ac, t, high ? 587.33 : 440, high ? 0.075 : 0.08, high ? 0.40 : 0.32, 'triangle', high ? 1500 : 1200);
+                            // tiếng "tách" tạo cảm giác mộc
+                            ckNote(ac, t, high ? 1174.66 : 880, 0.03, high ? 0.16 : 0.11, 'sine', 3200);
+                        } catch (e) {}
+                    }
+
+                    // ---- TRÀNG PHÁO TAY: dựng từ nhiễu trắng qua bộ lọc băng thông ----
+                    //   Nhiều "tiếng vỗ" chồng lên nhau, mỗi tiếng là 1 xung nhiễu ngắn.
+                    // ===== TIẾNG VỖ TAY THẬT (thu âm tại nhà hát Ronacher, Wien) =====
+                    // Nguồn: Wikimedia Commons — "2023-06-03 Ronacher Wien Schlussaplaus Publikum-Musical.ogg"
+                    // Giấy phép: CC BY-SA (Wikimedia Commons). Đã cắt 2,4s đoạn vỗ tay dày nhất,
+                    // lọc 110Hz–11kHz, làm phẳng đường bao, nén MP3 64kbps rồi nhúng thẳng vào file
+                    // → KHÔNG cần mạng, KHÔNG cần file ngoài, nghe y như thật.
+                    const CK_CLAP_B64 = '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';
+                    let ckClapBuf = null;          // AudioBuffer đã giải mã (giải 1 lần rồi dùng lại)
+                    let ckClapLoading = null;      // Promise giải mã đang chạy
+
+                    function ckLoadClap(ac) {
+                        if (ckClapBuf) return Promise.resolve(ckClapBuf);
+                        if (ckClapLoading) return ckClapLoading;
+                        try {
+                            const bin = atob(CK_CLAP_B64);
+                            const u8 = new Uint8Array(bin.length);
+                            for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+                            ckClapLoading = new Promise(function (res) {
+                                // decodeAudioData nhận MP3 → PCM.
+                                // LƯU Ý: hàm này gọi CẢ callback LẪN trả Promise. Promise thường
+                                // resolve TRƯỚC callback với giá trị undefined → nếu chỉ dựa vào
+                                // .then() thì buffer bị gán null. Vì vậy: chỉ nhận buffer THẬT
+                                // (có .duration), và chỉ resolve 1 lần.
+                                let settled = false;
+                                const done = function (buf) {
+                                    if (settled) return;
+                                    if (buf && buf.duration > 0) { settled = true; ckClapBuf = buf; res(buf); }
+                                };
+                                const fail = function () { if (!settled) { settled = true; res(null); } };
+                                let pr = null;
+                                try { pr = ac.decodeAudioData(u8.buffer, done, fail); } catch (e) { fail(); }
+                                if (pr && pr.then) pr.then(done).catch(fail);
+                                // chốt an toàn: sau 3s mà chưa có buffer thì thôi
+                                setTimeout(fail, 3000);
+                            });
+                        } catch (e) {
+                            ckClapLoading = Promise.resolve(null);
+                        }
+                        return ckClapLoading;
+                    }
+
+                    // ===== TRÀNG PHÁO TAY HỘI TRƯỜNG =====
+                    // KHÔNG dùng vài đợt rời rạc nữa. Thay vào đó TỔNG HỢP TỪNG HẠT:
+                    //   · ~180 hạt/1,8 giây (100 tiếng vỗ mỗi giây) → dày như đám đông thật
+                    //   · mỗi hạt = nhiễu ngắn 6–22ms, tần số riêng 900–3200Hz, âm lượng ngẫu nhiên
+                    //   · mật độ tăng dần ở đầu rồi giảm dần ở cuối (đám đông vỗ rộ lên rồi tản)
+                    //   · thêm VANG HỘI TRƯỜNG (convolver) + BỘ NÉN để to mà không vỡ tiếng
+                    function ckApplauseBuffer(ac, dur) {
+                        const sr = ac.sampleRate;
+                        const len = Math.ceil(sr * dur);
+                        const buf = ac.createBuffer(1, len, sr);
+                        const out = buf.getChannelData(0);
+
+                        // Số hạt: ~100 hạt mỗi giây → dày đặc
+                        const N = Math.round(180 * (dur / 1.8));
+                        for (let n = 0; n < N; n++) {
+                            // Phân bố thời điểm: dồn nhiều về nửa đầu (vỗ rộ lên rồi lắng)
+                            const u = Math.random();
+                            const at = Math.pow(u, 0.72) * dur * 0.96;
+                            const i0 = Math.floor(at * sr);
+
+                            // Âm lượng: có tiếng to tiếng nhỏ (người gần / người xa)
+                            const amp = 0.18 + Math.pow(Math.random(), 1.7) * 0.82;
+                            // Độ dài hạt ngắn (tiếng vỗ dứt khoát)
+                            const grain = Math.floor((0.006 + Math.random() * 0.016) * sr);
+                            // Tần số cộng hưởng riêng cho từng bàn tay (khác nhau → không bị đều)
+                            const res = 900 + Math.random() * 2300;
+                            // Hệ số suy giảm của bộ lọc cộng hưởng bậc 1
+                            const k = Math.exp(-2 * Math.PI * res / sr);
+                            let y1 = 0, y2 = 0;
+
+                            for (let i = 0; i < grain && (i0 + i) < len; i++) {
+                                const x = (Math.random() * 2 - 1);
+                                // lọc cộng hưởng 2 tầng → nghe "tách" chứ không phải "xì"
+                                y1 = (1 - k) * x + k * y1;
+                                y2 = (1 - k) * y1 + k * y2;
+                                // đường bao: vào 1ms, tắt dần hình mũ
+                                const e = Math.min(1, i / (sr * 0.001)) * Math.exp(-i / (grain * 0.34));
+                                out[i0 + i] += (y1 - y2) * e * amp;
+                            }
+                        }
+                        // Chuẩn hoá để không bị vỡ, giữ đỉnh quanh 0.9
+                        let peak = 0;
+                        for (let i = 0; i < len; i++) { const a = Math.abs(out[i]); if (a > peak) peak = a; }
+                        if (peak > 0) {
+                            const g = 0.92 / peak;
+                            for (let i = 0; i < len; i++) out[i] *= g;
+                        }
+                        return buf;
+                    }
+
+                    // Vang hội trường: đáp ứng xung tổng hợp (nhiễu tắt dần ~1,3 giây)
+                    function ckHallIR(ac, dur) {
+                        const sr = ac.sampleRate;
+                        const len = Math.ceil(sr * dur);
+                        const buf = ac.createBuffer(2, len, sr);
+                        for (let ch = 0; ch < 2; ch++) {
+                            const d = buf.getChannelData(ch);
+                            for (let i = 0; i < len; i++) {
+                                const tt = i / len;
+                                // tắt theo hàm mũ mũ 2 → đuôi vang tự nhiên
+                                const env = Math.pow(1 - tt, 2.6);
+                                // vài phản xạ sớm (tường gần) → nghe như phòng lớn
+                                const early = (i < sr * 0.09) ? 1.7 : 1.0;
+                                d[i] = (Math.random() * 2 - 1) * env * early;
+                            }
+                        }
+                        return buf;
+                    }
+
+                    // TRÀNG PHÁO TAY THẬT: phát file thu âm nhà hát → nén → ra loa
+                    //   (giữ lại nhánh tổng hợp cũ làm dự phòng nếu giải mã MP3 thất bại)
+                    function ckApplauseSynth(ac, t, dur) {
+                        const buf = ckApplauseBuffer(ac, dur);
+                        const src = ac.createBufferSource();
+                        src.buffer = buf;
+
+                        // ① Nén: đẩy âm lượng lên mà không vỡ tiếng (giống "làm to" trong studio)
+                        const comp = ac.createDynamicsCompressor();
+                        comp.threshold.setValueAtTime(-28, t);
+                        comp.knee.setValueAtTime(22, t);
+                        comp.ratio.setValueAtTime(11, t);
+                        comp.attack.setValueAtTime(0.003, t);
+                        comp.release.setValueAtTime(0.22, t);
+
+                        // ② Khuếch đại tổng: đây là chỗ quyết định "TO"
+                        const master = ac.createGain();
+                        master.gain.setValueAtTime(2.6, t);          // ×2.6 sau khi nén
+                        // nhỏ dần ở cuối cho tự nhiên
+                        master.gain.setValueAtTime(2.6, t + dur * 0.72);
+                        master.gain.linearRampToValueAtTime(1.5, t + dur);
+
+                        src.connect(comp); comp.connect(master);
+
+                        // ③ Vang hội trường (nhánh song song)
+                        const conv = ac.createConvolver();
+                        conv.buffer = ckHallIR(ac, 1.35);
+                        const wet = ac.createGain();
+                        wet.gain.setValueAtTime(0.5, t);
+                        const dry = ac.createGain();
+                        dry.gain.setValueAtTime(0.8, t);
+                        master.connect(dry);
+                        master.connect(conv); conv.connect(wet);
+
+                        // ④ Nối vào BUS MASTER: bus lo nén + soft-clip → TO mà không vỡ tiếng
+                        ckOut(ac, dry); ckOut(ac, wet);
+
+                        src.start(t); src.stop(t + dur + 0.02);
+                    }
+
+                    // PHÁT TRÀNG PHÁO TAY THẬT
+                    //   · AudioBuffer đã có → phát ngay lập tức
+                    //   · chưa có → giải mã xong mới phát (trễ ~20ms, không đáng kể)
+                    //   · giải mã lỗi → quay về bản tổng hợp (không bao giờ im lặng)
+                    function ckApplause(ac, t, dur) {
+                        const play = function (buf) {
+                            if (!buf) { ckApplauseSynth(ac, t, dur); return; }
+                            try {
+                                const src = ac.createBufferSource();
+                                src.buffer = buf;
+                                // cắt đúng độ dài mong muốn (nếu cần ngắn hơn file)
+                                const len = Math.min(buf.duration, dur > 0 ? dur : buf.duration);
+                                // Nén để đẩy độ to lên, rồi qua bus master
+                                const comp = ac.createDynamicsCompressor();
+                                comp.threshold.setValueAtTime(-26, ac.currentTime);
+                                comp.knee.setValueAtTime(20, ac.currentTime);
+                                comp.ratio.setValueAtTime(10, ac.currentTime);
+                                comp.attack.setValueAtTime(0.003, ac.currentTime);
+                                comp.release.setValueAtTime(0.24, ac.currentTime);
+                                const g = ac.createGain();
+                                g.gain.setValueAtTime(1.9, ac.currentTime);   // khuếch đại sau nén
+                                src.connect(comp); comp.connect(g);
+                                ckOut(ac, g);
+                                const when = Math.max(t, ac.currentTime + 0.005);
+                                src.start(when, 0, Math.min(len, buf.duration));
+                                src.stop(when + Math.min(len, buf.duration) + 0.02);
+                            } catch (e) { ckApplauseSynth(ac, t, dur); }
+                        };
+                        if (ckClapBuf) { play(ckClapBuf); return; }
+                        // chưa giải mã: giải mã rồi phát
+                        ckLoadClap(ac).then(function (buf) { play(buf); }).catch(function () { ckApplauseSynth(ac, t, dur); });
+                    }
+
+                    // Giữ tên cũ để không phá các chỗ khác
+                    function ckClapBurst(ac, t, dur, vol) {
+                        ckApplause(ac, t, Math.max(0.25, dur * 1.4));
+                    }
+                    // THẮNG: tràng pháo tay (3 đợt so le) + 3 nốt C5-E5-G5 phía trên
+                    function ckWin() {
+                        const ac = ckAudio(true);   // tiếng thắng LUÔN phát, kể cả khi tắt tích tắc
+                        if (!ac) return;
+                        try {
+                            const t = ac.currentTime;
+                            // TRÀNG PHÁO TAY THẬT (thu âm nhà hát): 2,4 giây
+                            ckApplause(ac, t, 2.3);
+                            // Giai điệu thắng phía trên — NHỎ hẳn để không át tiếng vỗ
+                            ckNote(ac, t + 0.02, 523.25, 0.22, 0.10, 'triangle', 3400);   // C5
+                            ckNote(ac, t + 0.13, 659.25, 0.22, 0.11, 'triangle', 3600);   // E5
+                            ckNote(ac, t + 0.24, 783.99, 0.38, 0.12, 'triangle', 3800);   // G5
+                            ckNote(ac, t + 0.24, 1046.5, 0.42, 0.07, 'sine', 4600);       // C6 hoà
+                        } catch (e) {}
+                    }
+
+                    // ---- CHAI RƠI VỠ ----
+                    // ① Tiếng rơi: nhiễu lọc thông cao, cao độ trượt XUỐNG (như vật rơi)
+                    function ckFall(ac, t, dur, vol) {
+                        const sr = ac.sampleRate;
+                        const len = Math.ceil(sr * dur);
+                        const buf = ac.createBuffer(1, len, sr);
+                        const d = buf.getChannelData(0);
+                        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+                        const src = ac.createBufferSource(); src.buffer = buf;
+                        const hp = ac.createBiquadFilter(); hp.type = 'highpass';
+                        hp.frequency.setValueAtTime(2400, t);
+                        hp.frequency.exponentialRampToValueAtTime(700, t + dur);
+                        const g = ac.createGain();
+                        g.gain.setValueAtTime(0.0001, t);
+                        g.gain.exponentialRampToValueAtTime(vol, t + 0.12);
+                        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+                        src.connect(hp); hp.connect(g); ckOut(ac, g);
+                        src.start(t); src.stop(t + dur + 0.01);
+                    }
+                    // ② Tiếng vỡ: nhiễu băng rộng bung ra + nhiều "mảnh thuỷ tinh" cao ngẫu nhiên
+                    function ckShatter(ac, t, vol) {
+                        const sr = ac.sampleRate, dur = 0.42;
+                        const len = Math.ceil(sr * dur);
+                        const buf = ac.createBuffer(1, len, sr);
+                        const d = buf.getChannelData(0);
+                        for (let i = 0; i < len; i++) {
+                            // nhiễu giảm dần theo thời gian → nghe như mảnh vỡ tản ra
+                            const k = 1 - i / len;
+                            d[i] = (Math.random() * 2 - 1) * k * k;
+                        }
+                        const src = ac.createBufferSource(); src.buffer = buf;
+                        const bp = ac.createBiquadFilter(); bp.type = 'bandpass';
+                        bp.frequency.setValueAtTime(3200, t); bp.Q.setValueAtTime(0.7, t);
+                        const g = ac.createGain();
+                        g.gain.setValueAtTime(0.0001, t);
+                        g.gain.exponentialRampToValueAtTime(vol, t + 0.004);
+                        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+                        src.connect(bp); bp.connect(g); ckOut(ac, g);
+                        src.start(t); src.stop(t + dur + 0.01);
+                        // ~14 mảnh thuỷ tinh: nốt cao ngẫu nhiên, lệch thời điểm
+                        for (let i = 0; i < 14; i++) {
+                            const dt = 0.01 + Math.random() * 0.32;
+                            const f = 2200 + Math.random() * 3600;
+                            ckNote(ac, t + dt, f, 0.05 + Math.random() * 0.07, 0.03 + Math.random() * 0.05, 'sine', 9000);
+                        }
+                    }
+                    // THUA: chai rơi (0.42s) rồi vỡ (bắt đầu lúc 0.42s)
+                    function ckLose() {
+                        const ac = ckAudio(true);   // tiếng thua LUÔN phát
+                        if (!ac) return;
+                        try {
+                            const t = ac.currentTime;
+                            ckFall(ac, t, 0.44, 0.30);            // tiếng rơi
+                            ckShatter(ac, t + 0.42, 0.42);        // tiếng vỡ
+                            ckNote(ac, t + 0.42, 130.81, 0.40, 0.24, 'triangle', 700);   // C3 nền trầm
+                            ckNote(ac, t + 0.42, 261.63, 0.34, 0.18, 'sine', 900);       // C4
+                        } catch (e) {}
+                    }
+                    function ckSndPaint() {
+                        const ckSndEl = document.getElementById('fkCkSnd');
+                        if (!ckSndEl) return;
+                        // Đang bật: hiện sóng âm; đang tắt: hiện dấu ✕
+                        const waves = ckSndEl.querySelectorAll('.fk-snd-wave');
+                        const xMark = ckSndEl.querySelector('.fk-snd-x');
+                        for (let i = 0; i < waves.length; i++) waves[i].style.display = ckMuted ? 'none' : '';
+                        if (xMark) xMark.style.display = ckMuted ? '' : 'none';
+                        ckSndEl.setAttribute('data-muted', ckMuted ? '1' : '0');
+                    }
+                    const ckSndBtn = document.getElementById('fkCkSnd');
+                    if (ckSndBtn) {
+                        ckSndBtn.addEventListener('click', function (ev) {
+                            ev.stopPropagation();
+                            ckMuted = !ckMuted;
+                            try { localStorage.setItem('vn168_clock_sound', ckMuted ? '0' : '1'); } catch (e) {}
+                            if (!ckMuted) ckBeep(true);      // nghe thử ngay để biết đã bật
+                            ckSndPaint();
+                        });
+                    }
+                    ckSndPaint();
+
                 function fkInit() {
                     fkLoad();
                     const el = function (id) { return document.getElementById(id); };
@@ -6396,99 +7132,7 @@ async function rbCopyText(text) {
                     const ckSnd = document.getElementById('fkCkSnd');
                     let ckLastSec = -1;
 
-                    // ---- TIẾNG TÍCH TẮC mỗi giây (Web Audio, không cần file âm thanh) ----
-                    let ckMuted = false;
-                    try { ckMuted = localStorage.getItem('vn168_clock_sound') === '0'; } catch (e) {}
-                    let ckAC = null;                  // AudioContext (tạo muộn để không bị chặn autoplay)
-                    function ckAudio() {
-                        if (ckMuted) return null;
-                        try {
-                            const AC = window.AudioContext || window.webkitAudioContext;
-                            if (!AC) return null;
-                            if (!ckAC) ckAC = new AC();
-                            if (ckAC.state === 'suspended') ckAC.resume();   // iOS: mở khi có thao tác
-                            return ckAC;
-                        } catch (e) { return null; }
-                    }
-                    // ---- Bộ phát âm thanh dùng chung ----
-                    // 1 nốt: tấn công (attack) nhanh, tắt dần theo hàm mũ, có thể lọc thông thấp cho mềm
-                    function ckNote(ac, t, freq, dur, vol, type, cutoff) {
-                        const osc = ac.createOscillator();
-                        const gain = ac.createGain();
-                        osc.type = type || 'sine';
-                        osc.frequency.setValueAtTime(freq, t);
-                        gain.gain.setValueAtTime(0.0001, t);
-                        gain.gain.exponentialRampToValueAtTime(vol, t + 0.012);
-                        gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-                        if (cutoff) {
-                            const lp = ac.createBiquadFilter();
-                            lp.type = 'lowpass';
-                            lp.frequency.setValueAtTime(cutoff, t);
-                            osc.connect(lp); lp.connect(gain);
-                        } else {
-                            osc.connect(gain);
-                        }
-                        gain.connect(ac.destination);
-                        osc.start(t); osc.stop(t + dur + 0.02);
-                    }
 
-                    // TÍCH TẮC mỗi giây: tiếng gỗ nhẹ (mộc, ấm) thay cho tiếng bíp điện tử chói
-                    //   · gõ "tok" = sóng tam giác lọc thấp 850Hz + tiếng tách rất ngắn
-                    //   · giây cuối (≤5s) cao hơn & to hơn một chút để gấp gáp
-                    function ckBeep(high) {
-                        const ac = ckAudio();
-                        if (!ac) return;
-                        try {
-                            const t = ac.currentTime;
-                            ckNote(ac, t, high ? 1046.5 : 784, high ? 0.07 : 0.075, high ? 0.13 : 0.10, 'triangle', high ? 2200 : 1600);
-                            // tiếng "tách" tạo cảm giác mộc
-                            ckNote(ac, t, high ? 2093 : 1568, 0.028, high ? 0.05 : 0.035, 'sine', 4200);
-                        } catch (e) {}
-                    }
-
-                    // THẮNG: 3 nốt đi LÊN (C5 → E5 → G5) + đuôi sáng — cảm giác vui, "ting ting ting"
-                    function ckWin() {
-                        const ac = ckAudio();
-                        if (!ac) return;
-                        try {
-                            const t = ac.currentTime;
-                            ckNote(ac, t + 0.00, 523.25, 0.16, 0.16, 'triangle', 3000);   // C5
-                            ckNote(ac, t + 0.09, 659.25, 0.16, 0.17, 'triangle', 3200);   // E5
-                            ckNote(ac, t + 0.18, 783.99, 0.30, 0.19, 'triangle', 3400);   // G5
-                            ckNote(ac, t + 0.18, 1046.5, 0.34, 0.10, 'sine', 4200);       // C6 hoà
-                        } catch (e) {}
-                    }
-
-                    // THUA: 2 nốt đi XUỐNG (G4 → C4) hơi đục — cảm giác trầm, không chói
-                    function ckLose() {
-                        const ac = ckAudio();
-                        if (!ac) return;
-                        try {
-                            const t = ac.currentTime;
-                            ckNote(ac, t + 0.00, 392.00, 0.20, 0.15, 'sine', 1200);       // G4
-                            ckNote(ac, t + 0.13, 261.63, 0.34, 0.16, 'sine', 900);        // C4
-                            ckNote(ac, t + 0.13, 130.81, 0.30, 0.09, 'triangle', 600);    // C3 nền
-                        } catch (e) {}
-                    }
-                    function ckSndPaint() {
-                        if (!ckSnd) return;
-                        // Đang bật: hiện sóng âm; đang tắt: hiện dấu ✕
-                        const waves = ckSnd.querySelectorAll('.fk-snd-wave');
-                        const xMark = ckSnd.querySelector('.fk-snd-x');
-                        for (let i = 0; i < waves.length; i++) waves[i].style.display = ckMuted ? 'none' : '';
-                        if (xMark) xMark.style.display = ckMuted ? '' : 'none';
-                        ckSnd.setAttribute('data-muted', ckMuted ? '1' : '0');
-                    }
-                    if (ckSnd) {
-                        ckSnd.addEventListener('click', function (ev) {
-                            ev.stopPropagation();
-                            ckMuted = !ckMuted;
-                            try { localStorage.setItem('vn168_clock_sound', ckMuted ? '0' : '1'); } catch (e) {}
-                            if (!ckMuted) ckBeep(true);      // nghe thử ngay để biết đã bật
-                            ckSndPaint();
-                        });
-                    }
-                    ckSndPaint();
 
                     const inp = el('fkLevels');
                     if (inp) inp.value = fk.levels.join(', ');
@@ -6512,8 +7156,10 @@ async function rbCopyText(text) {
                                         void ckTime.offsetWidth;          // buộc trình duyệt tính lại → chạy lại animation
                                         ckTime.classList.add('is-bump');
                                         clock.classList.add('is-tick');
-                                        // Kêu mỗi giây: giây cuối (≤5) dùng âm cao để gấp gáp hơn
-                                        ckBeep(sec > 0 && sec <= 5);
+                                        // Kêu mỗi giây — NHƯNG ngắt 1,4s sau khi thắng/thua để không chồng tiếng
+                                        if (Date.now() >= fkSfxHoldUntil) {
+                                            ckBeep(sec > 0 && sec <= 5);
+                                        }
                                     }
                                     ckLastSec = sec;
                                 }
@@ -6642,7 +7288,7 @@ async function rbCopyText(text) {
                     // Access token đã hết hạn nhưng CÓ refreshToken: xin token mới rồi tự BẬT,
                     // người dùng không phải làm gì thêm.
                     if (isTokenExpiredLocally(token, 0) && getRefreshToken()) {
-                        rbFlash('Token đã hết hạn — lấy cụm mới bằng bookmarklet rồi dán lại.', 'warn', 8000);
+                        rbFlash('Token hết hạn — dán token mới.', 'warn', 8000);
                         renewKick(0);
                         (function () {
                             let tries = 0;
@@ -7191,6 +7837,8 @@ async function rbCopyText(text) {
                     rbBalanceSoon(1500);
                     rbBalanceSoon(6000);
                     rbShowResult(ok, b, digit);
+                    // Âm thanh thắng / thua (dùng chung bộ âm với cược ảo, tạm ngắt tích tắc)
+                    try { fkSfxResult(ok, b.n); } catch (e) {}
                 }
 
                 // Gọi từ pdRender (10 lần/giây và mỗi khi bảng đổi).
@@ -7395,6 +8043,13 @@ async function rbCopyText(text) {
                     try {
                         if (!rbEl.Pop || !rbEl.PopBack) return;
                         pdText(rbEl.PopTitle, ok ? 'THẮNG' : 'THUA');
+                        const emoEl = document.getElementById('rbPopEmoji');
+                        const amtEl = document.getElementById('rbPopAmount');
+                        if (emoEl) {
+                            emoEl.innerHTML = ok ? fkFaceSvg(true) : fkBottleShatter();
+                            emoEl.classList.toggle('is-bottle', !ok);
+                        }
+                        if (amtEl) amtEl.textContent = (ok ? '+' : '−') + Math.abs(bet.n).toLocaleString('vi-VN') + 'đ';
                         pdText(rbEl.PopDetail, 'Kỳ ' + pdShort(bet.issue) + ' · ' + pdKindName(bet.c) + ' ' + rbFmtK(bet.n) + ' · ra ' + digit);
                         rbEl.Pop.classList.toggle('is-win', !!ok);
                         rbEl.Pop.classList.toggle('is-lose', !ok);
@@ -8328,12 +8983,12 @@ async function rbCopyText(text) {
                     // Token bị từ chối: đọc bảng chỉ nhận 401 mãi → nghỉ 20 giây mỗi lần.
                     if (tokenRefused()) { boardHoldUntil = Date.now() + 20000; return; }
                     refreshResults(false, false);
-                }, 3500);
+                }, 1800);   // nạp lại bảng 1,8 giây/lần → kết quả về nhanh, popup hiện sớm
                 // (Đã bỏ hẳn chuỗi tự gia hạn token theo yêu cầu: không còn nhịp kiểm tra 20 giây,
                 //  không tự gọi RefreshToken, không tự bật/tắt cược thật vì token. Token do người dùng
                 //  dán vào bằng bookmarklet và dùng tới khi hết hạn.)
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5d83a29ac5d02ae',t:'MTc5NTE4NTgwOA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5d83a29ac5d02ae',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5d86666db210725',t:'MTc5NTE4NzYyMA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5d86666db210725',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
