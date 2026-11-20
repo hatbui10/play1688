@@ -1670,14 +1670,29 @@
 
             /* Nút bật/tắt tiếng tích tắc */
             .fk-ck-snd {
-                flex: 0 0 auto; width: 30px; height: 30px; padding: 0;
+                flex: 0 0 auto; width: 34px; height: 34px; padding: 0;
                 display: flex; align-items: center; justify-content: center;
-                border-radius: 50%; cursor: pointer; font: inherit; font-size: 14px;
-                background: rgba(15, 23, 42, .85); color: #cbd5e1;
-                border: 1px solid rgba(148, 163, 184, .35);
+                border-radius: 50%; cursor: pointer; font: inherit;
+                border: 1px solid transparent;
                 -webkit-tap-highlight-color: transparent;
+                transition: background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease;
             }
-            .fk-ck-snd[data-muted="1"] { color: #64748b; opacity: .7; }
+            .fk-ck-snd svg { flex: 0 0 auto; }
+            .fk-ck-snd:active { transform: scale(.92); }
+            /* ĐANG BẬT: nền xanh ngọc đậm, icon trắng → nổi bật, dễ thấy */
+            .fk-ck-snd[data-muted="0"] {
+                background: linear-gradient(180deg, #10b981, #059669);
+                color: #ffffff;
+                border-color: rgba(167, 243, 208, .55);
+                box-shadow: 0 0 0 2px rgba(16, 185, 129, .18), 0 2px 8px rgba(5, 150, 105, .45);
+            }
+            /* ĐÃ TẮT: nền xám tối, icon xám → nhìn là biết đang im */
+            .fk-ck-snd[data-muted="1"] {
+                background: rgba(51, 65, 85, .9);
+                color: #94a3b8;
+                border-color: rgba(100, 116, 139, .45);
+                box-shadow: none;
+            }
 
 
             /* Thanh tiến trình chạy dưới đáy */
@@ -6676,14 +6691,17 @@ async function rbCopyText(text) {
                     // Mọi âm thanh (tích tắc, nốt nhạc, pháo tay, chai vỡ) đều đi qua đây.
                     // Nhờ vậy: LUÔN to hết cỡ mà KHÔNG BAO GIỜ vỡ tiếng (không mẫu nào > 1.0).
                     // ---- TIẾNG TÍCH TẮC mỗi giây (Web Audio, không cần file âm thanh) ----
+                    // ckMuted = ĐÃ TẮT TOÀN BỘ ÂM THANH (đếm giây + thắng + thua)
+                    // KEY MỚI 'vn168_sound_off' → mặc định BẬT (trước đây dùng key cũ nên
+                    // có máy bị lưu trạng thái tắt từ trước → không bao giờ nghe thấy gì)
                     let ckMuted = false;
-                    try { ckMuted = localStorage.getItem('vn168_clock_sound') === '0'; } catch (e) {}
+                    try { ckMuted = localStorage.getItem('vn168_sound_off') === '1'; } catch (e) {}
                     let ckAC = null;                  // AudioContext (tạo muộn để không bị chặn autoplay)
                     // forResult = true  → LUÔN trả AudioContext (tiếng THẮNG/THUA phải kêu,
                     //                      không phụ thuộc nút tắt tiếng tích tắc)
                     // forResult = false → tôn trọng ckMuted (chỉ dùng cho tiếng tích tắc)
                     function ckAudio(forResult) {
-                        if (!forResult && ckMuted) return null;
+                        if (ckMuted) return null;      // đã tắt âm thanh → im hoàn toàn
                         try {
                             const AC = window.AudioContext || window.webkitAudioContext;
                             if (!AC) return null;
@@ -6755,19 +6773,160 @@ async function rbCopyText(text) {
                         osc.start(t); osc.stop(t + dur + 0.02);
                     }
 
-                    // TÍCH TẮC mỗi giây: tiếng gỗ nhẹ (mộc, ấm) thay cho tiếng bíp điện tử chói
-                    //   · gõ "tok" = sóng tam giác lọc thấp 850Hz + tiếng tách rất ngắn
-                    //   · giây cuối (≤5s) cao hơn & to hơn một chút để gấp gáp
+                    // TÍCH TẮC mỗi giây — tiếng "GÕ GỖ" kiểu marimba (dễ nghe, không chói)
+                    //   · Hai nốt SO LE như tick-tock của đồng hồ thật:
+                    //       nhịp chẵn  → B5  (988 Hz)   "tick"  — gỗ cao, trong
+                    //       nhịp lẻ    → E6  (1318 Hz)  "tock" — gỗ cao hơn một quãng
+                    //     (trước đây 440/587 Hz là bíp vuông điện tử → chói và đơn điệu)
+                    //   · Mỗi tiếng = 1 nốt gõ có tấn công tức thì + đuôi tắt dần tự nhiên,
+                    //     cộng một lớp nhiễu gỗ rất ngắn → nghe "cốp" chứ không "bíp"
+                    //   · Giây cuối (≤5s) to hơn & thêm 1 nốt cao → hồi hộp, hấp dẫn hơn
+                    function ckWoodTick(ac, t, freq, vol) {
+                        // ① Thân tiếng gỗ: sóng tam giác (ấm, nhiều hài) + đuôi tắt nhanh
+                        const osc = ac.createOscillator();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, t);
+                        const g = ac.createGain();
+                        g.gain.setValueAtTime(0.0001, t);
+                        g.gain.exponentialRampToValueAtTime(vol, t + 0.004);        // tấn công 4ms
+                        g.gain.exponentialRampToValueAtTime(vol * 0.28, t + 0.035); // rơi nhanh
+                        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.085);     // đuôi
+                        const lp = ac.createBiquadFilter();
+                        lp.type = 'lowpass';
+                        lp.frequency.setValueAtTime(5200, t);
+                        lp.Q.setValueAtTime(0.7, t);
+                        osc.connect(lp); lp.connect(g); ckOut(ac, g);
+                        osc.start(t); osc.stop(t + 0.10);
+
+                        // ② Hài bậc 2 rất nhẹ → tạo độ "trong" của thanh gỗ
+                        const osc2 = ac.createOscillator();
+                        osc2.type = 'sine';
+                        osc2.frequency.setValueAtTime(freq * 2.01, t);
+                        const g2 = ac.createGain();
+                        g2.gain.setValueAtTime(0.0001, t);
+                        g2.gain.exponentialRampToValueAtTime(vol * 0.30, t + 0.003);
+                        g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+                        osc2.connect(g2); ckOut(ac, g2);
+                        osc2.start(t); osc2.stop(t + 0.055);
+
+                        // ③ Tiếng "cạch" của dùi gõ: nhiễu cực ngắn qua lọc băng hẹp
+                        const sr = ac.sampleRate;
+                        const len = Math.ceil(sr * 0.014);
+                        const buf = ac.createBuffer(1, len, sr);
+                        const d = buf.getChannelData(0);
+                        for (let i = 0; i < len; i++) {
+                            d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.30));
+                        }
+                        const ns = ac.createBufferSource();
+                        ns.buffer = buf;
+                        const bp = ac.createBiquadFilter();
+                        bp.type = 'bandpass';
+                        bp.frequency.setValueAtTime(freq * 2.4, t);
+                        bp.Q.setValueAtTime(1.4, t);
+                        const gn = ac.createGain();
+                        gn.gain.setValueAtTime(vol * 0.55, t);
+                        ns.connect(bp); bp.connect(gn); ckOut(ac, gn);
+                        ns.start(t); ns.stop(t + 0.016);
+                    }
+
+                    // Đếm nhịp để tick/tock so le nhau (0,1,0,1,...)
+                    // ================= TIẾNG ĐẾM GIÂY =================
+                    // Chọn kiểu: 'water' = giọt nước · 'clock' = dây đồng hồ · 'both' = luân phiên
+                    const CK_TICK_KIND = 'water';
+
+                    // ① TIẾNG GIỌT NƯỚC
+                    //    Đặc trưng của giọt nước: cao độ QUÉT LÊN RẤT NHANH rồi tắt dần —
+                    //    đó là bong bóng khí nổi lên khi giọt chạm mặt nước.
+                    function ckWaterDrop(ac, t, base, vol) {
+                        // MỘT tiếng duy nhất mỗi giây: chỉ có thân giọt (sine quét cao độ LÊN).
+                        // Đã bỏ: lớp nhiễu "chạm nước" (nghe như tách kim loại) và bản vang trễ
+                        // (nghe như tiếng thứ hai lặp lại) → không còn cảm giác "2 tiếng".
+                        const osc = ac.createOscillator();
+                        osc.type = 'sine';
+                        const f0 = base * 0.60;
+                        osc.frequency.setValueAtTime(f0, t);
+                        osc.frequency.exponentialRampToValueAtTime(base, t + 0.052);   // quét lên: linh hồn giọt nước
+                        const g = ac.createGain();
+                        g.gain.setValueAtTime(0.0001, t);
+                        g.gain.exponentialRampToValueAtTime(vol, t + 0.006);           // vào 6ms
+                        g.gain.exponentialRampToValueAtTime(vol * 0.34, t + 0.050);
+                        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.19);         // tắt mượt, dứt khoát
+                        // lọc thông thấp nhẹ: bỏ hài cao → mềm, không chói
+                        const lp = ac.createBiquadFilter();
+                        lp.type = 'lowpass';
+                        lp.frequency.setValueAtTime(4200, t);
+                        lp.Q.setValueAtTime(0.6, t);
+                        osc.connect(lp); lp.connect(g); ckOut(ac, g);
+                        osc.start(t); osc.stop(t + 0.21);
+                    }
+
+                    // ② TIẾNG DÂY ĐỒNG HỒ (cơ khí)
+                    //    Bánh răng thoát (escapement) gõ vào chốt: một tiếng "tách" sắc,
+                    //    ngắn, có cộng hưởng kim loại. Tick và tock khác cao độ một chút.
+                    function ckClockTick(ac, t, freq, vol) {
+                        const sr = ac.sampleRate;
+                        // (a) tiếng "tách" của búa gõ: nhiễu 7ms qua lọc băng hẹp Q cao
+                        const len = Math.ceil(sr * 0.016);
+                        const buf = ac.createBuffer(1, len, sr);
+                        const d = buf.getChannelData(0);
+                        for (let i = 0; i < len; i++) {
+                            // đường bao vào tức thì, tắt cực nhanh
+                            d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
+                        }
+                        const src = ac.createBufferSource();
+                        src.buffer = buf;
+                        const bp = ac.createBiquadFilter();
+                        bp.type = 'bandpass';
+                        bp.frequency.setValueAtTime(freq, t);
+                        bp.Q.setValueAtTime(7.5, t);            // Q cao → âm "kim" đặc trưng
+                        const g = ac.createGain();
+                        g.gain.setValueAtTime(vol * 1.15, t);
+                        src.connect(bp); bp.connect(g); ckOut(ac, g);
+                        src.start(t); src.stop(t + 0.018);
+
+                        // (b) thân cộng hưởng: 2 hài rất ngắn → cảm giác phiến kim loại
+                        const o1 = ac.createOscillator();
+                        o1.type = 'sine';
+                        o1.frequency.setValueAtTime(freq * 1.5, t);
+                        const g1 = ac.createGain();
+                        g1.gain.setValueAtTime(0.0001, t);
+                        g1.gain.exponentialRampToValueAtTime(vol * 0.42, t + 0.002);
+                        g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.035);
+                        o1.connect(g1); ckOut(ac, g1);
+                        o1.start(t); o1.stop(t + 0.04);
+
+                        const o2 = ac.createOscillator();
+                        o2.type = 'sine';
+                        o2.frequency.setValueAtTime(freq * 2.37, t);
+                        const g2 = ac.createGain();
+                        g2.gain.setValueAtTime(0.0001, t);
+                        g2.gain.exponentialRampToValueAtTime(vol * 0.22, t + 0.002);
+                        g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.026);
+                        o2.connect(g2); ckOut(ac, g2);
+                        o2.start(t); o2.stop(t + 0.03);
+                    }
+
+                    let ckTickParity = 0;
                     function ckBeep(high) {
                         const ac = ckAudio();
                         if (!ac) return;
                         try {
                             const t = ac.currentTime;
-                            // Tần số RIÊNG cho tích tắc, KHÔNG trùng nốt nào của thắng/thua:
-                            //   440Hz (A4) và 880Hz (A5) — cách đều C5/E5/G5/C6 và G4/C4/C3
-                            ckNote(ac, t, high ? 587.33 : 440, high ? 0.075 : 0.08, high ? 0.40 : 0.32, 'triangle', high ? 1500 : 1200);
-                            // tiếng "tách" tạo cảm giác mộc
-                            ckNote(ac, t, high ? 1174.66 : 880, 0.03, high ? 0.16 : 0.11, 'sine', 3200);
+                            // so le chẵn/lẻ → nhịp lắc lư (tick-tock)
+                            const odd = (ckTickParity++ % 2) === 1;
+                            const vol = high ? 0.62 : 0.50;
+                            const kind = (CK_TICK_KIND === 'both')
+                                ? (odd ? 'clock' : 'water') : CK_TICK_KIND;
+
+                            if (kind === 'clock') {
+                                // DÂY ĐỒNG HỒ: tick ~2700Hz, tock ~2300Hz
+                                ckClockTick(ac, t, odd ? 2300 : 2700, vol);
+                            } else {
+                                // GIỌT NƯỚC: giọt "to" và giọt "nhỏ" so le cho tự nhiên
+                                ckWaterDrop(ac, t, odd ? 720 : 900, vol);
+                            }
+                            // KHÔNG thêm tiếng phụ: mỗi giây đúng MỘT tiếng duy nhất.
+                            // 5 giây cuối chỉ to hơn (biến 'vol' ở trên) để gấp gáp.
                         } catch (e) {}
                     }
 
@@ -7042,18 +7201,28 @@ async function rbCopyText(text) {
                         for (let i = 0; i < waves.length; i++) waves[i].style.display = ckMuted ? 'none' : '';
                         if (xMark) xMark.style.display = ckMuted ? '' : 'none';
                         ckSndEl.setAttribute('data-muted', ckMuted ? '1' : '0');
+                        ckSndEl.setAttribute('aria-label', ckMuted ? 'Bật âm thanh' : 'Tắt âm thanh');
+                        ckSndEl.title = ckMuted ? 'Bấm để BẬT âm thanh' : 'Bấm để TẮT âm thanh';
                     }
-                    const ckSndBtn = document.getElementById('fkCkSnd');
-                    if (ckSndBtn) {
-                        ckSndBtn.addEventListener('click', function (ev) {
-                            ev.stopPropagation();
-                            ckMuted = !ckMuted;
-                            try { localStorage.setItem('vn168_clock_sound', ckMuted ? '0' : '1'); } catch (e) {}
-                            if (!ckMuted) ckBeep(true);      // nghe thử ngay để biết đã bật
-                            ckSndPaint();
-                        });
-                    }
+                    // UỶ QUYỀN SỰ KIỆN Ở document: nút #fkCkSnd được tạo SAU (khi đồng hồ dựng DOM),
+                    // nên gắn listener trực tiếp ở đây sẽ bị null. Cách này bắt được mọi lúc.
+                    document.addEventListener('click', function (ev) {
+                        const t = ev.target;
+                        if (!t || !t.closest) return;
+                        const btn = t.closest('#fkCkSnd');
+                        if (!btn) return;
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        ckMuted = !ckMuted;
+                        try { localStorage.setItem('vn168_sound_off', ckMuted ? '1' : '0'); } catch (e) {}
+                        if (!ckMuted) ckBeep(true);      // nghe thử ngay để biết đã bật
+                        ckSndPaint();
+                    }, true);
+                    // vẽ lại trạng thái nút sau khi đồng hồ được dựng
                     ckSndPaint();
+                    document.addEventListener('DOMContentLoaded', ckSndPaint);
+                    setTimeout(ckSndPaint, 0);
+                    setTimeout(ckSndPaint, 400);
 
                 function fkInit() {
                     fkLoad();
@@ -7113,7 +7282,7 @@ async function rbCopyText(text) {
                                 '<span class="fk-ck-iss" id="fkCkIss">#---</span>' +
                             '</div>' +
                             '<span class="fk-ck-time" id="fkCkTime">--:--</span>' +
-                            '<button type="button" class="fk-ck-snd" id="fkCkSnd" aria-label="Bật/tắt tiếng tích tắc" title="Bật/tắt tiếng tích tắc">' +
+                            '<button type="button" class="fk-ck-snd" id="fkCkSnd" aria-label="Bật/tắt âm thanh" title="Bật/tắt toàn bộ âm thanh">' +
                                 '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
                                     '<path d="M11 5 6 9H3v6h3l5 4V5z"/>' +
                                     '<path class="fk-snd-wave" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="fk-snd-wave" d="M18.5 5.5a9 9 0 0 1 0 13"/>' +
@@ -8989,6 +9158,6 @@ async function rbCopyText(text) {
                 //  dán vào bằng bookmarklet và dùng tới khi hết hạn.)
             })();
         </script>
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5d86666db210725',t:'MTc5NTE4NzYyMA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5d86666db210725',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5d88982c87f03b7',t:'MTc5NTE4OTA1OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5d88982c87f03b7',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
