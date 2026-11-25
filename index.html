@@ -199,72 +199,58 @@
         .cell.empty .v { color: #33456a; }
         .cell[data-new="1"] { box-shadow: 0 0 0 1px #38bdf8 inset; }
 
-        /* ===== 2 khung kết quả dưới bảng ===== */
+        /* ===== 1 khung kết quả: danh sách vị trí khớp + đối lập ===== */
         .res-wrap {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
-            position: sticky; top: 0; z-index: 20;
-            padding: 6px 0; background: rgba(11, 17, 32, .96);
-            backdrop-filter: blur(6px);
-        }
-        .res {
-            padding: 6px 8px 7px; border-radius: 10px;
+            margin-top: 10px; padding: 7px 9px 8px; border-radius: 11px;
             background: linear-gradient(180deg, #16233d, #101a2e);
             box-shadow: inset 0 0 0 1px #2b3a55;
-            display: grid; gap: 5px; min-width: 0;
+            position: sticky; top: 0; z-index: 20;
         }
-        .res[data-kind="hit"] { box-shadow: inset 0 0 0 1px rgba(250,204,21,.5), 0 0 14px rgba(250,204,21,.10); }
-        .res[data-kind="opp"] { box-shadow: inset 0 0 0 1px rgba(56,189,248,.5), 0 0 14px rgba(56,189,248,.10); }
-        .res-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
-        .res-lab { font-size: 8.5px; font-weight: 900; letter-spacing: .1em; color: #94a3b8; white-space: nowrap; }
-        .res[data-kind="hit"] .res-lab { color: #fde047; }
-        .res[data-kind="opp"] .res-lab { color: #7dd3fc; }
+        .res-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .res-head .res-lab { font-size: 9px; font-weight: 900; letter-spacing: .1em; color: #93c5fd; }
+        .res-head .res-lab b { color: #fde047; }
+        .res-head .res-lab b#cntOpp { color: #a78bfa; }
         .res-chip {
-            flex: 0 0 auto; padding: 2px 7px; border-radius: 999px;
-            font-size: 10px; font-weight: 900; font-variant-numeric: tabular-nums;
-            background: rgba(15,23,42,.9); color: #cbd5e1; box-shadow: inset 0 0 0 1px #33456a;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 900;
+            font-variant-numeric: tabular-nums; background: rgba(15,23,42,.9); color: #cbd5e1;
+            box-shadow: inset 0 0 0 1px #33456a; white-space: nowrap;
         }
-        .res-chip[data-ok="1"] { color: #fde047; box-shadow: inset 0 0 0 1px rgba(250,204,21,.6); }
-        .res-chip[data-ok="0"] { color: #64748b; }
-        .res-body { display: grid; grid-template-columns: 1fr auto auto; gap: 5px; align-items: center; min-width: 0; }
-        .res-big {
-            min-width: 0; padding: 6px 8px; border-radius: 8px; cursor: pointer; font: inherit;
-            font-size: 14px; font-weight: 900; font-variant-numeric: tabular-nums; text-align: center;
-            background: rgba(11,20,36,.95); color: #e6edf7; border: 1px solid #33456a;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        .res-legend {
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+            margin: 4px 0 5px; font-size: 9px; font-weight: 800; color: #64748b;
         }
-        .res-big:active { transform: scale(.97); }
-        .res[data-kind="hit"] .res-big { color: #fde047; border-color: rgba(250,204,21,.6); }
-        .res[data-kind="opp"] .res-big { color: #7dd3fc; border-color: rgba(56,189,248,.6); }
-        .res-big[data-none="1"] { color: #64748b; border-color: #24334c; cursor: default; }
-        .res-sub { grid-column: 1 / -1; font-size: 9.5px; font-weight: 700; color: #7c8ea8; text-align: center; line-height: 1.35; }
-        .res-btn {
-            appearance: none; cursor: pointer; font: inherit; width: 25px; height: 27px;
-            border-radius: 7px; font-size: 11px; font-weight: 900; color: #cbd5e1;
-            background: #1b2a45; border: 1px solid #33456a;
-        }
-        .res-btn:active { transform: scale(.94); }
-        .res-btn:disabled { opacity: .35; cursor: default; }
+        .res-legend span[data-k="hit"] { color: #fde047; }
+        .res-legend span[data-k="opp"] { color: #a78bfa; }
+        #resNote { margin-left: auto; color: #526581; }
         .res-list {
-            display: flex; flex-wrap: wrap; gap: 3px;
-            max-height: 86px; overflow-y: auto; overscroll-behavior: contain;
-            padding: 2px 1px 1px;
+            display: grid; grid-template-columns: 1fr; gap: 3px;
+            max-height: 176px; overflow-y: auto; overscroll-behavior: contain;
+            padding-right: 2px;
         }
-        .res-list:empty { display: none; }
-        .pos-chip {
-            appearance: none; cursor: pointer; font: inherit;
-            padding: 2px 6px; border-radius: 6px;
-            font-size: 10px; font-weight: 900; font-variant-numeric: tabular-nums;
-            color: #cbd5e1; background: #182741; border: 1px solid #2b3a55;
-            white-space: nowrap;
+        .pos-row {
+            appearance: none; cursor: pointer; font: inherit; width: 100%;
+            display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 7px;
+            padding: 4px 8px; border-radius: 7px; text-align: left;
+            font-size: 11.5px; font-weight: 900; font-variant-numeric: tabular-nums;
+            background: rgba(15,23,42,.85); color: #cbd5e1;
+            border: 1px solid #24334c; border-left: 3px solid #24334c;
         }
-        .pos-chip:active { transform: scale(.94); }
-        .pos-chip[data-on="1"] { color: #3b1702; background: linear-gradient(180deg,#fde047,#f59e0b); border-color: #fbbf24; }
-        .res[data-kind="opp"] .pos-chip[data-on="1"] { color: #062b3d; background: linear-gradient(180deg,#7dd3fc,#38bdf8); border-color: #38bdf8; }
-        .pos-chip .pos-d {
-            font-size: 8px; opacity: .75; margin-left: 3px;
+        .pos-row[data-k="hit"] { border-left-color: #fbbf24; }
+        .pos-row[data-k="opp"] { border-left-color: #8b5cf6; }
+        .pos-row[data-cur="1"] { background: rgba(253,224,71,.14); box-shadow: inset 0 0 0 1px rgba(250,204,21,.5); }
+        .pos-row[data-k="opp"][data-cur="1"] { background: rgba(139,92,246,.18); box-shadow: inset 0 0 0 1px rgba(167,139,250,.55); }
+        .pos-row:active { transform: scale(.995); }
+        .pos-h { color: #e6edf7; }
+        .pos-row[data-k="hit"] .pos-h { color: #fde047; }
+        .pos-row[data-k="opp"] .pos-h { color: #c4b5fd; }
+        .pos-dr { font-size: 9.5px; font-weight: 800; color: #64748b; }
+        .pos-tag {
+            padding: 1px 6px; border-radius: 5px; font-size: 8.5px; font-weight: 900;
+            letter-spacing: .04em; white-space: nowrap;
         }
-        @media (max-width: 340px) { .res-wrap { grid-template-columns: 1fr; } }
+        .pos-tag[data-k="hit"] { background: rgba(250,204,21,.18); color: #fde047; }
+        .pos-tag[data-k="opp"] { background: rgba(139,92,246,.22); color: #c4b5fd; }
+        .res-empty { padding: 10px; text-align: center; font-size: 10.5px; color: #64748b; }
 
         .foot {
             display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -303,35 +289,19 @@
         <button type="button" class="btn ghost" id="btnToken">Token</button>
     </div>
 
-        <!-- 2 KHUNG KẾT QUẢ: vị trí KHỚP · vị trí ĐỐI LẬP gần nhất -->
-        <div class="res-wrap">
-            <div class="res" id="resHit" data-kind="hit">
-                <div class="res-top">
-                    <span class="res-lab">KHỚP MẪU</span>
-                    <span class="res-chip" id="hitList">—</span>
-                </div>
-                <div class="res-body">
-                    <div class="res-big" id="hitHead">—</div>
-                    <div class="res-sub" id="hitSub">chưa có mẫu</div>
-                    <button type="button" class="res-btn" id="hitPrev" title="Vị trí khớp trước (cũ hơn)">▲</button>
-                    <button type="button" class="res-btn" id="hitNext" title="Vị trí khớp sau (mới hơn)">▼</button>
-                </div>
-                <div class="res-list" id="hitPos" role="list" aria-label="Danh sách vị trí khớp"></div>
+        <!-- 1 KHUNG KẾT QUẢ: danh sách vị trí KHỚP MẪU + ĐỐI LẬP, xếp theo STT hàng tăng dần -->
+        <section class="res-wrap" id="resWrap" aria-label="Danh sách vị trí khớp và đối lập">
+            <div class="res-head">
+                <span class="res-lab">VỊ TRÍ KHỚP MẪU <b id="cntHit">0</b> · ĐỐI LẬP <b id="cntOpp">0</b></span>
+                <span class="res-chip" id="resChip">—</span>
             </div>
-            <div class="res" id="resOpp" data-kind="opp">
-                <div class="res-top">
-                    <span class="res-lab">ĐỐI LẬP GẦN NHẤT</span>
-                    <span class="res-chip" id="oppList">—</span>
-                </div>
-                <div class="res-body">
-                    <div class="res-big" id="oppHead">—</div>
-                    <div class="res-sub" id="oppSub">chưa có mẫu</div>
-                    <button type="button" class="res-btn" id="oppPrev" title="Vị trí đối lập trước (cũ hơn)">▲</button>
-                    <button type="button" class="res-btn" id="oppNext" title="Vị trí đối lập sau (mới hơn)">▼</button>
-                </div>
-                <div class="res-list" id="oppPos" role="list" aria-label="Danh sách vị trí đối lập"></div>
+            <div class="res-legend">
+                <span data-k="hit">■ khớp mẫu</span>
+                <span data-k="opp">■ đối lập</span>
+                <span id="resNote">xếp theo STT hàng, bé nhất ở trên</span>
             </div>
-        </div>
+            <div class="res-list" id="posList" role="list"></div>
+        </section>
 
     <section class="clock" id="clockBox" aria-label="Đồng hồ kỳ đang chạy">
         <div class="clock-lab">KỲ ĐANG CHẠY</div>
@@ -988,101 +958,80 @@
         if (posState.oppIdx >= posState.opp.length) posState.oppIdx = 0;
     }
 
-    function renderPositions() {
-        scanPositions();
-        // khung KHỚP
-        const h = posState.hit;
-        const hBox = $('hitHead'), hSub = $('hitSub'), hList = $('hitList'), hRes = $('resHit');
-        if (!h.length) {
-            $('hitPrev').disabled = true; $('hitNext').disabled = true;
-            if (!pattern) {
-                $('hitHead').textContent = '—'; $('hitHead').setAttribute('data-none', '1');
-                $('hitSub').textContent = 'chưa nhập mẫu';
-                $('hitList').textContent = '—'; $('hitList').setAttribute('data-ok', '0');
-                $('hitList').setAttribute('data-pos', '-1');
-            } else {
-                $('hitHead').textContent = 'không có'; $('hitHead').setAttribute('data-none', '1');
-                $('hitSub').textContent = 'không hàng nào khớp ' + pattern;
-                $('hitList').textContent = '0'; $('hitList').setAttribute('data-ok', '0');
-                $('hitList').setAttribute('data-pos', '-1');
-            }
-        } else {
-            const i = posState.hitIdx;
-            const r = h[i];
-            const stt = cellEls[r][0].stt.textContent;
-            $('hitHead').textContent = 'hàng ' + (r + 1);
-            $('hitHead').removeAttribute('data-none');
-            $('hitHead').setAttribute('data-row', String(r));
-            $('hitList').textContent = (i + 1) + '/' + h.length;
-            $('hitList').setAttribute('data-ok', '1');
-            $('hitList').setAttribute('data-pos', String(r));
-            $('hitSub').textContent = 'kỳ ' + stt + ' · cách hàng 1: ' + r + ' hàng';
-            $('hitPrev').disabled = h.length < 2; $('hitNext').disabled = h.length < 2;
-        }
-        // DANH SÁCH toàn bộ vị trí khớp (bấm chip nào nhảy tới hàng đó)
-        paintPosList('hitPos', posState.hit, posState.hitIdx, 'hit');
-        // khung ĐỐI LẬP (gần nhất = vị trí khớp đầu tiên tính từ hàng 1)
-        const o = posState.opp;
-        if (!o.length) {
-            $('oppHead').textContent = pattern ? 'không có' : '—';
-            $('oppHead').setAttribute('data-none', '1');
-            $('oppSub').textContent = pattern ? ('không hàng nào đối lập mẫu') : 'chưa nhập mẫu';
-            $('oppList').textContent = pattern ? '0' : '—';
-            $('oppList').setAttribute('data-ok', '0');
-            $('oppList').setAttribute('data-pos', '-1');
-            $('oppPrev').disabled = true; $('oppNext').disabled = true;
-        } else {
-            const i = posState.oppIdx;
-            const r = o[i];
-            const stt = cellEls[r][0].stt.textContent;
-            $('oppHead').textContent = 'hàng ' + (r + 1);
-            $('oppHead').removeAttribute('data-none');
-            $('oppHead').setAttribute('data-row', String(r));
-            $('oppList').textContent = (i + 1) + '/' + o.length;
-            $('oppList').setAttribute('data-ok', '1');
-            $('oppList').setAttribute('data-pos', String(r));
-            $('oppSub').textContent = 'kỳ ' + stt + ' · cách hàng 1: ' + r + ' hàng';
-            $('oppPrev').disabled = o.length < 2; $('oppNext').disabled = o.length < 2;
-        }
-        paintPosList('oppPos', posState.opp, posState.oppIdx, 'opp');
-    }
-
-    // vẽ dãy chip vị trí: "hàng N" + khoảng cách tới hàng 1
-    function paintPosList(boxId, list, curIdx, kind) {
-        const box = $(boxId);
-        if (!box) return;
-        if (!list.length) { box.textContent = ''; return; }
-        if (box.getAttribute('data-n') === String(list.length) && box.getAttribute('data-cur') === String(curIdx)) return;
-        box.textContent = '';
-        const frag = document.createDocumentFragment();
-        list.forEach(function (r, i) {
-            const b = document.createElement('button');
-            b.type = 'button';
-            b.className = 'pos-chip';
-            b.setAttribute('role', 'listitem');
-            b.setAttribute('data-row', String(r));
-            b.setAttribute('data-on', i === curIdx ? '1' : '0');
-            b.innerHTML = 'hàng ' + (r + 1) + '<span class="pos-d">+' + r + '</span>';
-            b.addEventListener('click', function (ev) {
-                ev.stopPropagation();
-                if (kind === 'hit') posState.hitIdx = i; else posState.oppIdx = i;
-                renderPositions();
-                scrollToRow(r);
-            });
-            frag.appendChild(b);
-        });
-        box.appendChild(frag);
-        box.setAttribute('data-n', String(list.length));
-        box.setAttribute('data-cur', String(curIdx));
-        const on = box.querySelector('.pos-chip[data-on="1"]');
-        if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' });
-    }
-
     function scrollToRow(r) {
         if (!(r >= 0) || !rowEls[r]) return;
         rowEls[r].scrollIntoView({ block: 'center', behavior: 'smooth' });
         rowEls[r].setAttribute('data-flash', '1');
         setTimeout(function () { if (rowEls[r]) rowEls[r].removeAttribute('data-flash'); }, 1400);
+    }
+
+    function renderPositions() {
+        scanPositions();
+        $('cntHit').textContent = String(posState.hit.length);
+        $('cntOpp').textContent = String(posState.opp.length);
+
+        // gộp 2 loại vị trí rồi xếp theo STT hàng TĂNG DẦN (bé nhất ở trên cùng)
+        const all = [];
+        posState.hit.forEach(function (r, i) { all.push({ r: r, k: 'hit', i: i }); });
+        posState.opp.forEach(function (r, i) { all.push({ r: r, k: 'opp', i: i }); });
+        all.sort(function (a, b) { return a.r - b.r; });
+
+        const curRow = posState.hit.length ? posState.hit[posState.hitIdx]
+            : (posState.opp.length ? posState.opp[posState.oppIdx] : -1);
+        $('resChip').textContent = (posState.hit.length + posState.opp.length)
+            ? (all.length + ' vị trí · xếp theo hàng')
+            : '0 vị trí';
+        $('resNote').textContent = pattern ? ('mẫu ' + pattern) : 'chưa nhập mẫu';
+
+        const box = $('posList');
+        if (!box) return;
+        const sig = all.map(function (o) { return o.r + o.k; }).join(',') + '|' + curRow;
+        if (box.getAttribute('data-sig') === sig) return;
+        box.textContent = '';
+        if (!all.length) {
+            const d = document.createElement('div');
+            d.className = 'res-empty';
+            d.textContent = pattern ? ('không hàng nào khớp hoặc đối lập mẫu ' + pattern) : 'nhập mẫu nhị phân để xem vị trí';
+            box.appendChild(d);
+            box.setAttribute('data-sig', sig);
+            return;
+        }
+        const frag = document.createDocumentFragment();
+        all.forEach(function (o) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'pos-row';
+            b.setAttribute('role', 'listitem');
+            b.setAttribute('data-k', o.k);
+            b.setAttribute('data-cur', o.r === curRow ? '1' : '0');
+            b.setAttribute('data-row', String(o.r));
+
+            const h = document.createElement('span');
+            h.className = 'pos-h';
+            h.textContent = 'hàng ' + (o.r + 1);
+
+            const dr = document.createElement('span');
+            dr.className = 'pos-dr';
+            dr.textContent = (o.r === 0 ? 'ngay hàng 1' : '+' + o.r);
+
+            const tag = document.createElement('span');
+            tag.className = 'pos-tag';
+            tag.setAttribute('data-k', o.k);
+            tag.textContent = o.k === 'hit' ? 'KHỚP' : 'ĐỐI LẬP';
+
+            b.appendChild(h); b.appendChild(dr); b.appendChild(tag);
+            b.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                if (o.k === 'hit') posState.hitIdx = o.i; else posState.oppIdx = o.i;
+                renderPositions();
+                scrollToRow(o.r);
+            });
+            frag.appendChild(b);
+        });
+        box.appendChild(frag);
+        box.setAttribute('data-sig', sig);
+        const on = box.querySelector('.pos-row[data-cur="1"]');
+        if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' });
     }
 
     // =====================================================================
@@ -1489,37 +1438,7 @@
         });
 
         $('btnFetch').addEventListener('click', doFetch);
-        // bấm vào khung kết quả → cuộn tới đúng hàng đó
-        ['resHit', 'resOpp'].forEach(function (id) {
-            const wrap = $(id);
-            if (!wrap) return;
-            wrap.addEventListener('click', function (ev) {
-                const t = ev.target;
-                const host = t.closest('.res-big') || t.closest('.res-chip');
-                if (!host) return;
-                const pos = Number(host.getAttribute('data-pos') === null
-                    ? host.closest('.res').querySelector('.res-big').getAttribute('data-row')
-                    : host.getAttribute('data-pos'));
-                if (!isFinite(pos) || pos < 0) return;
-                scrollToRow(pos);
-            });
-        });
-        // ▲▼ đổi vị trí
-        function stepPos(kind, dir) {
-            const list = kind === 'hit' ? posState.hit : posState.opp;
-            if (list.length < 2) return;
-            if (kind === 'hit') {
-                posState.hitIdx = (posState.hitIdx + dir + list.length) % list.length;
-            } else {
-                posState.oppIdx = (posState.oppIdx + dir + list.length) % list.length;
-            }
-            renderPositions();
-            scrollToRow(kind === 'hit' ? posState.hit[posState.hitIdx] : posState.opp[posState.oppIdx]);
-        }
-        $('hitPrev').addEventListener('click', function (e) { e.stopPropagation(); stepPos('hit', -1); });
-        $('hitNext').addEventListener('click', function (e) { e.stopPropagation(); stepPos('hit', 1); });
-        $('oppPrev').addEventListener('click', function (e) { e.stopPropagation(); stepPos('opp', -1); });
-        $('oppNext').addEventListener('click', function (e) { e.stopPropagation(); stepPos('opp', 1); });
+        // (danh sách vị trí đã gộp — bấm từng dòng để nhảy tới hàng đó)
 
         $('btnJump').addEventListener('click', function () {
             const rowEl = rowEls[0];
@@ -1569,5 +1488,5 @@
     init();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a60178852aeb5dde',t:'MTc5NTYxODI3OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a60178852aeb5dde',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
