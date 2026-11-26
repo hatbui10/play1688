@@ -130,6 +130,42 @@
         }
         .bet-picks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
         .bet-picks.bet-picks2 { grid-template-columns: 1fr 1fr; }
+
+        /* ===== DÃY NÚT MỨC CƯỢC ===== */
+        .bet-lvbar { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+        .lvb {
+            flex: 1 1 0; min-width: 44px; cursor: pointer; font: inherit;
+            padding: 6px 4px 5px; border-radius: 8px; border: 1px solid #2c3b57;
+            background: linear-gradient(180deg, #1d2a41, #141d2f);
+            color: #8fa3c0; font-size: 10.5px; font-weight: 900;
+            font-variant-numeric: tabular-nums; letter-spacing: .01em;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 2px 0 #0b1220;
+            transition: transform .08s, box-shadow .12s, background .12s, color .12s;
+            position: relative;
+        }
+        .lvb .lvb-i { display: block; font-size: 8px; font-weight: 800; color: #526581; letter-spacing: .04em; }
+        .lvb[data-pass="1"] { color: #64748b; opacity: .8; }
+        .lvb[data-pass="1"] .lvb-i::after { content: " ✓"; color: #34d399; }
+        .lvb[data-on="1"] {
+            color: #052e16;
+            background: linear-gradient(180deg, #a7f3d0, #34d399 55%, #10b981);
+            border-color: #34d399;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 0 14px rgba(52,211,153,.6), 0 3px 0 #047857;
+            transform: translateY(-1px);
+        }
+        .lvb[data-on="1"] .lvb-i { color: #065f46; }
+        .lvb[data-last="1"][data-on="1"] {
+            color: #2a0d0d;
+            background: linear-gradient(180deg, #fecaca, #f87171 55%, #dc2626);
+            border-color: #f87171;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 0 14px rgba(248,113,113,.65), 0 3px 0 #991b1b;
+        }
+        .lvb:active { transform: translateY(1px); }
+        .bet-cur {
+            font-size: 13px; font-weight: 900; color: #6ee7b7;
+            font-variant-numeric: tabular-nums;
+        }
+        .bet-lvnum { font-size: 9.5px; font-weight: 800; color: #64748b; }
         .bet-lvinp {
             flex: 1 1 140px; min-width: 110px; appearance: none; font: inherit;
             background: #0b1626; color: #fde047; border: 1px solid #33456a; border-radius: 7px;
@@ -138,98 +174,161 @@
         .bet-lvinp:focus { outline: none; border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,.25); }
         .bet-mini-ok { color: #052e16; background: linear-gradient(180deg,#6ee7b7,#34d399); border-color: #34d399; }
         .bet-lvhint { flex: 1 1 100%; font-size: 9px; font-weight: 700; color: #526581; }
-        /* ===== NÚT LỚN / NHỎ — HIỆU ỨNG 3D ===== */
+        /* [hidden] của trình duyệt bị .bet-row{display:flex} đè → phải khai báo lại */
+        .bet-row[hidden], .bet-lv[hidden] { display: none !important; }
+        /* ===== LỚN / NHỎ: ĐỨNG IM KHI CHƯA CHỌN, VIỀN CHẠY LIÊN TỤC KHI CHỌN ===== */
         .pick {
+            --pick-rgb: 250, 204, 21;
+            --pick-wall: #6e3308;
+            --pick-inset: rgba(113,63,18,.7);
+            --pick-edge: #fef08a;
+            --pick-track: #724106;
+            --pick-spark: #ffe56b;
             position: relative; isolation: isolate;
-            cursor: pointer; font: inherit; display: flex; flex-direction: column; align-items: center;
-            gap: 1px; padding: 9px 2px 8px; border-radius: 12px;
-            color: #e8eefb; border: 0;
-            background: linear-gradient(180deg, #3b4a68 0%, #26334d 48%, #1b2438 100%);
-            box-shadow:
-                inset 0 1px 0 rgba(255,255,255,.28),      /* ánh sáng mép trên */
-                inset 0 -3px 0 rgba(0,0,0,.42),           /* bóng đáy trong nút */
-                0 5px 0 #0d1524,                          /* "thành" nút dày 5px */
-                0 7px 12px rgba(0,0,0,.55);               /* bóng đổ ra nền */
+            cursor: pointer; font: inherit;
+            display: flex; flex-direction: column; align-items: center;
+            gap: 2px; padding: 9px 4px 8px; border-radius: 14px;
+            border: 1.5px solid var(--pick-edge);
             transform: translateY(0);
-            transition: transform .09s ease, box-shadow .09s ease, background .18s ease;
-            text-shadow: 0 1px 1px rgba(0,0,0,.5);
+            box-shadow:
+                inset 0 1.5px 1px #fff,
+                inset 0 -3px 3px var(--pick-inset),
+                0 5px 0 var(--pick-wall),
+                0 0 10px rgba(var(--pick-rgb),.22),
+                0 8px 16px rgba(0,0,0,.6);
+            transition: transform .12s ease, box-shadow .2s ease, filter .2s ease;
             overflow: hidden;
+            user-select: none; -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        /* vệt sáng cong trên mặt nút */
         .pick::before {
-            content: ""; position: absolute; inset: 1px 1px auto 1px; height: 46%;
-            border-radius: 11px 11px 50% 50% / 11px 11px 60% 60%;
-            background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0));
-            pointer-events: none; z-index: -1;
+            content: ""; position: absolute; inset: 1px 1px auto; height: 50%;
+            border-radius: 12px 12px 50% 50% / 12px 12px 70% 70%;
+            background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.16) 60%, transparent);
+            pointer-events: none; z-index: 1;
         }
-        .pick .pk-t { font-size: 13px; font-weight: 900; letter-spacing: .03em; }
-        .pick .pk-d { font-size: 8.5px; font-weight: 800; color: #9fb0cc; }
-        .pick:hover { background: linear-gradient(180deg, #45567a 0%, #2b3a56 48%, #1e293e 100%); }
-        .pick:active {
-            transform: translateY(4px);
-            box-shadow:
-                inset 0 1px 0 rgba(255,255,255,.18),
-                inset 0 -2px 0 rgba(0,0,0,.4),
-                0 1px 0 #0d1524,
-                0 3px 6px rgba(0,0,0,.5);
-        }
-
-        /* LỚN — vàng kim */
         .pick[data-pick="big"] {
-            background: linear-gradient(180deg, #f7d774 0%, #e0a92a 46%, #b47b13 100%);
-            color: #3a2405;
-            box-shadow:
-                inset 0 1px 0 rgba(255,255,255,.6),
-                inset 0 -3px 0 rgba(120,74,4,.55),
-                0 5px 0 #7a4c07,
-                0 7px 12px rgba(0,0,0,.55);
-            text-shadow: 0 1px 0 rgba(255,255,255,.28);
+            color: #3f1e03;
+            background: linear-gradient(180deg, #fffbeb 0%, #fef08a 12%, #facc15 36%, #eab308 58%, #ca8a04 80%, #78350f 100%);
+            text-shadow: 0 1px 0 rgba(255,255,255,.7);
         }
-        .pick[data-pick="big"] .pk-d { color: #6b4409; }
-        .pick[data-pick="big"]:active { box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 1px 0 #7a4c07, 0 3px 6px rgba(0,0,0,.5); }
-
-        /* NHỎ — xanh dương */
         .pick[data-pick="small"] {
-            background: linear-gradient(180deg, #8fd4ff 0%, #3d9bea 46%, #1e6bb0 100%);
-            color: #04223a;
-            box-shadow:
-                inset 0 1px 0 rgba(255,255,255,.6),
-                inset 0 -3px 0 rgba(9,52,86,.55),
-                0 5px 0 #11436e,
-                0 7px 12px rgba(0,0,0,.55);
-            text-shadow: 0 1px 0 rgba(255,255,255,.28);
+            --pick-rgb: 56, 189, 248;
+            --pick-wall: #052e54;
+            --pick-inset: rgba(8,47,73,.7);
+            --pick-edge: #a5f3fc;
+            --pick-track: #063e63;
+            --pick-spark: #87f4ff;
+            color: #032540;
+            background: linear-gradient(180deg, #f0fdfa 0%, #a5f3fc 12%, #38bdf8 36%, #0ea5e9 58%, #0284c7 80%, #083358 100%);
+            text-shadow: 0 1px 0 rgba(255,255,255,.7);
         }
-        .pick[data-pick="small"] .pk-d { color: #0c3554; }
-        .pick[data-pick="small"]:active { box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 1px 0 #11436e, 0 3px 6px rgba(0,0,0,.5); }
+        .pick .pk-t {
+            position: relative; z-index: 3;
+            font-size: 14.5px; font-weight: 900; letter-spacing: .06em; line-height: 1.15;
+        }
+        .pick .pk-d {
+            position: relative; z-index: 3;
+            font-size: 9.5px; font-weight: 900; letter-spacing: .05em;
+            padding: 1px 9px; border-radius: 999px; line-height: 1.25;
+            border: 1px solid rgba(255,255,255,.5);
+            box-shadow: inset 0 1px 1px rgba(0,0,0,.25);
+            background: rgba(85,38,5,.22); color: #3b1b02;
+        }
+        .pick[data-pick="small"] .pk-d { background: rgba(3,44,77,.22); color: #032540; }
+        .pick:hover:not([data-off="1"]) { filter: brightness(1.05) saturate(1.05); }
+        .pick:focus-visible { outline: 2px solid #fff; outline-offset: 5px; }
+        .pick:active:not([data-off="1"]) {
+            transform: translateY(3px) !important;
+            box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 -2px 2px var(--pick-inset),
+                0 2px 0 var(--pick-wall), 0 0 18px rgba(var(--pick-rgb),.5) !important;
+        }
 
-        /* trạng thái ĐANG CHỌN: phát sáng + nảy lên */
-        .pick[data-on="1"] { transform: translateY(-2px); }
-        .pick[data-pick="big"][data-on="1"] {
-            background: linear-gradient(180deg, #fff2b0 0%, #ffd94a 46%, #d99a10 100%);
-            box-shadow:
-                inset 0 1px 0 rgba(255,255,255,.85),
-                inset 0 -3px 0 rgba(140,88,4,.5),
-                0 7px 0 #8a5708,
-                0 0 18px rgba(250,204,21,.65),
-                0 9px 16px rgba(0,0,0,.55);
+        /* SVG đi đúng theo chu vi bo góc; không còn là vệt sáng quét ngang mặt nút. */
+        .pk-orbit {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            z-index: 4; pointer-events: none; overflow: visible;
+            opacity: 0; transition: opacity .18s ease;
         }
-        .pick[data-pick="small"][data-on="1"] {
-            background: linear-gradient(180deg, #c6ecff 0%, #63b6f5 46%, #1b74c0 100%);
-            box-shadow:
-                inset 0 1px 0 rgba(255,255,255,.85),
-                inset 0 -3px 0 rgba(10,58,95,.5),
-                0 7px 0 #0f4a78,
-                0 0 18px rgba(56,189,248,.6),
-                0 9px 16px rgba(0,0,0,.55);
+        .pk-orbit rect {
+            width: calc(100% - 4px); height: calc(100% - 4px);
+            fill: none; stroke-linecap: round;
+            vector-effect: non-scaling-stroke;
         }
-        .pick[data-on="1"] .pk-t::after { content: " ✓"; font-size: 11px; }
+        .pk-orbit-track { stroke: var(--pick-track); stroke-opacity: .65; stroke-width: 3.8px; }
+        .pk-orbit-trail {
+            --orbit-start: 0px;
+            stroke: var(--pick-spark); stroke-width: 3.6px;
+            stroke-dasharray: 20 30;
+            filter: drop-shadow(0 0 3px rgba(var(--pick-rgb),1));
+        }
+        .pk-orbit-head {
+            --orbit-start: -16px;
+            stroke: #fff; stroke-width: 2.4px; stroke-dasharray: 4 46;
+            filter: drop-shadow(0 0 2px #fff);
+        }
+        @keyframes pickOrbit {
+            from { stroke-dashoffset: var(--orbit-start); }
+            to { stroke-dashoffset: calc(var(--orbit-start) - 100px); }
+        }
+        /* Một nhịp sáng/tối dịu trong 2,6 giây; không chớp tắt, không rung nút. */
+        @keyframes pickGentlePulse {
+            0%, 100% {
+                filter: brightness(1) saturate(1.03);
+                box-shadow: inset 0 1.5px 1px #fff, inset 0 -3px 3px var(--pick-inset),
+                    0 5px 0 var(--pick-wall), 0 0 13px rgba(var(--pick-rgb),.42),
+                    0 0 25px rgba(var(--pick-rgb),.15), 0 8px 16px rgba(0,0,0,.6);
+            }
+            50% {
+                filter: brightness(1.10) saturate(1.13);
+                box-shadow: inset 0 1.5px 1px #fff, inset 0 -3px 3px var(--pick-inset),
+                    0 5px 0 var(--pick-wall), 0 0 23px rgba(var(--pick-rgb),.75),
+                    0 0 38px rgba(var(--pick-rgb),.27), 0 8px 16px rgba(0,0,0,.6);
+            }
+        }
+        .pick[data-on="1"]:not([data-off="1"]) {
+            transform: translateY(-1px);
+            animation: pickGentlePulse 2.6s ease-in-out infinite;
+        }
+        .pick[data-on="1"]:not([data-off="1"]) .pk-orbit { opacity: 1; }
+        .pick[data-on="1"]:not([data-off="1"]) .pk-orbit-trail,
+        .pick[data-on="1"]:not([data-off="1"]) .pk-orbit-head {
+            animation: pickOrbit 2.4s linear infinite;
+        }
+        .pick[data-on="1"] .pk-t::after {
+            content: "✓"; position: absolute; left: calc(100% + 4px); top: 50%;
+            transform: translateY(-50%); font-size: 12px; color: #fff;
+            text-shadow: 0 0 5px rgba(255,255,255,.8);
+        }
+        .pick[data-off="1"] { filter: grayscale(.85) brightness(.62); cursor: not-allowed; animation: none; }
+        @media (prefers-reduced-motion: reduce) {
+            .pick { transition: none; }
+            .pick[data-on="1"]:not([data-off="1"]) {
+                animation: none;
+                box-shadow: inset 0 1.5px 1px #fff, inset 0 -3px 3px var(--pick-inset),
+                    0 5px 0 var(--pick-wall), 0 0 20px rgba(var(--pick-rgb),.6), 0 8px 16px rgba(0,0,0,.6);
+            }
+            .pick[data-on="1"]:not([data-off="1"]) .pk-orbit-trail,
+            .pick[data-on="1"]:not([data-off="1"]) .pk-orbit-head { animation-duration: 8s; }
+        }
         .bet-go {
-            flex: 1 1 auto; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 900;
-            letter-spacing: .04em; padding: 8px 10px; border-radius: 9px; color: #052e16;
-            background: linear-gradient(180deg, #6ee7b7, #34d399); border: 0;
+            flex: 1 1 auto; cursor: pointer; font: inherit; font-size: 13px; font-weight: 900;
+            letter-spacing: .06em; padding: 9px 12px; border-radius: 11px; color: #032e16;
+            background: linear-gradient(180deg, #a7f3d0 0%, #34d399 45%, #10b981 75%, #047857 100%);
+            border: 1.5px solid #86efac;
+            box-shadow: inset 0 1.5px 1px #fff, inset 0 -2px 3px rgba(4,120,87,.6), 0 4px 0 #064e3b, 0 6px 12px rgba(0,0,0,.5);
+            text-shadow: 0 1px 0 rgba(255,255,255,.6);
+            transition: transform .08s ease, box-shadow .08s ease, filter .12s ease;
         }
-        .bet-go:active { transform: scale(.99); }
-        .bet-go[disabled] { opacity: .45; }
+        .bet-go:hover:not([disabled]) {
+            filter: brightness(1.08);
+            box-shadow: inset 0 1.5px 1px #fff, inset 0 -2px 3px rgba(4,120,87,.6), 0 4px 0 #064e3b, 0 0 18px rgba(52,211,153,.65), 0 6px 12px rgba(0,0,0,.5);
+        }
+        .bet-go:active:not([disabled]) {
+            transform: translateY(3px);
+            box-shadow: inset 0 1px 1px rgba(255,255,255,.5), 0 1px 0 #064e3b, 0 2px 4px rgba(0,0,0,.5);
+        }
+        .bet-go[disabled] { opacity: .42; cursor: not-allowed; filter: grayscale(.4); }
         .bet-note { font-size: 9.5px; font-weight: 700; color: #64748b; flex: 1 1 100%; }
         .bet-hist-h {
             display: flex; align-items: center; justify-content: space-between;
@@ -269,6 +368,36 @@
             display: grid; gap: 9px;
         }
         .ctrl-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+        .ctrl-save-row { display: flex; align-items: center; gap: 8px; }
+        .ctrl-save {
+            appearance: none; cursor: pointer; font: inherit; font-size: 11.5px; font-weight: 900;
+            letter-spacing: .04em; padding: 8px 16px; border-radius: 9px; color: #032e16;
+            background: linear-gradient(180deg, #a7f3d0, #34d399 55%, #10b981);
+            border: 1px solid #86efac;
+            box-shadow: inset 0 1px 0 #fff, 0 3px 0 #047857, 0 5px 10px rgba(0,0,0,.45);
+        }
+        .ctrl-save:active { transform: translateY(2px); box-shadow: inset 0 1px 0 #fff, 0 1px 0 #047857; }
+        .ctrl-save-hint { font-size: 9.5px; font-weight: 800; color: #64748b; }
+        /* khung điều khiển khi đã thu gọn: chỉ còn 1 nút */
+        .ctrl[data-mini="1"] > .ctrl-row,
+        .ctrl[data-mini="1"] > .hint,
+        .ctrl[data-mini="1"] > .ctrl-save-row,
+        .ctrl[data-mini="1"] > details { display: none; }
+        .ctrl[data-mini="1"] { padding: 6px; }
+        .ctrl-open {
+            display: none; width: 100%; cursor: pointer; font: inherit; font-size: 11.5px; font-weight: 900;
+            letter-spacing: .05em; padding: 9px 12px; border-radius: 9px; color: #dbeafe;
+            background: linear-gradient(180deg, #1e3355, #16233d); border: 1px solid #3b5480;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 3px 0 #0b1220;
+        }
+
+        .ctrl-open { display: none; }
+        .ctrl[data-mini="1"] .ctrl-open {
+            display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left;
+        }
+        .ctrl-open .co-go { font-size: 10px; font-weight: 800; color: #93c5fd; white-space: nowrap; }
+        .ctrl-open b { color: #fde047; }
+        .ctrl-open i { font-style: normal; color: #93c5fd; }
         .lab {
             font-size: 9.5px; font-weight: 900; letter-spacing: .12em;
             text-transform: uppercase; color: #93c5fd;
@@ -376,6 +505,25 @@
             box-shadow: inset 0 0 0 1px #2b3a55;
             position: sticky; top: 0; z-index: 20;
         }
+        .res-tools { display: flex; align-items: center; gap: 6px; }
+        .res-edit {
+            appearance: none; cursor: pointer; font: inherit; font-size: 10px; font-weight: 900;
+            padding: 3px 9px; border-radius: 999px; color: #dbeafe;
+            background: #1e3355; border: 1px solid #3b5480; white-space: nowrap;
+        }
+        .res-edit:hover { filter: brightness(1.2); }
+        .res-wrap[data-open="1"] .res-edit { background: linear-gradient(180deg, #facc15, #d97706); color: #3b1702; border-color: #fde047; }
+        .res-body { display: block; overflow: hidden; max-height: 1200px; transition: max-height .22s ease, opacity .18s ease; }
+        .res-wrap[data-open="0"] .res-body { max-height: 0; opacity: 0; }
+        .res-wrap[data-open="0"] .res-body > * { visibility: hidden; }
+        .res-save {
+            display: none; width: 100%; margin-top: 7px; cursor: pointer; font: inherit;
+            font-size: 11px; font-weight: 900; letter-spacing: .04em; padding: 7px 12px; border-radius: 8px;
+            color: #032e16; background: linear-gradient(180deg, #a7f3d0, #34d399 55%, #10b981);
+            border: 1px solid #86efac; box-shadow: inset 0 1px 0 #fff, 0 3px 0 #047857;
+        }
+        .res-wrap[data-open="1"] .res-save { display: block; }
+        .res-save:active { transform: translateY(2px); box-shadow: inset 0 1px 0 #fff; }
         .res-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .res-head .res-lab { font-size: 9px; font-weight: 900; letter-spacing: .1em; color: #93c5fd; }
         .res-head .res-lab b { color: #fde047; }
@@ -411,6 +559,80 @@
             background: #16233d; border: 1px solid #33456a;
         }
         .rf-clear:active { transform: scale(.96); }
+        /* ===== 5 Ô NHỊ PHÂN 40×40 — bấm để đổi 0/1 ===== */
+        .rf-cells { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .rf-cell {
+            width: 40px; height: 40px; flex: 0 0 40px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font: inherit; font-size: 19px; font-weight: 900;
+            font-variant-numeric: tabular-nums; border-radius: 9px; line-height: 1;
+            border: 1.5px solid #33456a; color: #94a3b8;
+            background: linear-gradient(180deg, #1a2740, #101a2e);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 3px 0 #0a1120, 0 4px 8px rgba(0,0,0,.45);
+            transition: transform .08s, box-shadow .12s, background .12s, color .12s, border-color .12s;
+            user-select: none; -webkit-user-select: none;
+        }
+        .rf-cell:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.1); }
+        /* ô = 1 : vàng kim */
+        .rf-cell[data-bit="1"] {
+            color: #3b1702; border-color: #fde047;
+            background: linear-gradient(180deg, #fef9c3, #facc15 55%, #d97706);
+            box-shadow: inset 0 1px 1px #fff, inset 0 -2px 3px rgba(120,53,15,.6), 0 3px 0 #7c2d12, 0 0 12px rgba(250,204,21,.55);
+        }
+        /* ô = 0 : xanh lam đậm */
+        .rf-cell[data-bit="0"] {
+            color: #bae6fd; border-color: #38bdf8;
+            background: linear-gradient(180deg, #1e3a8a, #0c4a6e 60%, #082f49);
+            box-shadow: inset 0 1px 1px rgba(255,255,255,.45), inset 0 -2px 3px rgba(2,20,35,.7), 0 3px 0 #041a2b, 0 0 12px rgba(56,189,248,.45);
+        }
+        /* ô chưa đặt */
+        .rf-cell[data-bit=""] {
+            border-style: dashed; border-color: #3b4d70; color: #3f5372;
+            background: linear-gradient(180deg, #131e33, #0b1424);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+        }
+        .rf-cell[data-bit=""]:hover { border-color: #64748b; color: #94a3b8; }
+        /* nút LẤY CANH */
+        .rf-take {
+            appearance: none; cursor: pointer; font: inherit; font-size: 10px; font-weight: 900;
+            letter-spacing: .04em; padding: 6px 10px; border-radius: 8px; color: #042f2e;
+            background: linear-gradient(180deg, #99f6e4, #2dd4bf 55%, #0d9488);
+            border: 1px solid #5eead4; white-space: nowrap;
+            box-shadow: inset 0 1px 0 #fff, 0 3px 0 #115e59, 0 4px 8px rgba(0,0,0,.4);
+        }
+        .rf-take:active { transform: translateY(2px); box-shadow: inset 0 1px 0 #fff, 0 1px 0 #115e59; }
+        /* hàng ô: dãy tìm (trên) + dãy đảo (dưới) */
+        .rf-findrow { display: flex; align-items: center; gap: 7px; margin-top: 6px; }
+        .rf-findrow .rf-tag { flex: 0 0 40px; width: 40px; text-align: center; box-sizing: border-box; }
+        .rf-findrow .rf-cells { flex-wrap: nowrap; }
+        .rf-tag {
+            font-size: 8px; font-weight: 900; letter-spacing: .06em;
+            color: #c4b5fd; padding: 3px 0; border-radius: 6px;
+            background: rgba(139,92,246,.14); box-shadow: inset 0 0 0 1px #6d5bd0;
+        }
+        .rf-tag-hit { color: #fde68a; background: rgba(250,204,21,.14); box-shadow: inset 0 0 0 1px #a16207; }
+        /* hàng MẪU: làm mờ đi (vẫn bấm được) — hàng ĐẢO giữ nguyên độ sáng */
+        #findCells .rf-cell {
+            opacity: .38; filter: saturate(.5) brightness(.85);
+            transition: opacity .15s, filter .15s, transform .08s, box-shadow .12s;
+        }
+        #findCells .rf-cell:hover { opacity: .8; filter: none; }
+        #findCells .rf-cell:focus-visible { opacity: 1; filter: none; }
+        .rf-findrow:first-child .rf-tag-hit { opacity: .55; }
+        .rf-cells-opp .rf-cell { opacity: 1; filter: none; }
+        /* ô đảo: tím violet, tự đổi khi dãy trên đổi */
+        .rf-cells-opp .rf-cell { cursor: default; }
+        .rf-cells-opp .rf-cell[data-bit="1"] {
+            color: #2e1065; border-color: #c4b5fd;
+            background: linear-gradient(180deg, #ede9fe, #c4b5fd 55%, #8b5cf6);
+            box-shadow: inset 0 1px 1px #fff, inset 0 -2px 3px rgba(76,29,149,.6), 0 3px 0 #4c1d95, 0 0 12px rgba(167,139,250,.6);
+        }
+        .rf-cells-opp .rf-cell[data-bit="0"] {
+            color: #ede9fe; border-color: #8b5cf6;
+            background: linear-gradient(180deg, #4c1d95, #3b1280 60%, #2e1065);
+            box-shadow: inset 0 1px 1px rgba(255,255,255,.4), inset 0 -2px 3px rgba(15,4,50,.75), 0 3px 0 #1e0b45, 0 0 12px rgba(139,92,246,.5);
+        }
+        .rf-cells-opp .rf-cell[data-bit=""] { opacity: .55; }
         .res-legend {
             display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
             margin: 4px 0 5px; font-size: 9px; font-weight: 800; color: #64748b;
@@ -491,28 +713,38 @@
         <div class="brand">BẢNG SỐ · TÔ MÀU NHỊ PHÂN</div>
     </div>
 
-        <!-- 1 KHUNG KẾT QUẢ: danh sách vị trí KHỚP MẪU + ĐỐI LẬP, xếp theo STT hàng tăng dần -->
-        <section class="res-wrap" id="resWrap" aria-label="Danh sách vị trí khớp và đối lập">
+        <!-- 1 KHUNG KẾT QUẢ — thu gọn thành 1 nút, bấm ✎ để mở ra đổi mẫu -->
+        <section class="res-wrap" id="resWrap" aria-label="Danh sách vị trí khớp và đối lập" data-open="0">
             <div class="res-head">
-                <span class="res-lab">VỊ TRÍ KHỚP MẪU <b id="cntHit">0</b> · ĐỐI LẬP <b id="cntOpp">0</b></span>
-                <span class="res-chip" id="resChip">—</span>
+                <span class="res-lab" title="Số hàng khớp mẫu / đối lập">KHỚP <b id="cntHit">0</b> · ĐỐI LẬP <b id="cntOpp">0</b></span>
+                <span class="res-tools">
+                    <button id="resEdit" class="res-edit" type="button" aria-expanded="false" title="Mở ra để đổi mẫu">✎ đổi mẫu</button>
+                    <span class="res-chip" id="resChip">—</span>
+                </span>
             </div>
-            <div class="res-find">
-                <label class="rf-lab" for="findLen">SỐ Ô</label>
-                <select id="findLen" class="rf-sel" title="Số ô của dãy cần tìm (bằng số ô/hàng)"></select>
-                <input id="findSeq" class="rf-inp" type="tel" inputmode="numeric" autocomplete="off"
-                       placeholder="nhập dãy 0/1…" spellcheck="false">
-                <span class="rf-sep">hoặc hàng</span>
-                <input id="findStt" class="rf-inp rf-stt" type="tel" inputmode="numeric" autocomplete="off"
-                       placeholder="STT" maxlength="4" spellcheck="false">
-                <button id="findClear" class="rf-clear" type="button" title="Xoá dãy tìm">✕</button>
+            <div class="res-body" id="resBody">
+                <div class="res-find">
+                    <label class="rf-lab" for="findLen">SỐ Ô</label>
+                    <select id="findLen" class="rf-sel" title="Số ô của dãy cần tìm (bằng số ô/hàng)"></select>
+                    <button id="findTake" class="rf-take" type="button" title="Lấy 5 số ở hàng 1 (trên cùng) của bảng">lấy canh</button>
+                    <button id="findClear" class="rf-clear" type="button" title="Xoá cả dãy">✕</button>
+                </div>
+                <div class="rf-findrow">
+                    <span class="rf-tag rf-tag-hit">MẪU</span>
+                    <div class="rf-cells" id="findCells" role="group" aria-label="Dãy nhị phân cần tìm — bấm ô để đổi 0/1"></div>
+                </div>
+                <div class="rf-findrow">
+                    <span class="rf-tag">ĐẢO</span>
+                    <div class="rf-cells rf-cells-opp" id="findOpp" role="group" aria-label="Dãy đảo ngược 0↔1 của dãy trên"></div>
+                </div>
+                <div class="res-legend">
+                    <span data-k="hit">■ khớp mẫu</span>
+                    <span data-k="opp">■ đối lập</span>
+                    <span id="resNote">xếp theo STT hàng, bé nhất ở trên</span>
+                </div>
+                <div class="res-list" id="posList" role="list"></div>
             </div>
-            <div class="res-legend">
-                <span data-k="hit">■ khớp mẫu</span>
-                <span data-k="opp">■ đối lập</span>
-                <span id="resNote">xếp theo STT hàng, bé nhất ở trên</span>
-            </div>
-            <div class="res-list" id="posList" role="list"></div>
+            <button id="resSave" class="res-save" type="button">lưu &amp; thu gọn</button>
         </section>
 
     <section class="clock" id="clockBox" aria-label="Đồng hồ kỳ đang chạy">
@@ -532,30 +764,43 @@
                 <b id="betBal">1.000.000</b>
                 <span class="bet-unit">đ</span>
             </div>
+            <button id="betToFirst" class="bet-mini" type="button" title="Quay lại mức cược 1">↺ về mức 1</button>
             <button id="betReset" class="bet-mini" type="button" title="Đặt lại số dư ban đầu">↺ nạp lại</button>
         </div>
 
         <div class="bet-row">
             <span class="bet-lab">CƯỢC KỲ</span>
             <span class="bet-issue" id="betIssue">---</span>
-            <span class="bet-lab">MỨC</span>
-            <select id="betAmt" class="bet-sel" aria-label="Mức cược"></select>
+            <span class="bet-lab">MỨC ĐANG ĐÁNH</span>
+            <span class="bet-cur" id="betCur">1.000</span>
+            <span class="bet-lvnum" id="betLvNum">mức 1/6</span>
             <button id="betLvEdit" class="bet-mini" type="button" title="Sửa danh sách mức cược">sửa mức</button>
         </div>
 
+        <!-- các nút mức cược: đang đánh tới mức nào thì mức đó sáng -->
+        <div class="bet-lvbar" id="betLvBar" role="group" aria-label="Các mức cược"></div>
+
         <div class="bet-row bet-picks bet-picks2">
-            <button class="pick" type="button" data-pick="big" data-on="0">
+            <button class="pick" type="button" data-pick="big" data-on="0" aria-pressed="false">
+                <svg class="pk-orbit" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                    <rect class="pk-orbit-track" x="2" y="2" rx="11" />
+                    <rect class="pk-orbit-trail" x="2" y="2" rx="11" pathLength="100" />
+                    <rect class="pk-orbit-head" x="2" y="2" rx="11" pathLength="100" />
+                </svg>
                 <span class="pk-t">LỚN</span><span class="pk-d">5–9</span>
             </button>
-            <button class="pick" type="button" data-pick="small" data-on="0">
+            <button class="pick" type="button" data-pick="small" data-on="0" aria-pressed="false">
+                <svg class="pk-orbit" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                    <rect class="pk-orbit-track" x="2" y="2" rx="11" />
+                    <rect class="pk-orbit-trail" x="2" y="2" rx="11" pathLength="100" />
+                    <rect class="pk-orbit-head" x="2" y="2" rx="11" pathLength="100" />
+                </svg>
                 <span class="pk-t">NHỎ</span><span class="pk-d">0–4</span>
             </button>
         </div>
 
         <div class="bet-row">
-            <button id="betPlace" class="bet-go" type="button">ĐẶT CƯỢC</button>
-            <button id="betClear" class="bet-mini" type="button">bỏ chọn</button>
-            <span class="bet-note" id="betNote">chọn LỚN hoặc NHỎ</span>
+            <span class="bet-note" id="betNote">bấm LỚN hoặc NHỎ là đặt cược ngay</span>
         </div>
 
         <div class="bet-row bet-lv" id="betLvRow" hidden>
@@ -563,7 +808,7 @@
             <input id="betLvInp" class="bet-lvinp" type="text" inputmode="numeric" spellcheck="false"
                    placeholder="vd: 1 2 5 12 25 50">
             <button id="betLvSave" class="bet-mini bet-mini-ok" type="button">lưu</button>
-            <button id="betLvCancel" class="bet-mini" type="button">thôi</button>
+            <button id="betLvCancel" class="bet-mini" type="button">thu gọn</button>
             <button id="betLvDef" class="bet-mini" type="button" title="Quay lại 1 2 5 12 25 50">mặc định</button>
             <span class="bet-lvhint" id="betLvHint">cách nhau dấu cách hoặc dấu phẩy · đơn vị: nghìn đồng</span>
         </div>
@@ -576,7 +821,8 @@
         <div class="bet-stat" id="betStat"></div>
     </section>
 
-    <div class="ctrl">
+    <div class="ctrl" id="ctrlBox" data-mini="0">
+        <button type="button" class="ctrl-open" id="ctrlOpen">⚙ ĐIỀU KHIỂN BẢNG · <b id="ctrlSum">5 ô/hàng · Lớn/Nhỏ</b> <span class="co-go">bấm để mở ▾</span></button>
         <div class="ctrl-row">
             <span class="lab">Số ô / hàng</span>
             <select id="selCols" aria-label="Số ô trên 1 hàng">
@@ -605,6 +851,10 @@
         </div>
 
         <div class="hint" id="hint">Nhập 0/1 bất kỳ (5, 6, 7 số… tuỳ ý) · khớp thì <b>tô cả hàng</b> · chỉ xét trong 1 hàng.</div>
+        <div class="ctrl-save-row">
+            <button type="button" class="ctrl-save" id="btnCtrlSave">lưu &amp; thu gọn</button>
+            <span class="ctrl-save-hint">thu khung này thành 1 nút ở trên cùng</span>
+        </div>
         <div class="hint" id="status" role="status" aria-live="polite"></div>
         <details id="diagBox" style="margin-top:2px;">
             <summary style="cursor:pointer; font-size:10px; color:#64748b; font-weight:800; letter-spacing:.06em;">NHẬT KÝ NẠP</summary>
@@ -687,6 +937,37 @@
     const $ = function (id) { return document.getElementById(id); };
     const gridEl = $('grid');
     const statusEl = $('status');
+
+    // =====================================================================
+    //  THU GỌN KHUNG: bấm «lưu» → cả khung co lại thành 1 nút ở trên cùng
+    // =====================================================================
+    const LS_CTRL_MINI = 'vn168_ctrl_mini_v1';
+    const LS_RES_MINI = 'vn168_res_mini_v1';
+
+    function ctrlSumText() {
+        const el = document.getElementById('ctrlSum');
+        if (!el) return;
+        const rowN = Math.ceil(TOTAL_CELLS / perRow);
+        el.textContent = perRow + ' ô/hàng (' + rowN + ' hàng) · ' + (bitMode === 'odd' ? 'Chẵn/Lẻ' : 'Lớn/Nhỏ')
+            + (pattern ? ' · mẫu ' + pattern : '');
+    }
+
+    function setCtrlMini(mini) {
+        const box = $('ctrlBox');
+        if (!box) return;
+        box.setAttribute('data-mini', mini ? '1' : '0');
+        if (mini) ctrlSumText();
+        try { localStorage.setItem(LS_CTRL_MINI, mini ? '1' : '0'); } catch (e) {}
+    }
+
+    function setResOpen(open) {
+        const w = $('resWrap');
+        if (!w) return;
+        w.setAttribute('data-open', open ? '1' : '0');
+        const b = $('resEdit');
+        if (b) b.setAttribute('aria-expanded', open ? 'true' : 'false');
+        try { localStorage.setItem(LS_RES_MINI, open ? '0' : '1'); } catch (e) {}
+    }
 
     function setStatus(msg, kind) {
         statusEl.textContent = msg || '';
@@ -1214,7 +1495,7 @@
         $('footHit').textContent = String(hits);
         $('footOpp').textContent = String(opps);
         try {
-            if (findState.seq || findState.stt) doFind();
+            if (findState.seq) doFind();
             else renderPositions();
         } catch (e) {}
         $('footLeft').innerHTML = keys.length
@@ -1258,7 +1539,90 @@
     // ================= TÌM THEO DÃY / THEO STT HÀNG =================
     //   · Nhập dãy (độ dài bằng "số ô" đang chọn) → tìm mọi hàng có dãy giống hệt.
     //   · Nhập STT hàng x   → lấy dãy của hàng x±1 rồi tìm các hàng khác có dãy giống hệt dãy đó.
-    const findState = { seq: '', stt: '', len: 0, src: '', refRow: -1, rows: [], oppRows: [], active: false, note: '', shown: '' };
+    //   · Dãy mẫu giờ nhập bằng 5 Ô 40×40 (mỗi ô 1 số nhị phân), bấm ô để đổi 0/1.
+    const findState = { cells: [], seq: '', len: 0, src: '', rows: [], oppRows: [], active: false, note: '', shown: '' };
+
+    // vẽ 5 ô nhị phân (số ô = giá trị «SỐ Ô») — bấm để xoay 0 → 1 → trống
+    function renderFindCells() {
+        const box = $('findCells');
+        if (!box) return;
+        const L = findState.len || perRow || 5;
+        while (findState.cells.length < L) findState.cells.push('');
+        findState.cells.length = L;
+        const sig = findState.cells.join('');
+        if (box.getAttribute('data-sig') === sig && box.children.length === L) return;
+        box.setAttribute('data-sig', sig);
+        box.textContent = '';
+        findState.cells.forEach(function (v, i) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'rf-cell';
+            b.setAttribute('data-bit', v);
+            b.setAttribute('data-i', String(i));
+            b.setAttribute('aria-label', 'ô ' + (i + 1));
+            b.textContent = v === '' ? '·' : v;
+            b.addEventListener('click', function () {
+                const cur = findState.cells[i];
+                findState.cells[i] = cur === '' ? '0' : (cur === '0' ? '1' : '');
+                syncFindFromCells();
+            });
+            box.appendChild(b);
+        });
+        renderOppCells();
+    }
+
+    // hàng ĐẢO: 0↔1 của từng ô ở hàng trên (chỉ để xem, không bấm)
+    function renderOppCells() {
+        const box = $('findOpp');
+        if (!box) return;
+        const src = findState.cells.map(function (v) { return v === '1' ? '0' : (v === '0' ? '1' : ''); });
+        box.setAttribute('data-sig', src.join(''));
+        box.textContent = '';
+        src.forEach(function (v, i) {
+            const d = document.createElement('div');
+            d.className = 'rf-cell';
+            d.setAttribute('data-bit', v);
+            d.setAttribute('data-i', String(i));
+            d.textContent = v === '' ? '·' : v;
+            box.appendChild(d);
+        });
+    }
+
+    // lấy 5 số nhị phân của HÀNG 1 (trên cùng) trong bảng → đổ vào dãy tìm
+    function takeTopRowBits() {
+        const L = findState.len || perRow || 5;
+        let bits = '';
+        try { bits = rowBitsOf(0) || ''; } catch (e) { bits = ''; }
+        if (!bits) {
+            const keys = latestIssues();
+            if (keys.length) {
+                bits = keys.slice(0, perRow).map(function (k) {
+                    const d = data.get(String(k));
+                    return (d === undefined || d === '' || d === null) ? '' : bitOf(d);
+                }).join('');
+            }
+        }
+        if (!bits || bits.length < L) {
+            setStatus('Hàng 1 chưa đủ ' + L + ' số — chờ kết quả trực tuyến rồi bấm lại.', 'warn');
+            return;
+        }
+        findState.cells = bits.slice(0, L).split('');
+        findState.seq = findState.cells.join('');
+        renderFindCells();
+        doFind();
+        try { paint(); } catch (e) {}
+        setStatus('Đã lấy canh hàng 1: ' + findState.seq + ' · đảo: '
+            + findState.cells.map(function (v) { return v === '1' ? '0' : '1'; }).join(''), 'ok');
+    }
+
+    // ô → dãy tìm (chỉ tính khi đã điền đủ số ô)
+    function syncFindFromCells() {
+        const full = findState.cells.length && findState.cells.join('').length === findState.cells.length;
+        findState.seq = full ? findState.cells.join('') : '';
+        renderFindCells();
+        doFind();
+        try { paint(); } catch (e) {}
+    }
 
     function rowsCount() { return Math.max(1, Math.ceil(TOTAL_CELLS / perRow)); }
 
@@ -1279,25 +1643,12 @@
         });
         sel.value = opts.map(String).indexOf(keep) >= 0 ? keep : String(opts[opts.length - 1]);
         findState.len = Number(sel.value) || maxLen;
+        try { renderFindCells(); } catch (e) {}
     }
 
     function bitsOfRowIndex(r) {
         if (!(r >= 0) || r >= rows || !cellEls[r]) return '';
         return rowBitsOf(r);
-    }
-
-    // từ STT (001) → chỉ số hàng 0-based, khớp theo số cuối của kỳ (0832 → hàng của kỳ 832)
-    function rowFromStt(stt) {
-        const t = String(stt || '').replace(/[^0-9]/g, '');
-        if (!t) return -1;
-        const want = t.padStart(3, '0');
-        const keys = latestIssues();
-        for (let i = 0; i < keys.length && i < TOTAL_CELLS; i++) {
-            if (pad3(keys[i]) === want.slice(-3)) return Math.floor(i / perRow);
-        }
-        const n = Number(t);
-        if (isFinite(n) && n >= 1 && n <= rows) return n - 1;
-        return -1;
     }
 
     // so 1 hàng với dãy cần tìm: bằng độ dài thì so khít cả hàng, ngắn hơn thì tìm dãy nằm liền trong hàng
@@ -1319,34 +1670,18 @@
 
     function doFind() {
         findState.seq = String(findState.seq || '').replace(/[^01]/g, '');
+        try { renderFindCells(); } catch (e) {}
         findState.rows = [];
         findState.oppRows = [];
         findState.note = '';
-        findState.active = !!(findState.seq || findState.stt);
-        findState.refRow = -1;
+        findState.active = !!findState.seq;
         findState.src = '';
         if (!findState.active) { paintFindRows(''); return; }
         const L = Math.min(findState.len || perRow, perRow);
         let targets = [];
         let shown = '';
 
-        if (findState.stt) {
-            const r0 = rowFromStt(findState.stt);
-            if (r0 >= 0) {
-                // lấy dãy của hàng liền kề: ưu tiên x+1 (hàng dưới), rồi x-1 (hàng trên)
-                [r0 + 1, r0 - 1].forEach(function (rr) {
-                    const b = bitsOfRowIndex(rr);
-                    if (!b) return;
-                    const cand = (L === perRow) ? [b] : windowsOf(b, L);
-                    cand.forEach(function (t) { if (targets.indexOf(t) < 0) targets.push(t); });
-                });
-                if (targets.length) {
-                    findState.refRow = r0;
-                    findState.src = 'STT hàng ' + pad3(findState.stt) + ' → hàng ' + (r0 + 1) + ' ± 1';
-                }
-            }
-        }
-        if (!targets.length && findState.seq && findState.seq.length === L) targets = [findState.seq];
+        if (findState.seq && findState.seq.length === L) targets = [findState.seq];
 
         if (targets.length) {
             const opps = targets.map(function (t) {
@@ -1396,7 +1731,7 @@
         if ($('footHit')) $('footHit').textContent = String(findState.rows.length);
         if ($('footOpp')) $('footOpp').textContent = String(findState.oppRows.length);
         $('resChip').textContent = all.length ? (all.length + ' vị trí · xếp theo hàng') : '0 vị trí';
-        $('resNote').textContent = findState.note || ('nhập dãy ' + (findState.len || perRow) + ' số hoặc STT hàng');
+        $('resNote').textContent = findState.note || ('bấm ' + (findState.len || perRow) + ' ô để nhập dãy 0/1 cần tìm');
 
         const box = $('posList');
         if (!box) return;
@@ -1554,7 +1889,9 @@
     const BET_START = 1000000;
     const LS_BET_LV = 'vn168_bet_levels_v1';
     const BET_LV_DEFAULT = [1, 2, 5, 12, 25, 50];     // nghìn đồng → 1.000 … 50.000
-    const betState = { bal: BET_START, hist: [], levels: BET_LV_DEFAULT.slice(), levelIdx: 0 };
+    // levelIdx = bậc cược đang đánh (0 = mức đầu). Thắng → về mức 1, thua → lên mức kế,
+    // thua ở mức cuối → dừng lại (chờ bấm «↺ về mức 1» hoặc nạp lại).
+    const betState = { bal: BET_START, hist: [], levels: BET_LV_DEFAULT.slice(), levelIdx: 0, stopped: false };
     const pickOn = { big: false, small: false };
 
     function betLoad() {
@@ -1564,6 +1901,8 @@
             const o = JSON.parse(raw);
             if (o && typeof o.bal === 'number' && isFinite(o.bal)) betState.bal = o.bal;
             if (o && Array.isArray(o.hist)) betState.hist = o.hist.slice(0, 500);
+            if (o && typeof o.levelIdx === 'number') betState.levelIdx = Math.max(0, o.levelIdx | 0);
+            if (o && typeof o.stopped === 'boolean') betState.stopped = o.stopped;
         } catch (e) {}
         try {
             const raw2 = localStorage.getItem(LS_BET_LV) || '';
@@ -1579,31 +1918,77 @@
         } catch (e) {}
     }
     function betSave() {
-        try { localStorage.setItem(LS_BET, JSON.stringify({ bal: betState.bal, hist: betState.hist.slice(0, 500) })); } catch (e) {}
+        try {
+            localStorage.setItem(LS_BET, JSON.stringify({
+                bal: betState.bal, hist: betState.hist.slice(0, 500),
+                levelIdx: betState.levelIdx, stopped: betState.stopped
+            }));
+        } catch (e) {}
     }
     function betLevelsSave() {
         try { localStorage.setItem(LS_BET_LV, JSON.stringify(betState.levels)); } catch (e) {}
     }
 
-    // dựng dropdown mức cược (đơn vị nghìn đồng → hiện đ = ×1000)
-    function betFillLevels(keepValue) {
-        const sel = $('betAmt');
-        if (!sel) return;
-        const prev = keepValue !== undefined ? keepValue : (Number(sel.value) || 0);
-        sel.textContent = '';
-        betState.levels.forEach(function (lv) {
-            const o = document.createElement('option');
-            o.value = String(lv * 1000);
-            o.textContent = money(lv * 1000);
-            sel.appendChild(o);
+    // dựng DÃY NÚT mức cược (đơn vị nghìn đồng → hiện đ = ×1000)
+    //   data-on="1"  = bậc đang đánh   · data-pass="1" = đã thua qua bậc này
+    function betFillLevels() {
+        const bar = $('betLvBar');
+        if (!bar) return;
+        if (betState.levelIdx >= betState.levels.length) betState.levelIdx = betState.levels.length - 1;
+        if (betState.levelIdx < 0) betState.levelIdx = 0;
+        const sig = betState.levels.join(',') + '|' + betState.levelIdx + '|' + (betState.stopped ? 1 : 0);
+        if (bar.getAttribute('data-sig') === sig) { betPaintCurrent(); return; }
+        bar.setAttribute('data-sig', sig);
+        bar.textContent = '';
+        betState.levels.forEach(function (lv, i) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'lvb';
+            b.setAttribute('data-i', String(i));
+            b.setAttribute('data-on', i === betState.levelIdx ? '1' : '0');
+            b.setAttribute('data-pass', i < betState.levelIdx ? '1' : '0');
+            if (i === betState.levels.length - 1) b.setAttribute('data-last', '1');
+            const t = document.createElement('span');
+            t.textContent = money(lv * 1000);
+            const n = document.createElement('span');
+            n.className = 'lvb-i';
+            n.textContent = 'mức ' + (i + 1);
+            b.appendChild(t); b.appendChild(n);
+            b.addEventListener('click', function () {
+                // bấm vào một mức để nhảy tới mức đó (đổi tay)
+                betState.levelIdx = i;
+                betState.stopped = false;
+                betSave();
+                betFillLevels();
+                betPaintTop();
+            });
+            bar.appendChild(b);
         });
-        const vals = betState.levels.map(function (x) { return String(x * 1000); });
-        let pick = vals.indexOf(String(prev));
-        if (pick < 0) pick = Math.min(betState.levelIdx || 0, vals.length - 1);
-        if (pick < 0) pick = 0;
-        sel.value = vals[pick];
+        betPaintCurrent();
     }
-    function betAmtNow() { return Number($('betAmt').value) || 0; }
+
+    // hiện mức đang đánh + số bậc
+    function betPaintCurrent() {
+        const cur = $('betCur');
+        const lv = betState.levels[betState.levelIdx] || betState.levels[0] || 0;
+        if (cur) cur.textContent = money(lv * 1000) + ' đ';
+        const num = $('betLvNum');
+        if (num) {
+            num.textContent = betState.stopped
+                ? 'dừng (thua mức cuối) — bấm «về mức 1»'
+                : ('mức ' + (betState.levelIdx + 1) + '/' + betState.levels.length);
+            num.setAttribute('data-stop', betState.stopped ? '1' : '0');
+        }
+        const go = $('betPlace');
+        if (go) go.disabled = betState.stopped || !clockIssue;
+        Array.prototype.forEach.call(document.querySelectorAll('.pick'), function (b) {
+            // Giữ trạng thái sáng đã chọn cả khi đang chờ máy chủ.
+            // betPlace() vẫn chặn đặt vé nếu chưa có kỳ; không xếp hàng cược tự động.
+            b.setAttribute('data-off', betState.stopped ? '1' : '0');
+        });
+    }
+
+    function betAmtNow() { return (betState.levels[betState.levelIdx] || 0) * 1000; }
     function money(n) {
         const v = Math.round(Number(n) || 0);
         return v.toLocaleString('vi-VN');
@@ -1627,17 +2012,16 @@
         }
         const iss = $('betIssue');
         if (iss) iss.textContent = clockIssue ? pad3(clockIssue) : '---';
-        const go = $('betPlace');
-        const any = Object.keys(pickOn).some(function (k) { return pickOn[k]; });
-        if (go) go.disabled = !any || !clockIssue;
         const note = $('betNote');
         if (note) {
             const amt = betAmtNow();
-            const cnt = Object.keys(pickOn).filter(function (k) { return pickOn[k]; }).length;
             note.textContent = !clockIssue
                 ? 'chờ biết kỳ đang mở…'
-                : (any ? ('cược ' + money(amt * cnt) + ' đ cho kỳ ' + pad3(clockIssue)) : 'chọn LỚN hoặc NHỎ');
+                : betState.stopped
+                    ? 'đã dừng: thua ở mức cuối — bấm «↺ về mức 1» để đánh tiếp'
+                    : ('bấm LỚN/NHỎ là đặt ' + money(amt) + ' đ cho kỳ ' + pad3(clockIssue));
         }
+        try { betPaintCurrent(); } catch (e) {}
         // tổng kết lịch sử
         let st = 0, win = 0, lose = 0;
         betState.hist.forEach(function (h) {
@@ -1658,7 +2042,7 @@
         if (!betState.hist.length) {
             const d = document.createElement('div');
             d.className = 'bet-empty';
-            d.textContent = 'chưa có vé nào — chọn cửa rồi bấm «ĐẶT CƯỢC»';
+            d.textContent = 'chưa có vé nào — bấm LỚN hoặc NHỎ là đặt cược';
             box.appendChild(d);
             return;
         }
@@ -1714,7 +2098,21 @@
             changed = true;
         });
         if (changed) {
+            // cập nhật bậc cược theo kết quả mới nhất (vé vừa chốt)
+            const decided = betState.hist.filter(function (h) { return h.st === 'win' || h.st === 'lose'; })
+                .sort(function (a, b) { return (b.placedAt || 0) - (a.placedAt || 0); })[0];
+            if (decided && decided._applied !== true) {
+                betState.hist.forEach(function (h) { if (h.id === decided.id) h._applied = true; });
+                if (decided.st === 'win') {
+                    betState.levelIdx = 0;               // thắng → quay lại mức 1
+                    betState.stopped = false;
+                } else {
+                    if (betState.levelIdx >= betState.levels.length - 1) betState.stopped = true;  // thua mức cuối → dừng
+                    else betState.levelIdx = betState.levelIdx + 1;                                 // thua → lên mức kế
+                }
+            }
             betSave();
+            try { betFillLevels(); } catch (e) {}
             betPaintTop();
             betPaintHist();
             paintBetRows();
@@ -1743,6 +2141,10 @@
     }
 
     function betPlace() {
+        if (betState.stopped) {
+            setStatus('Dãy cược đã dừng ở mức cuối — bấm «↺ về mức 1» để đánh tiếp.', 'warn');
+            return;
+        }
         if (!clockIssue) { setStatus('Chưa biết kỳ đang mở — chờ đồng hồ chạy đã.', 'warn'); return; }
         const amt = betAmtNow();
         const picks = Object.keys(pickOn).filter(function (k) { return pickOn[k]; });
@@ -1774,22 +2176,20 @@
         Array.prototype.forEach.call(document.querySelectorAll('.pick'), function (b) {
             b.addEventListener('click', function () {
                 const k = b.getAttribute('data-pick');
-                const on = !pickOn[k];
-                // LỚN và NHỎ loại trừ nhau (chỉ đánh một cửa)
+                // bấm LỚN / NHỎ = ĐẶT CƯỢC ngay ở mức đang đánh
                 Object.keys(pickOn).forEach(function (x) { pickOn[x] = false; });
-                pickOn[k] = on;
+                pickOn[k] = true;
                 Array.prototype.forEach.call(document.querySelectorAll('.pick'), function (x) {
-                    x.setAttribute('data-on', pickOn[x.getAttribute('data-pick')] ? '1' : '0');
+                    const selected = !!pickOn[x.getAttribute('data-pick')];
+                    x.setAttribute('data-on', selected ? '1' : '0');
+                    x.setAttribute('aria-pressed', selected ? 'true' : 'false');
                 });
-                betPaintTop();
+                // Chỉ đặt MỘT vé cho mỗi lần bấm. Giữ viền chạy + nhịp sáng
+                // cho tới khi chọn cửa kia; hiệu ứng CSS không đặt cược tự động.
+                betPlace();
             });
         });
         betFillLevels();
-        $('betAmt').addEventListener('change', function () {
-            const vals = betState.levels.map(function (x) { return String(x * 1000); });
-            betState.levelIdx = Math.max(0, vals.indexOf(String(this.value)));
-            betPaintTop();
-        });
         $('betLvEdit').addEventListener('click', function () {
             const row = $('betLvRow');
             if (row.hasAttribute('hidden')) {
@@ -1821,15 +2221,19 @@
             betPaintTop();
             setStatus('Đã đổi mức cược: ' + betState.levels.map(function (x) { return money(x * 1000); }).join(' · ') + ' đ.', 'ok');
         });
-        $('betPlace').addEventListener('click', betPlace);
-        $('betClear').addEventListener('click', function () {
-            Object.keys(pickOn).forEach(function (k) { pickOn[k] = false; });
-            Array.prototype.forEach.call(document.querySelectorAll('.pick'), function (b) { b.setAttribute('data-on', '0'); });
+        if ($('betToFirst')) $('betToFirst').addEventListener('click', function () {
+            betState.levelIdx = 0;
+            betState.stopped = false;
+            betSave();
+            betFillLevels();
             betPaintTop();
+            setStatus('Đã quay lại mức 1: ' + money(betAmtNow()) + ' đ.', 'ok');
         });
         $('betReset').addEventListener('click', function () {
             betState.bal = BET_START;
-            betSave(); betPaintTop();
+            betState.levelIdx = 0;
+            betState.stopped = false;
+            betSave(); betFillLevels(); betPaintTop();
             setStatus('Đã đặt lại số dư ảo về ' + money(BET_START) + ' đ.', 'ok');
         });
         $('betHistClear').addEventListener('click', function () {
@@ -1849,12 +2253,13 @@
     function applyCols(n) {
         n = Math.max(2, Math.min(200, Math.floor(Number(n) || 5)));
         perRow = n;
+        try { ctrlSumText(); } catch (e) {}
         try { localStorage.setItem(LS_COLS, String(n)); } catch (e) {}
         $('numCols').value = String(n);
         $('selCols').value = String(n);
         buildGrid();
         if (pattern) applyPattern(pattern);
-        try { fillFindLen(); doFind(); } catch (e) {}
+        try { fillFindLen(); renderFindCells(); doFind(); } catch (e) {}
     }
 
     function applyPattern(raw) {
@@ -2161,8 +2566,7 @@
         if (!el) return;
         const t = clockIssue ? pad3(clockIssue) : '---';
         if (el.textContent !== t) el.textContent = t;
-        const go = document.getElementById('betPlace');
-        if (go) go.disabled = !clockIssue || !Object.keys(pickOn).some(function (k) { return pickOn[k]; });
+        try { betPaintCurrent(); } catch (e) {}
     }
 
     // khi máy chủ không trả số kỳ: lấy kỳ kế tiếp của bảng làm "kỳ đang mở"
@@ -2372,41 +2776,24 @@
 
         $('selCols').addEventListener('change', function () { applyCols(this.value); });
         $('numCols').addEventListener('change', function () { applyCols(this.value); });
-        // ---- khung tìm theo dãy / theo STT hàng ----
+        // ---- khung tìm theo dãy: 5 ô nhị phân 40×40 ----
         fillFindLen();
         $('findLen').addEventListener('change', function () {
-            findState.len = Number(this.value) || perRow;
-            const seq = $('findSeq');
-            seq.value = String(findState.seq).slice(0, findState.len);
-            findState.seq = seq.value;
-            doFind();
+            const L = Number(this.value) || perRow;
+            findState.len = L;
+            findState.cells = findState.cells.slice(0, L);
+            while (findState.cells.length < L) findState.cells.push('');
+            syncFindFromCells();
         });
-        $('findSeq').addEventListener('input', function () {
-            const clean = this.value.replace(/[^01]/g, '').slice(0, findState.len || perRow);
-            if (this.value !== clean) this.value = clean;
-            findState.seq = clean;
-            if (clean) { findState.stt = ''; $('findStt').value = ''; }
-            doFind();
-        });
-        $('findStt').addEventListener('input', function () {
-            const clean = this.value.replace(/[^0-9]/g, '').slice(0, 4);
-            if (this.value !== clean) this.value = clean;
-            findState.stt = clean;
-            if (clean) { findState.seq = ''; $('findSeq').value = ''; }
-            doFind();
-        });
+        $('findTake').addEventListener('click', takeTopRowBits);
         $('findClear').addEventListener('click', function () {
-            findState.seq = ''; findState.stt = ''; findState.rows = []; findState.refRow = -1;
-            $('findSeq').value = ''; $('findStt').value = '';
+            findState.cells = [];
+            findState.seq = '';
+            findState.rows = [];
+            findState.oppRows = [];
+            renderFindCells();
             doFind();
-        });
-        ['findSeq', 'findStt'].forEach(function (id) {
-            $(id).addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (findState.rows.length) { scrollToRow(findState.rows[0]); }
-                }
-            });
+            try { paint(); } catch (e) {}
         });
 
         $('binInput').addEventListener('input', function () {
@@ -2426,6 +2813,27 @@
                 applyPattern(pattern);
             });
         });
+
+        // ---- khung kết quả: nút ✎ mở ra, nút lưu thu gọn ----
+        $('resEdit').addEventListener('click', function () {
+            setResOpen($('resWrap').getAttribute('data-open') !== '1');
+        });
+        $('resSave').addEventListener('click', function () {
+            setResOpen(false);
+            setStatus('Đã lưu mẫu ' + (pattern || '(trống)') + ' · khung kết quả thu gọn thành 1 nút.', 'ok');
+        });
+        // ---- khung điều khiển: lưu & thu gọn / bấm nút để mở lại ----
+        $('ctrlOpen').addEventListener('click', function () { setCtrlMini(false); });
+        $('btnCtrlSave').addEventListener('click', function () {
+            setCtrlMini(true);
+            setStatus('Đã lưu cấu hình ' + perRow + ' ô/hàng · ' + (bitMode === 'odd' ? 'Chẵn/Lẻ' : 'Lớn/Nhỏ')
+                + ' · khung thu gọn thành 1 nút ở trên cùng.', 'ok');
+        });
+
+        // khôi phục trạng thái thu gọn đã lưu
+        try { if (localStorage.getItem(LS_CTRL_MINI) === '1') setCtrlMini(true); } catch (e) {}
+        try { if (localStorage.getItem(LS_RES_MINI) === '1') setResOpen(false); else setResOpen(true); } catch (e) {}
+        try { ctrlSumText(); } catch (e) {}
 
         // (danh sách vị trí đã gộp — bấm từng dòng để nhảy tới hàng đó)
 
@@ -2458,5 +2866,5 @@
     init();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a606a9b599b80435',t:'MTc5NTY3MjcyMg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a606a9b599b80435',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a609a8646d4ed11a',t:'MTc5NTcwNDEyNg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a609a8646d4ed11a',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
