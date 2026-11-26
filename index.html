@@ -1,0 +1,2462 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Bảng số 2000 ô · Tô màu nhị phân 0-1</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg: #0b1120;
+            --surface: #111c33;
+            --surface-2: #16233d;
+            --border: #2b3a55;
+            --text: #e6edf7;
+            --muted: #8b9cb6;
+            --accent: #38bdf8;
+            --hit-bg: #fde047;
+            --hit-text: #3b2a00;
+            --hit-edge: #f59e0b;
+        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        body {
+            background: radial-gradient(1200px 600px at 50% -200px, #16233d 0%, var(--bg) 60%) no-repeat, var(--bg);
+            color: var(--text);
+            font-family: "Be Vietnam Pro", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+            padding: 10px 8px 40px;
+            -webkit-text-size-adjust: 100%;
+        }
+        .wrap { width: 100%; max-width: 760px; margin: 0 auto; }
+
+        /* ================= ĐỒNG HỒ KỲ ĐANG CHẠY ================= */
+        .clock {
+            margin-top: 10px; padding: 9px 12px 10px; border-radius: 12px;
+            background: linear-gradient(180deg, #16233d, #101a2e);
+            box-shadow: inset 0 0 0 1px var(--border);
+            display: grid; grid-template-columns: 1fr auto; align-items: center;
+            gap: 2px 10px;
+        }
+        .clock-lab { font-size: 9px; font-weight: 900; letter-spacing: .14em; color: #93c5fd; }
+        .clock-num {
+            grid-column: 1; font-size: 13px; font-weight: 900; color: #e6edf7;
+            font-variant-numeric: tabular-nums;
+        }
+        .clock-time {
+            grid-column: 2; grid-row: 1 / span 2; justify-self: end;
+            font-size: 30px; line-height: 1; font-weight: 900; letter-spacing: .02em;
+            color: #fde047; font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 14px rgba(253, 224, 71, .28);
+        }
+        .clock-time[data-hot="1"] { color: #fb7185; text-shadow: 0 0 16px rgba(251, 113, 133, .4); }
+        .clock-time[data-off="1"] { color: #64748b; text-shadow: none; }
+        .clock-bar {
+            grid-column: 1 / -1; margin-top: 6px; height: 5px; border-radius: 99px;
+            background: #0b1424; overflow: hidden; box-shadow: inset 0 0 0 1px #24334c;
+        }
+        .clock-bar i {
+            display: block; height: 100%; width: 0%;
+            background: linear-gradient(90deg, #38bdf8, #fde047);
+            border-radius: 99px; transition: width .25s linear;
+        }
+        .clock-bar i[data-hot="1"] { background: linear-gradient(90deg, #f97316, #fb7185); }
+        .clock-sync {
+            grid-column: 1 / -1; margin-top: 2px;
+            font-size: 9.5px; font-weight: 800; color: #64748b;
+        }
+        .clock-sync[data-ok="1"] { color: #6ee7b7; }
+        .clock-sync[data-ok="0"] { color: #fca5a5; }
+        .clock-src {
+            grid-column: 1 / -1; margin-top: 4px; font-size: 9.5px; font-weight: 700; color: #64748b;
+        }
+
+        /* ================= THANH TRÊN ================= */
+        .topbar {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            padding: 10px 12px; border-radius: 12px;
+            background: linear-gradient(180deg, #16233d, #101a2e);
+            box-shadow: inset 0 0 0 1px var(--border);
+        }
+        .topbar .brand {
+            flex: 1 1 auto; min-width: 0;
+            font-size: 14px; font-weight: 900; letter-spacing: .04em;
+            background: linear-gradient(90deg, #fde047, #38bdf8);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .btn {
+            appearance: none; cursor: pointer; font: inherit;
+            padding: 7px 11px; border-radius: 9px;
+            font-size: 11.5px; font-weight: 800; letter-spacing: .02em;
+            color: #dbeafe; background: #1b2a45;
+            border: 1px solid #33456a;
+        }
+        .btn:hover { filter: brightness(1.15); }
+        .btn:active { transform: translateY(1px); }
+        .btn.primary { background: #1d4ed8; border-color: #3b82f6; color: #fff; }
+        .btn.warn { background: #3d2a12; border-color: #a16207; color: #fde68a; }
+        .btn.ghost { background: #16223a; }
+
+        /* ================= KHUNG ĐIỀU KHIỂN ================= */
+        /* ============ KHUNG ĐẶT CƯỢC ============ */
+        .bet {
+            margin-top: 10px; padding: 9px 10px 10px; border-radius: 12px;
+            background: linear-gradient(180deg, #16233d, #101a2e);
+            box-shadow: inset 0 0 0 1px #2b3a55;
+        }
+        .bet-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .bet-bal { display: flex; align-items: baseline; gap: 5px; }
+        .bet-bal-lab { font-size: 9px; font-weight: 900; letter-spacing: .1em; color: #93c5fd; }
+        .bet-bal b { font-size: 17px; font-weight: 900; color: #6ee7b7; font-variant-numeric: tabular-nums; }
+        .bet-bal b[data-neg="1"] { color: #fca5a5; }
+        .bet-unit { font-size: 10px; font-weight: 800; color: #64748b; }
+        .bet-mini {
+            cursor: pointer; font: inherit; font-size: 10px; font-weight: 800;
+            padding: 4px 7px; border-radius: 7px; color: #94a3b8;
+            background: #16233d; border: 1px solid #33456a;
+        }
+        .bet-mini:active { transform: scale(.97); }
+        .bet-row { display: flex; align-items: center; gap: 7px; margin-top: 7px; flex-wrap: wrap; }
+        .bet-lab { font-size: 9px; font-weight: 900; letter-spacing: .08em; color: #64748b; }
+        .bet-issue {
+            font-size: 13px; font-weight: 900; color: #fde047; font-variant-numeric: tabular-nums;
+            padding: 1px 7px; border-radius: 6px; background: #0b1626; box-shadow: inset 0 0 0 1px #33456a;
+        }
+        .bet-sel {
+            appearance: none; -webkit-appearance: none; cursor: pointer; font: inherit;
+            background: #0f1b2f; color: #e6edf7; border: 1px solid #33456a; border-radius: 7px;
+            font-size: 11.5px; font-weight: 900; padding: 5px 8px; font-variant-numeric: tabular-nums;
+        }
+        .bet-picks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .bet-picks.bet-picks2 { grid-template-columns: 1fr 1fr; }
+        .bet-lvinp {
+            flex: 1 1 140px; min-width: 110px; appearance: none; font: inherit;
+            background: #0b1626; color: #fde047; border: 1px solid #33456a; border-radius: 7px;
+            font-size: 12px; font-weight: 900; letter-spacing: .06em; padding: 5px 8px;
+        }
+        .bet-lvinp:focus { outline: none; border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,.25); }
+        .bet-mini-ok { color: #052e16; background: linear-gradient(180deg,#6ee7b7,#34d399); border-color: #34d399; }
+        .bet-lvhint { flex: 1 1 100%; font-size: 9px; font-weight: 700; color: #526581; }
+        /* ===== NÚT LỚN / NHỎ — HIỆU ỨNG 3D ===== */
+        .pick {
+            position: relative; isolation: isolate;
+            cursor: pointer; font: inherit; display: flex; flex-direction: column; align-items: center;
+            gap: 1px; padding: 9px 2px 8px; border-radius: 12px;
+            color: #e8eefb; border: 0;
+            background: linear-gradient(180deg, #3b4a68 0%, #26334d 48%, #1b2438 100%);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,.28),      /* ánh sáng mép trên */
+                inset 0 -3px 0 rgba(0,0,0,.42),           /* bóng đáy trong nút */
+                0 5px 0 #0d1524,                          /* "thành" nút dày 5px */
+                0 7px 12px rgba(0,0,0,.55);               /* bóng đổ ra nền */
+            transform: translateY(0);
+            transition: transform .09s ease, box-shadow .09s ease, background .18s ease;
+            text-shadow: 0 1px 1px rgba(0,0,0,.5);
+            overflow: hidden;
+        }
+        /* vệt sáng cong trên mặt nút */
+        .pick::before {
+            content: ""; position: absolute; inset: 1px 1px auto 1px; height: 46%;
+            border-radius: 11px 11px 50% 50% / 11px 11px 60% 60%;
+            background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0));
+            pointer-events: none; z-index: -1;
+        }
+        .pick .pk-t { font-size: 13px; font-weight: 900; letter-spacing: .03em; }
+        .pick .pk-d { font-size: 8.5px; font-weight: 800; color: #9fb0cc; }
+        .pick:hover { background: linear-gradient(180deg, #45567a 0%, #2b3a56 48%, #1e293e 100%); }
+        .pick:active {
+            transform: translateY(4px);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,.18),
+                inset 0 -2px 0 rgba(0,0,0,.4),
+                0 1px 0 #0d1524,
+                0 3px 6px rgba(0,0,0,.5);
+        }
+
+        /* LỚN — vàng kim */
+        .pick[data-pick="big"] {
+            background: linear-gradient(180deg, #f7d774 0%, #e0a92a 46%, #b47b13 100%);
+            color: #3a2405;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,.6),
+                inset 0 -3px 0 rgba(120,74,4,.55),
+                0 5px 0 #7a4c07,
+                0 7px 12px rgba(0,0,0,.55);
+            text-shadow: 0 1px 0 rgba(255,255,255,.28);
+        }
+        .pick[data-pick="big"] .pk-d { color: #6b4409; }
+        .pick[data-pick="big"]:active { box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 1px 0 #7a4c07, 0 3px 6px rgba(0,0,0,.5); }
+
+        /* NHỎ — xanh dương */
+        .pick[data-pick="small"] {
+            background: linear-gradient(180deg, #8fd4ff 0%, #3d9bea 46%, #1e6bb0 100%);
+            color: #04223a;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,.6),
+                inset 0 -3px 0 rgba(9,52,86,.55),
+                0 5px 0 #11436e,
+                0 7px 12px rgba(0,0,0,.55);
+            text-shadow: 0 1px 0 rgba(255,255,255,.28);
+        }
+        .pick[data-pick="small"] .pk-d { color: #0c3554; }
+        .pick[data-pick="small"]:active { box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 1px 0 #11436e, 0 3px 6px rgba(0,0,0,.5); }
+
+        /* trạng thái ĐANG CHỌN: phát sáng + nảy lên */
+        .pick[data-on="1"] { transform: translateY(-2px); }
+        .pick[data-pick="big"][data-on="1"] {
+            background: linear-gradient(180deg, #fff2b0 0%, #ffd94a 46%, #d99a10 100%);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,.85),
+                inset 0 -3px 0 rgba(140,88,4,.5),
+                0 7px 0 #8a5708,
+                0 0 18px rgba(250,204,21,.65),
+                0 9px 16px rgba(0,0,0,.55);
+        }
+        .pick[data-pick="small"][data-on="1"] {
+            background: linear-gradient(180deg, #c6ecff 0%, #63b6f5 46%, #1b74c0 100%);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,.85),
+                inset 0 -3px 0 rgba(10,58,95,.5),
+                0 7px 0 #0f4a78,
+                0 0 18px rgba(56,189,248,.6),
+                0 9px 16px rgba(0,0,0,.55);
+        }
+        .pick[data-on="1"] .pk-t::after { content: " ✓"; font-size: 11px; }
+        .bet-go {
+            flex: 1 1 auto; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 900;
+            letter-spacing: .04em; padding: 8px 10px; border-radius: 9px; color: #052e16;
+            background: linear-gradient(180deg, #6ee7b7, #34d399); border: 0;
+        }
+        .bet-go:active { transform: scale(.99); }
+        .bet-go[disabled] { opacity: .45; }
+        .bet-note { font-size: 9.5px; font-weight: 700; color: #64748b; flex: 1 1 100%; }
+        .bet-hist-h {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 10px; padding-top: 8px; border-top: 1px solid #22304a;
+            font-size: 9px; font-weight: 900; letter-spacing: .1em; color: #93c5fd;
+        }
+        .bet-hist { margin-top: 5px; display: grid; grid-template-columns: 1fr; gap: 3px; max-height: 168px; overflow-y: auto; }
+        .bh {
+            display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 6px;
+            padding: 4px 7px; border-radius: 7px; font-size: 10.5px; font-weight: 800;
+            background: rgba(15,23,42,.85); border: 1px solid #24334c; border-left: 3px solid #24334c;
+            font-variant-numeric: tabular-nums; color: #cbd5e1;
+        }
+        .bh[data-st="win"] { border-left-color: #34d399; }
+        .bh[data-st="lose"] { border-left-color: #f87171; }
+        .bh[data-st="wait"] { border-left-color: #fbbf24; }
+        .bh[data-st="void"] { border-left-color: #64748b; opacity: .75; }
+        .bh .bh-i { color: #93c5fd; }
+        .bh .bh-p { color: #e6edf7; }
+        .bh .bh-a { color: #94a3b8; }
+        .bh .bh-r { font-weight: 900; }
+        .bh[data-st="win"] .bh-r { color: #6ee7b7; }
+        .bh[data-st="lose"] .bh-r { color: #fca5a5; }
+        .bh[data-st="wait"] .bh-r { color: #fde047; }
+        .bh .bh-digit {
+            display: inline-block; min-width: 15px; text-align: center; border-radius: 4px;
+            background: #0b1626; box-shadow: inset 0 0 0 1px #33456a;
+        }
+        .bet-empty { padding: 8px; text-align: center; font-size: 10px; color: #64748b; }
+        .bet-stat { font-size: 9.5px; font-weight: 800; color: #64748b; margin-top: 5px; }
+        .bet-stat b { color: #6ee7b7; }
+        .bet-stat b[data-neg="1"] { color: #fca5a5; }
+
+        .ctrl {
+            margin-top: 10px; padding: 10px 12px; border-radius: 12px;
+            background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+            display: grid; gap: 9px;
+        }
+        .ctrl-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+        .lab {
+            font-size: 9.5px; font-weight: 900; letter-spacing: .12em;
+            text-transform: uppercase; color: #93c5fd;
+        }
+        .sep { width: 1px; height: 18px; background: var(--border); }
+
+        select, .num, .bin {
+            appearance: none; font: inherit; color: var(--text);
+            background: #0f1a2e; border: 1px solid #33456a; border-radius: 8px;
+            padding: 7px 9px; font-size: 12.5px; font-weight: 700;
+        }
+        select { padding-right: 24px; background-image: linear-gradient(45deg, transparent 50%, #93c5fd 50%), linear-gradient(135deg, #93c5fd 50%, transparent 50%); background-position: calc(100% - 14px) 14px, calc(100% - 9px) 14px; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+        .num { width: 76px; }
+        .bin {
+            flex: 1 1 150px; min-width: 0;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            letter-spacing: .22em; font-size: 15px; text-align: center;
+            border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, .16);
+        }
+        .bin:focus { outline: none; border-color: #fde047; box-shadow: 0 0 0 2px rgba(253, 224, 71, .22); }
+        .bin::placeholder { color: #4b5f7d; letter-spacing: .18em; }
+
+        .seg { display: inline-flex; border-radius: 9px; overflow: hidden; box-shadow: inset 0 0 0 1px #33456a; }
+        .seg button {
+            appearance: none; cursor: pointer; font: inherit; border: 0;
+            padding: 7px 10px; font-size: 11px; font-weight: 800;
+            background: #0f1a2e; color: #9fb1c9;
+        }
+        .seg button[data-on="1"] { background: linear-gradient(180deg, #facc15, #d97706); color: #3b1702; }
+
+        .hint { font-size: 10.5px; font-weight: 700; color: var(--muted); line-height: 1.45; }
+        .hint b { color: #fde047; }
+        #status { min-height: 15px; }
+        #status[data-kind="ok"] { color: #6ee7b7; }
+        #status[data-kind="err"] { color: #fda4af; }
+        #status[data-kind="warn"] { color: #fcd34d; }
+
+        /* ================= BẢNG ================= */
+        .board {
+            margin-top: 10px; padding: 6px; border-radius: 12px;
+            background: #0d1626; box-shadow: inset 0 0 0 1px #23314a;
+            overflow-x: auto; overscroll-behavior-x: contain;
+        }
+        .board::-webkit-scrollbar { height: 6px; }
+        .board::-webkit-scrollbar-thumb { background: #33456a; border-radius: 3px; }
+        .grid { display: grid; gap: 2px; }
+        /* mỗi hàng là 1 dải cuộn ngang: ô luôn đúng 50x50px, không bị bóp lại */
+        .row {
+            display: grid; gap: 2px;
+            grid-template-columns: repeat(var(--cols, 5), 50px);
+            width: max-content;
+            padding: 1px; border-radius: 4px;
+            transition: background .12s ease, box-shadow .12s ease;
+        }
+        .row[data-flash="1"] {
+            box-shadow: 0 0 0 2px #38bdf8, 0 0 16px rgba(56,189,248,.45);
+            border-radius: 6px;
+        }
+        /* hàng ĐỐI LẬP với mẫu → tô xanh tím */
+        .row[data-opp="1"] {
+            background: rgba(129, 140, 248, .16);
+            box-shadow: 0 0 0 1px rgba(167, 139, 250, .6), 0 0 10px rgba(129, 140, 248, .18);
+        }
+        .row[data-opp="1"] .cell {
+            background: linear-gradient(180deg, #c4b5fd, #8b5cf6);
+            border-color: #7c3aed;
+        }
+        .row[data-opp="1"] .cell .v { color: #2e1065; }
+        .row[data-opp="1"] .cell .stt { color: #4c1d95; opacity: .95; }
+        .row[data-hit="1"] {
+            background: rgba(253, 224, 71, .16);
+            box-shadow: 0 0 0 1px rgba(253, 224, 71, .55), 0 0 10px rgba(253, 224, 71, .18);
+        }
+        .row[data-hit="1"] .cell {
+            background: linear-gradient(180deg, #fde68a, #fbbf24);
+            border-color: var(--hit-edge);
+        }
+        .row[data-hit="1"] .cell .v { color: var(--hit-text); }
+        .row[data-hit="1"] .cell .stt { color: #6b4a00; }
+        .cell {
+            width: 50px; height: 50px; flex: 0 0 50px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 0; border: 1px solid #24334c; border-radius: 4px;
+            background: var(--surface-2);
+            transition: background .12s ease, border-color .12s ease;
+            overflow: hidden;
+        }
+        .cell .stt {
+            font-size: 8px; line-height: 9px; color: #facc15;
+            max-width: 100%; overflow: hidden; white-space: nowrap;
+            user-select: none; opacity: .8;
+        }
+        .cell .v {
+            font-size: 22px; line-height: 24px; font-weight: 800; color: var(--text);
+            font-variant-numeric: tabular-nums; user-select: none;
+        }
+        .cell.empty { background: #101a2c; }
+        .cell.empty .v { color: #33456a; }
+        .cell[data-new="1"] { box-shadow: 0 0 0 1px #38bdf8 inset; }
+
+        /* ===== 1 khung kết quả: danh sách vị trí khớp + đối lập ===== */
+        .res-wrap {
+            margin-top: 10px; padding: 7px 9px 8px; border-radius: 11px;
+            background: linear-gradient(180deg, #16233d, #101a2e);
+            box-shadow: inset 0 0 0 1px #2b3a55;
+            position: sticky; top: 0; z-index: 20;
+        }
+        .res-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .res-head .res-lab { font-size: 9px; font-weight: 900; letter-spacing: .1em; color: #93c5fd; }
+        .res-head .res-lab b { color: #fde047; }
+        .res-head .res-lab b#cntOpp { color: #a78bfa; }
+        .res-chip {
+            padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 900;
+            font-variant-numeric: tabular-nums; background: rgba(15,23,42,.9); color: #cbd5e1;
+            box-shadow: inset 0 0 0 1px #33456a; white-space: nowrap;
+        }
+        .res-find {
+            display: flex; align-items: center; gap: 6px; margin: 6px 0 2px; flex-wrap: wrap;
+        }
+        .rf-lab { font-size: 9px; font-weight: 900; letter-spacing: .1em; color: #93c5fd; }
+        .rf-sel {
+            appearance: none; -webkit-appearance: none; cursor: pointer;
+            background: #0f1b2f; color: #e6edf7; border: 1px solid #33456a; border-radius: 7px;
+            font: inherit; font-size: 11px; font-weight: 900; font-variant-numeric: tabular-nums;
+            padding: 5px 8px; min-width: 62px;
+        }
+        .rf-inp {
+            flex: 1 1 90px; min-width: 70px; appearance: none;
+            background: #0b1626; color: #fde047; border: 1px solid #33456a; border-radius: 7px;
+            font: inherit; font-size: 12.5px; font-weight: 900; letter-spacing: .12em;
+            font-variant-numeric: tabular-nums; padding: 5px 8px;
+        }
+        .rf-inp::placeholder { color: #475569; letter-spacing: 0; font-weight: 700; }
+        .rf-inp:focus, .rf-sel:focus { outline: none; border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,.25); }
+        .rf-inp.rf-stt { flex: 0 0 54px; min-width: 54px; letter-spacing: .04em; color: #a5b4fc; }
+        .rf-sep { font-size: 9px; font-weight: 800; color: #526581; }
+        .rf-clear {
+            cursor: pointer; font: inherit; font-size: 12px; font-weight: 900; line-height: 1;
+            padding: 6px 8px; border-radius: 7px; color: #94a3b8;
+            background: #16233d; border: 1px solid #33456a;
+        }
+        .rf-clear:active { transform: scale(.96); }
+        .res-legend {
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+            margin: 4px 0 5px; font-size: 9px; font-weight: 800; color: #64748b;
+        }
+        .res-legend span[data-k="hit"] { color: #fde047; }
+        .res-legend span[data-k="opp"] { color: #a78bfa; }
+        #resNote { margin-left: auto; color: #526581; }
+        .res-list {
+            display: grid; grid-template-columns: 1fr; gap: 3px;
+            max-height: 176px; overflow-y: auto; overscroll-behavior: contain;
+            padding-right: 2px;
+        }
+        .pos-row {
+            appearance: none; cursor: pointer; font: inherit; width: 100%;
+            display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 7px;
+            padding: 4px 8px; border-radius: 7px; text-align: left;
+            font-size: 11.5px; font-weight: 900; font-variant-numeric: tabular-nums;
+            background: rgba(15,23,42,.85); color: #cbd5e1;
+            border: 1px solid #24334c; border-left: 3px solid #24334c;
+        }
+        .pos-row[data-k="hit"] { border-left-color: #fbbf24; }
+        .pos-row[data-k="opp"] { border-left-color: #8b5cf6; }
+        .pos-row[data-cur="1"] { background: rgba(253,224,71,.14); box-shadow: inset 0 0 0 1px rgba(250,204,21,.5); }
+        .pos-row[data-k="opp"][data-cur="1"] { background: rgba(139,92,246,.18); box-shadow: inset 0 0 0 1px rgba(167,139,250,.55); }
+        .pos-row:active { transform: scale(.995); }
+        .pos-h { color: #e6edf7; }
+        .pos-row[data-k="hit"] .pos-h { color: #fde047; }
+        .pos-row[data-k="opp"] .pos-h { color: #c4b5fd; }
+        .pos-dr { font-size: 9.5px; font-weight: 800; color: #64748b; }
+        .pos-tag {
+            padding: 1px 6px; border-radius: 5px; font-size: 8.5px; font-weight: 900;
+            letter-spacing: .04em; white-space: nowrap;
+        }
+        .pos-tag[data-k="hit"] { background: rgba(250,204,21,.18); color: #fde047; }
+        .pos-tag[data-k="opp"] { background: rgba(139,92,246,.22); color: #c4b5fd; }
+        .row[data-find="1"] .cell {
+            box-shadow: inset 0 0 0 2px #22d3ee, 0 0 8px rgba(34,211,238,.45);
+        }
+        .row[data-find="1"] { background: rgba(34,211,238,.10); border-radius: 6px; }
+        .row[data-bet="win"] .cell { box-shadow: inset 0 0 0 2px #34d399; background: linear-gradient(180deg,#0f3b2e,#0a2a21) !important; }
+        .row[data-bet="lose"] .cell { box-shadow: inset 0 0 0 2px #f87171; background: linear-gradient(180deg,#3b1414,#2a0d0d) !important; }
+        .row[data-bet="wait"] .cell { box-shadow: inset 0 0 0 2px #fbbf24; }
+        .row[data-bet="void"] .cell { box-shadow: inset 0 0 0 1px #64748b; opacity: .8; }
+        .res-empty { padding: 10px; text-align: center; font-size: 10.5px; color: #64748b; }
+
+        .foot {
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            margin-top: 8px; font-size: 11px; font-weight: 700; color: var(--muted);
+            flex-wrap: wrap;
+        }
+        .foot b { color: #fde047; }
+
+        /* ================= POPUP TOKEN ================= */
+        .backdrop {
+            position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+            padding: 14px; background: rgba(3, 8, 18, .74);
+        }
+        .backdrop[hidden] { display: none; }
+        .dlg {
+            width: 100%; max-width: 460px; max-height: 86vh; overflow-y: auto;
+            padding: 14px; border-radius: 14px; background: #0f172a;
+            box-shadow: 0 20px 50px rgba(0,0,0,.7), inset 0 0 0 1px #2b3a55;
+        }
+        .dlg h2 { margin: 0 0 8px; font-size: 15px; }
+        .dlg p { margin: 0 0 9px; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+        .dlg textarea {
+            width: 100%; min-height: 84px; resize: vertical;
+            font-family: monospace; font-size: 11.5px;
+            background: #0b1424; color: var(--text); border: 1px solid #33456a; border-radius: 8px; padding: 8px;
+        }
+        .dlg .acts { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 10px; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+
+    <div class="topbar">
+        <div class="brand">BẢNG SỐ · TÔ MÀU NHỊ PHÂN</div>
+    </div>
+
+        <!-- 1 KHUNG KẾT QUẢ: danh sách vị trí KHỚP MẪU + ĐỐI LẬP, xếp theo STT hàng tăng dần -->
+        <section class="res-wrap" id="resWrap" aria-label="Danh sách vị trí khớp và đối lập">
+            <div class="res-head">
+                <span class="res-lab">VỊ TRÍ KHỚP MẪU <b id="cntHit">0</b> · ĐỐI LẬP <b id="cntOpp">0</b></span>
+                <span class="res-chip" id="resChip">—</span>
+            </div>
+            <div class="res-find">
+                <label class="rf-lab" for="findLen">SỐ Ô</label>
+                <select id="findLen" class="rf-sel" title="Số ô của dãy cần tìm (bằng số ô/hàng)"></select>
+                <input id="findSeq" class="rf-inp" type="tel" inputmode="numeric" autocomplete="off"
+                       placeholder="nhập dãy 0/1…" spellcheck="false">
+                <span class="rf-sep">hoặc hàng</span>
+                <input id="findStt" class="rf-inp rf-stt" type="tel" inputmode="numeric" autocomplete="off"
+                       placeholder="STT" maxlength="4" spellcheck="false">
+                <button id="findClear" class="rf-clear" type="button" title="Xoá dãy tìm">✕</button>
+            </div>
+            <div class="res-legend">
+                <span data-k="hit">■ khớp mẫu</span>
+                <span data-k="opp">■ đối lập</span>
+                <span id="resNote">xếp theo STT hàng, bé nhất ở trên</span>
+            </div>
+            <div class="res-list" id="posList" role="list"></div>
+        </section>
+
+    <section class="clock" id="clockBox" aria-label="Đồng hồ kỳ đang chạy">
+        <div class="clock-lab">KỲ ĐANG CHẠY</div>
+        <div class="clock-num" id="clockIssue">---</div>
+        <div class="clock-time" id="clockTime">--:--</div>
+        <div class="clock-bar"><i id="clockBar"></i></div>
+        <div class="clock-src" id="clockSrc">đang chờ giờ máy chủ…</div>
+        <div class="clock-sync" id="clockSync">bảng: —</div>
+    </section>
+
+    <!-- ================= ĐẶT CƯỢC THỬ (số dư ảo) ================= -->
+    <section class="bet" id="betBox" aria-label="Đặt cược thử bằng số dư ảo">
+        <div class="bet-top">
+            <div class="bet-bal">
+                <span class="bet-bal-lab">SỐ DƯ ẢO</span>
+                <b id="betBal">1.000.000</b>
+                <span class="bet-unit">đ</span>
+            </div>
+            <button id="betReset" class="bet-mini" type="button" title="Đặt lại số dư ban đầu">↺ nạp lại</button>
+        </div>
+
+        <div class="bet-row">
+            <span class="bet-lab">CƯỢC KỲ</span>
+            <span class="bet-issue" id="betIssue">---</span>
+            <span class="bet-lab">MỨC</span>
+            <select id="betAmt" class="bet-sel" aria-label="Mức cược"></select>
+            <button id="betLvEdit" class="bet-mini" type="button" title="Sửa danh sách mức cược">sửa mức</button>
+        </div>
+
+        <div class="bet-row bet-picks bet-picks2">
+            <button class="pick" type="button" data-pick="big" data-on="0">
+                <span class="pk-t">LỚN</span><span class="pk-d">5–9</span>
+            </button>
+            <button class="pick" type="button" data-pick="small" data-on="0">
+                <span class="pk-t">NHỎ</span><span class="pk-d">0–4</span>
+            </button>
+        </div>
+
+        <div class="bet-row">
+            <button id="betPlace" class="bet-go" type="button">ĐẶT CƯỢC</button>
+            <button id="betClear" class="bet-mini" type="button">bỏ chọn</button>
+            <span class="bet-note" id="betNote">chọn LỚN hoặc NHỎ</span>
+        </div>
+
+        <div class="bet-row bet-lv" id="betLvRow" hidden>
+            <span class="bet-lab">MỨC CƯỢC</span>
+            <input id="betLvInp" class="bet-lvinp" type="text" inputmode="numeric" spellcheck="false"
+                   placeholder="vd: 1 2 5 12 25 50">
+            <button id="betLvSave" class="bet-mini bet-mini-ok" type="button">lưu</button>
+            <button id="betLvCancel" class="bet-mini" type="button">thôi</button>
+            <button id="betLvDef" class="bet-mini" type="button" title="Quay lại 1 2 5 12 25 50">mặc định</button>
+            <span class="bet-lvhint" id="betLvHint">cách nhau dấu cách hoặc dấu phẩy · đơn vị: nghìn đồng</span>
+        </div>
+
+        <div class="bet-hist-h">
+            <span>LỊCH SỬ CƯỢC</span>
+            <button id="betHistClear" class="bet-mini" type="button">xoá lịch sử</button>
+        </div>
+        <div class="bet-hist" id="betHist"></div>
+        <div class="bet-stat" id="betStat"></div>
+    </section>
+
+    <div class="ctrl">
+        <div class="ctrl-row">
+            <span class="lab">Số ô / hàng</span>
+            <select id="selCols" aria-label="Số ô trên 1 hàng">
+                <option value="5">5 ô / hàng (400 hàng)</option>
+                <option value="8">8 ô / hàng (250 hàng)</option>
+                <option value="10">10 ô / hàng (200 hàng)</option>
+                <option value="20">20 ô / hàng (100 hàng)</option>
+                <option value="25">25 ô / hàng (80 hàng)</option>
+                <option value="40">40 ô / hàng (50 hàng)</option>
+                <option value="50">50 ô / hàng (40 hàng)</option>
+            </select>
+            <input class="num" id="numCols" type="number" min="2" max="200" step="1" value="5" aria-label="Tự nhập số ô mỗi hàng">
+            <span class="sep"></span>
+            <span class="lab">Bit</span>
+            <div class="seg" id="segBit">
+                <button type="button" data-mode="big" data-on="1">Lớn/Nhỏ</button>
+                <button type="button" data-mode="odd" data-on="0">Chẵn/Lẻ</button>
+            </div>
+        </div>
+
+        <div class="ctrl-row">
+            <span class="lab">Mẫu nhị phân</span>
+            <input class="bin" id="binInput" type="text" inputmode="numeric" autocomplete="off" spellcheck="false"
+                   placeholder="10001" maxlength="20" aria-label="Nhập mẫu nhị phân 0-1">
+            <button type="button" class="btn warn" id="btnClear">Xoá mẫu</button>
+        </div>
+
+        <div class="hint" id="hint">Nhập 0/1 bất kỳ (5, 6, 7 số… tuỳ ý) · khớp thì <b>tô cả hàng</b> · chỉ xét trong 1 hàng.</div>
+        <div class="hint" id="status" role="status" aria-live="polite"></div>
+        <details id="diagBox" style="margin-top:2px;">
+            <summary style="cursor:pointer; font-size:10px; color:#64748b; font-weight:800; letter-spacing:.06em;">NHẬT KÝ NẠP</summary>
+            <pre id="diag" style="margin:6px 0 0; padding:7px; max-height:150px; overflow:auto; white-space:pre-wrap; font-size:10px; line-height:1.45; color:#93a5c0; background:#0b1424; border-radius:8px; box-shadow:inset 0 0 0 1px #24334c;"></pre>
+        </details>
+    </div>
+
+    <div class="board">
+        <div class="grid" id="grid" role="grid" aria-label="Bảng kết quả"></div>
+        <div class="foot">
+            <span id="footLeft">Chưa có dữ liệu</span>
+            <span>Khớp <b id="footHit">0</b> · Đối lập <b id="footOpp">0</b> hàng</span>
+            <button type="button" class="btn ghost" id="btnJump" style="padding:4px 9px; font-size:10.5px;">↑ Lên kỳ mới nhất</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+(function () {
+    'use strict';
+
+    // =====================================================================
+    //  CẤU HÌNH API (chỉ đọc kết quả — không có đặt cược)
+    // =====================================================================
+    const CFG = {
+        arOrigin: 'https://373vn.com',
+        apiResult: 'https://vn168api.com/api/webapi/GetNoaverageEmerdList',
+        apiIssue: 'https://vn168api.com/api/webapi/GetGameIssue',
+        payload: {
+            typeId: 30,
+            language: 2,
+            random: '4d3fb5ed4f834fdb9bdfa7e947510b21',
+            signature: 'F7752055ADB99E86DBC8B0DAC9AA224D',
+            timestamp: 1772716919
+        }
+    };
+
+    const TOTAL_CELLS = 2000;    // bảng luôn 2000 ô (200 hàng × 10 → xếp lại thành 400 hàng × 5…)
+    const STORE_MAX = 6000;      // giữ tối đa 6000 kỳ trong bộ nhớ máy
+    const FETCH_TARGET = TOTAL_CELLS;   // mục tiêu: đủ 2000 kỳ cho đầy bảng
+    const FETCH_MAX_PAGES = 60;         // số trang tối đa mỗi lần nạp sâu
+    const LS_DATA = 'vn168_bin_cells_v2';
+    const LS_COLS = 'vn168_bin_cols_v1';
+    const LS_BIT = 'vn168_bin_bitmode_v1';
+    const LS_PAT = 'vn168_bin_pattern_v1';
+    const FB_COLLECTION = 'vn168';
+    const FB_DOC = 'data';
+    const firebaseConfig = {
+        apiKey: 'AIzaSyBKQGr19UsETmy24RCBIXQuETE6c4WWZ7I',
+        authDomain: 'vn-d925e.firebaseapp.com',
+        projectId: 'vn-d925e',
+        storageBucket: 'vn-d925e.firebasestorage.app',
+        messagingSenderId: '128210473722',
+        appId: '1:128210473722:web:fb30f15f7bf4828c3bef43',
+        measurementId: 'G-EZMVTFJRNY'
+    };
+    const LS_TOKEN = 'vn168_token';
+    const LS_REFRESH = 'vn168_refresh_token';
+    const LS_HEADER = 'vn168_token_header';
+
+    // =====================================================================
+    //  TRẠNG THÁI
+    // =====================================================================
+    let perRow = 5;                 // số ô trên 1 hàng
+    let rows = Math.ceil(TOTAL_CELLS / 5);   // số hàng = 2000 / số ô mỗi hàng
+    let bitMode = 'big';            // big = Lớn/Nhỏ · odd = Chẵn/Lẻ
+    let pattern = '';               // mẫu nhị phân người dùng nhập
+    let data = new Map();           // issue → digit ('0'..'9')
+    let lastIssue = '';             // kỳ mới nhất đã có
+    let latestGameIssue = '';       // kỳ mới nhất của game (mốc lùi 2000)
+    let rowEls = [];
+    let cellEls = [];
+    let fbDB = null;
+    let fbUnsub = null;
+    let fbReady = false;
+    let busy = false;
+    let timer = null;
+
+    const $ = function (id) { return document.getElementById(id); };
+    const gridEl = $('grid');
+    const statusEl = $('status');
+
+    function setStatus(msg, kind) {
+        statusEl.textContent = msg || '';
+        statusEl.setAttribute('data-kind', kind || '');
+    }
+
+    // =====================================================================
+    //  TIỆN ÍCH
+    // =====================================================================
+    function pad3(issue) { const s = String(issue || ''); return s ? s.padStart(3, '0').slice(-3) : ''; }
+
+    function issueGreater(a, b) {
+        a = String(a || ''); b = String(b || '');
+        if (!b) return !!a;
+        if (!a) return false;
+        if (/^\d+$/.test(a) && /^\d+$/.test(b)) {
+            if (a.length !== b.length) return a.length > b.length;
+            return a > b;
+        }
+        return a > b;
+    }
+
+    function sortIssuesAsc(list) {
+        return list.sort(function (x, y) { return issueGreater(x.issue, y.issue) ? 1 : -1; });
+    }
+
+    function valueToDigit(value) {
+        if (value === null || value === undefined) return null;
+        let text;
+        if (typeof value === 'number') { if (!isFinite(value)) return null; text = String(Math.abs(value)); }
+        else text = String(value).trim();
+        const digits = text.replace(/\D/g, '');
+        return digits ? digits.charAt(digits.length - 1) : null;
+    }
+
+    function findRows(json) {
+        const out = [];
+        (function walk(obj) {
+            if (Array.isArray(obj)) {
+                const valid = obj.filter(function (it) {
+                    return it && typeof it === 'object' && ('issue' in it || 'Issue' in it || 'issueNo' in it || 'issueNumber' in it);
+                });
+                if (valid.length) out.push(valid);
+                obj.forEach(function (it) { if (it && typeof it === 'object' && valid.indexOf(it) < 0) walk(it); });
+            } else if (obj && typeof obj === 'object') {
+                Object.keys(obj).forEach(function (k) { if (obj[k] && typeof obj[k] === 'object') walk(obj[k]); });
+            }
+        })(json);
+        if (!out.length) return [];
+        out.sort(function (a, b) { return b.length - a.length; });
+        return out[0];
+    }
+
+    function rowIssue(row) {
+        return row.issueNumber || row.issue || row.Issue || row.issueNo || row.issue_number || row.no || row.No || '';
+    }
+
+    function rowValue(row) {
+        if ('number' in row && row.number !== '') return row.number;
+        if ('Number' in row && row.Number !== '') return row.Number;
+        if ('num' in row && row.num !== '') return row.num;
+        if ('result' in row && row.result) return row.result;
+        for (const k in row) {
+            const v = row[k];
+            if (typeof v === 'string' && /^[0-9]$/.test(v.trim())) return v;
+        }
+        return null;
+    }
+
+    // ---- md5 để ký body (giống bản gốc) ----
+    function md5hex(str) {
+        function safeAdd(x, y) {
+            const lsw = (x & 0xFFFF) + (y & 0xFFFF);
+            const msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+            return (msw << 16) | (lsw & 0xFFFF);
+        }
+        function rot(n, c) { return (n << c) | (n >>> (32 - c)); }
+        function cmn(q, a, b, x, s, t) { a = safeAdd(safeAdd(a, q), safeAdd(x, t)); return rot(a, s) + b; }
+        function ff(a, b, c, d, x, s, t) { return cmn((b & c) | ((~b) & d), a, b, x, s, t); }
+        function gg(a, b, c, d, x, s, t) { return cmn((b & d) | (c & (~d)), a, b, x, s, t); }
+        function hh(a, b, c, d, x, s, t) { return cmn(b ^ c ^ d, a, b, x, s, t); }
+        function ii(a, b, c, d, x, s, t) { return cmn(c ^ (b | (~d)), a, b, x, s, t); }
+        function blk(x, len) {
+            x[len >> 5] |= 0x80 << (len % 32);
+            x[(((len + 64) >>> 9) << 4) + 14] = len;
+            let a = 1732584193, b = -271733879, c = -1732584194, d = 271733878;
+            const w16 = new Array(16);
+            for (let w = 0; w < x.length; w += 16) {
+                for (let j = 0; j < 16; j++) w16[j] = (x[w + j] === undefined) ? 0 : x[w + j];
+                const oa = a, ob = b, oc = c, od = d;
+                a = ff(a,b,c,d,w16[0],7,-680876936); d = ff(d,a,b,c,w16[1],12,-389564586); c = ff(c,d,a,b,w16[2],17,606105819); b = ff(b,c,d,a,w16[3],22,-1044525330);
+                a = ff(a,b,c,d,w16[4],7,-176418897); d = ff(d,a,b,c,w16[5],12,1200080426); c = ff(c,d,a,b,w16[6],17,-1473231341); b = ff(b,c,d,a,w16[7],22,-45705983);
+                a = ff(a,b,c,d,w16[8],7,1770035416); d = ff(d,a,b,c,w16[9],12,-1958414417); c = ff(c,d,a,b,w16[10],17,-42063); b = ff(b,c,d,a,w16[11],22,-1990404162);
+                a = ff(a,b,c,d,w16[12],7,1804603682); d = ff(d,a,b,c,w16[13],12,-40341101); c = ff(c,d,a,b,w16[14],17,-1502002290); b = ff(b,c,d,a,w16[15],22,1236535329);
+                a = gg(a,b,c,d,w16[1],5,-165796510); d = gg(d,a,b,c,w16[6],9,-1069501632); c = gg(c,d,a,b,w16[11],14,643717713); b = gg(b,c,d,a,w16[0],20,-373897302);
+                a = gg(a,b,c,d,w16[5],5,-701558691); d = gg(d,a,b,c,w16[10],9,38016083); c = gg(c,d,a,b,w16[15],14,-660478335); b = gg(b,c,d,a,w16[4],20,-405537848);
+                a = gg(a,b,c,d,w16[9],5,568446438); d = gg(d,a,b,c,w16[14],9,-1019803690); c = gg(c,d,a,b,w16[3],14,-187363961); b = gg(b,c,d,a,w16[8],20,1163531501);
+                a = gg(a,b,c,d,w16[13],5,-1444681467); d = gg(d,a,b,c,w16[2],9,-51403784); c = gg(c,d,a,b,w16[7],14,1735328473); b = gg(b,c,d,a,w16[12],20,-1926607734);
+                a = hh(a,b,c,d,w16[5],4,-378558); d = hh(d,a,b,c,w16[8],11,-2022574463); c = hh(c,d,a,b,w16[11],16,1839030562); b = hh(b,c,d,a,w16[14],23,-35309556);
+                a = hh(a,b,c,d,w16[1],4,-1530992060); d = hh(d,a,b,c,w16[4],11,1272893353); c = hh(c,d,a,b,w16[7],16,-155497632); b = hh(b,c,d,a,w16[10],23,-1094730640);
+                a = hh(a,b,c,d,w16[13],4,681279174); d = hh(d,a,b,c,w16[0],11,-358537222); c = hh(c,d,a,b,w16[3],16,-722521979); b = hh(b,c,d,a,w16[6],23,76029189);
+                a = hh(a,b,c,d,w16[9],4,-640364487); d = hh(d,a,b,c,w16[12],11,-421815835); c = hh(c,d,a,b,w16[15],16,530742520); b = hh(b,c,d,a,w16[2],23,-995338651);
+                a = ii(a,b,c,d,w16[0],6,-198630844); d = ii(d,a,b,c,w16[7],10,1126891415); c = ii(c,d,a,b,w16[14],15,-1416354905); b = ii(b,c,d,a,w16[5],21,-57434055);
+                a = ii(a,b,c,d,w16[12],6,1700485571); d = ii(d,a,b,c,w16[3],10,-1894986606); c = ii(c,d,a,b,w16[10],15,-1051523); b = ii(b,c,d,a,w16[1],21,-2054922799);
+                a = ii(a,b,c,d,w16[8],6,1873313359); d = ii(d,a,b,c,w16[15],10,-30611744); c = ii(c,d,a,b,w16[6],15,-1560198380); b = ii(b,c,d,a,w16[13],21,1309151649);
+                a = ii(a,b,c,d,w16[4],6,-145523070); d = ii(d,a,b,c,w16[11],10,-1120210379); c = ii(c,d,a,b,w16[2],15,718787259); b = ii(b,c,d,a,w16[9],21,-343485551);
+                a = safeAdd(a,oa); b = safeAdd(b,ob); c = safeAdd(c,oc); d = safeAdd(d,od);
+            }
+            return [a, b, c, d];
+        }
+        function toBin(s) {
+            const bin = [];
+            for (let i = 0; i < s.length * 8; i += 8) bin[i >> 5] = (bin[i >> 5] | 0) | ((s.charCodeAt(i / 8) & 0xff) << (i % 32));
+            return bin;
+        }
+        function toHex(ba) {
+            const tab = '0123456789abcdef';
+            let out = '';
+            for (let i = 0; i < ba.length * 4; i++) out += tab.charAt((ba[i >> 2] >> ((i % 4) * 8 + 4)) & 0xF) + tab.charAt((ba[i >> 2] >> ((i % 4) * 8)) & 0xF);
+            return out;
+        }
+        const utf8 = unescape(encodeURIComponent(str));
+        return toHex(blk(toBin(utf8), utf8.length * 8));
+    }
+
+    function randHex32() {
+        const hex = '0123456789abcdef';
+        let out = '';
+        for (let i = 0; i < 32; i++) {
+            if (i === 12) out += '4';
+            else if (i === 16) out += '89ab'[(Math.random() * 4) | 0];
+            else out += hex[(Math.random() * 16) | 0];
+        }
+        return out;
+    }
+
+    function signedBody(params) {
+        const body = {};
+        Object.keys(params || {}).forEach(function (k) { body[k] = params[k]; });
+        body.language = CFG.payload.language;
+        body.random = randHex32();
+        const sorted = {};
+        Object.keys(body).sort().forEach(function (k) {
+            const v = body[k];
+            if (v !== null && v !== undefined && v !== '') sorted[k] = v;
+        });
+        body.signature = md5hex(JSON.stringify(sorted)).toUpperCase();
+        body.timestamp = Math.floor(Date.now() / 1000);
+        return body;
+    }
+
+    // =====================================================================
+    //  TOKEN (chỉ để đọc kết quả)
+    // =====================================================================
+    function getToken() { try { return String(localStorage.getItem(LS_TOKEN) || ''); } catch (e) { return ''; } }
+    function getRefresh() { try { return String(localStorage.getItem(LS_REFRESH) || ''); } catch (e) { return ''; } }
+    function getHeader() { try { return String(localStorage.getItem(LS_HEADER) || 'Bearer '); } catch (e) { return 'Bearer '; } }
+
+    function extractToken(str) {
+        const s = String(str || '');
+        const m = s.match(/eyJ[A-Za-z0-9\-_]+(?:\.[A-Za-z0-9\-_]+){1,3}/);
+        return m ? m[0] : s.replace(/[^\x00-\x7F]/g, '').trim();
+    }
+
+    function parseBundle(text) {
+        const raw = String(text || '').trim();
+        const out = { token: '', refreshToken: '', tokenHeader: '' };
+        if (!raw) return out;
+        if (raw.charAt(0) === '{' || raw.charAt(0) === '[') {
+            try {
+                const obj = JSON.parse(raw);
+                (function walk(o) {
+                    if (!o || typeof o !== 'object') return;
+                    Object.keys(o).forEach(function (k) {
+                        const v = o[k];
+                        const lk = k.toLowerCase();
+                        if (typeof v === 'string') {
+                            if (lk.indexOf('refresh') >= 0 && !out.refreshToken) out.refreshToken = extractToken(v);
+                            else if ((lk === 'token' || lk.indexOf('accesstoken') >= 0 || lk === 'authorization') && !out.token) out.token = extractToken(v);
+                            else if (lk.indexOf('header') >= 0 && !out.tokenHeader) out.tokenHeader = String(v).trim();
+                        } else if (v && typeof v === 'object') walk(v);
+                    });
+                })(obj);
+            } catch (e) {}
+        }
+        if (!out.token) {
+            const plain = extractToken(raw);
+            if (/^[A-Za-z0-9._\-]{20,}$/.test(plain) && !/^\d+$/.test(plain)) out.token = plain;
+        }
+        return out;
+    }
+
+    // =====================================================================
+    //  GỌI API (chỉ đọc)
+    // =====================================================================
+    function apiError(kind, msg) { const e = new Error(msg); e.kind = kind; return e; }
+
+    function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+    function proxyCandidates(url) {
+        const list = [{ url: url }];
+        try {
+            const custom = String(localStorage.getItem('vn168_corsProxy') || '').trim();
+            if (custom) {
+                const enc = encodeURIComponent(url);
+                list.push({ url: custom.indexOf('{url}') >= 0 ? custom.split('{url}').join(enc) : (/=$/.test(custom) ? custom + enc : custom + url) });
+            }
+        } catch (e) {}
+        list.push({ url: 'https://proxy.corsfix.com/?' + url });
+        return list;
+    }
+
+    let noAuthOk = false;               // máy chủ đã từng trả dữ liệu khi KHÔNG gửi Authorization
+    async function apiPost(url, body, tokenOverride) {
+        const token = tokenOverride !== undefined ? tokenOverride : getToken();
+        const base = {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Accept': 'application/json, text/plain, */*',
+            'Ar-Origin': CFG.arOrigin,
+            'X-App-Type': 'PC'
+        };
+        const payload = JSON.stringify(body);
+        let lastErr = null;
+        // 1) có token → gửi kèm; 2) không token (hoặc token chết) → thử KHÔNG Authorization.
+        //    Nhiều máy chủ xổ số cho đọc danh sách kết quả công khai, nên mở trang là có số ngay.
+        const authModes = [];
+        if (token && !(tokenLeftMs() <= 0)) authModes.push('token');
+        if (!token || tokenLeftMs() <= 0 || noAuthOk) authModes.push('anon');
+        if (!authModes.length) authModes.push('anon');
+        const list = proxyCandidates(url);
+        for (let ai = 0; ai < authModes.length; ai++) {
+        const headers = Object.assign({}, base);
+        if (authModes[ai] === 'token') headers['Authorization'] = getHeader() + extractToken(token);
+        for (let i = 0; i < list.length; i++) {
+            let ctrl = null, timer = null;
+            try {
+                if (typeof AbortController !== 'undefined') {
+                    ctrl = new AbortController();
+                    timer = setTimeout(function () { ctrl.abort(); }, 12000);
+                }
+                const res = await fetch(list[i].url, { method: 'POST', headers: headers, body: payload, signal: ctrl ? ctrl.signal : undefined });
+                if (timer) clearTimeout(timer);
+                const text = await res.text();
+                if (res.status === 401 || res.status === 403) throw apiError('auth', 'Token bị từ chối (' + res.status + ').');
+                if (!res.ok) throw apiError('net', 'Máy chủ trả HTTP ' + res.status + '.');
+                let json = null;
+                try { json = JSON.parse(text); } catch (e) { throw apiError('data', 'Phản hồi không phải JSON (có thể bị chặn CORS).'); }
+                if (authModes[ai] === 'anon') noAuthOk = true;
+                return json;
+            } catch (e) {
+                if (timer) clearTimeout(timer);
+                lastErr = e;
+                if (e && e.kind === 'auth') throw e;
+                diag('net thử ' + (i + 1) + '/' + list.length + ': ' + (e && e.message ? e.message : e));
+            }
+        }
+        }
+        throw lastErr || apiError('net', 'Không gọi được máy chủ.');
+    }
+
+    const _bodyCache = new Map();
+    function signedBodyCached(key, params) {
+        if (_bodyCache.has(key)) return Object.assign({}, _bodyCache.get(key), { timestamp: Math.floor(Date.now() / 1000) });
+        const b = signedBody(params);
+        _bodyCache.set(key, b);
+        return b;
+    }
+
+    // nhật ký chẩn đoán hiện trên trang
+    const diagLines = [];
+    function diag(txt) {
+        const t = new Date().toLocaleTimeString('vi-VN');
+        diagLines.push('[' + t + '] ' + txt);
+        if (diagLines.length > 60) diagLines.shift();
+        const box = document.getElementById('diag');
+        if (box) box.textContent = diagLines.join('\n');
+    }
+
+    async function fetchPage(pageNo, pageSize, scheme) {
+        const sc = scheme || { page: 'pageNo', size: 'pageSize' };
+        const params = { typeId: CFG.payload.typeId };
+        params[sc.page] = pageNo;
+        params[sc.size] = pageSize;
+        const key = sc.page + ':' + pageNo + 'x' + sc.size + 'x' + pageSize;
+        const attempts = [signedBodyCached(key, params),
+                          Object.assign({}, CFG.payload, params)];
+        let lastErr = null;
+        for (let a = 0; a < attempts.length; a++) {
+            for (let tryNo = 0; tryNo < 2; tryNo++) {
+                try {
+                    const res = await apiPost(CFG.apiResult, attempts[a]);
+                    if (findRows(res).length) return res;
+                    return res;
+                } catch (e) {
+                    lastErr = e;
+                    if (e && e.kind === 'auth') throw e;
+                    await sleep(500 * (tryNo + 1));
+                }
+            }
+        }
+        throw lastErr || apiError('net', 'Không lấy được trang kết quả.');
+    }
+
+    // Lấy đúng 2000 KỲ GẦN NHẤT tính lùi từ kỳ mới nhất của game.
+    //   · Máy chủ trả ~100 kỳ/trang → đọc nhiều trang, trang 1 là mới nhất.
+    //   · Không bao giờ lấy quá kỳ mới nhất; nếu máy chủ trả cả kỳ tương lai thì cắt bỏ.
+    async function fetchLatest(need, maxPages) {
+        const want = Math.max(1, Math.min(TOTAL_CELLS, Number(need) || TOTAL_CELLS));
+        const seen = new Map();
+        let newestIssue = '';
+        const SCHEMES = [
+            { page: 'pageNo', size: 'pageSize' },
+            { page: 'page', size: 'pageSize' },
+            { page: 'pageIndex', size: 'pageSize' },
+            { page: 'pageNo', size: 'pageSize', sizeVal: 200 },
+            { page: 'pageNo', size: 'pageSize', sizeVal: 500 },
+            { page: 'pageNo', size: 'limit' }
+        ];
+
+        schemeLoop:
+        for (let si = 0; si < SCHEMES.length; si++) {
+            const sc = SCHEMES[si];
+            const size = sc.sizeVal || 100;
+            for (let p = 1; p <= (maxPages || FETCH_MAX_PAGES); p++) {
+                setStatus('Đang nạp trang ' + p + ' (kiểu ' + sc.page + '/' + size + ') … đã có ' + seen.size + '/' + want + ' kỳ', '');
+                let rows;
+                try {
+                    const res = await fetchPage(p, size, sc);
+                    rows = findRows(res).filter(function (r) { return String(rowIssue(r) || '').trim(); });
+                } catch (e) {
+                    diag('LỖI ' + sc.page + ' trang ' + p + ': ' + (e && e.message ? e.message : e));
+                    break;                       // lỗi → thử kiểu tham số khác
+                }
+                if (!rows.length) { diag(sc.page + ' trang ' + p + ': 0 dòng → hết dữ liệu'); break; }
+                let fresh = 0;
+                rows.forEach(function (r) {
+                    const iss = String(rowIssue(r)).trim();
+                    const dig = valueToDigit(rowValue(r));
+                    if (!iss || dig === null) return;
+                    if (!newestIssue || issueGreater(iss, newestIssue)) newestIssue = iss;
+                    if (!seen.has(iss)) fresh++;
+                    seen.set(iss, dig);
+                });
+                diag(sc.page + ' trang ' + p + ': ' + rows.length + ' dòng · mới (' + fresh + ') · dải '
+                    + pad3(rowIssue(rows[rows.length - 1])) + '→' + pad3(rowIssue(rows[0])));
+                // trang không có kỳ nào mới = đã chạm đáy → DỪNG NGAY (không gọi thêm trang vô ích)
+                if (!fresh) break;
+                if (seen.size >= want) break;
+            }
+            if (seen.size) break;                // kiểu tham số này chạy được → không thử kiểu khác
+        }
+        // cắt còn đúng `want` kỳ mới nhất
+        const sorted = Array.from(seen.keys()).sort(function (a, b) { return issueGreater(a, b) ? 1 : -1; });
+        const keep = sorted.slice(-want);
+        const out = new Map();
+        keep.forEach(function (k) { out.set(k, seen.get(k)); });
+        // mốc mới nhất của game: dùng cho lần nạp sau
+        if (newestIssue) latestGameIssue = newestIssue;
+        return out;
+    }
+
+    // =====================================================================
+    //  DỮ LIỆU BẢNG
+    // =====================================================================
+    function loadData() {
+        try {
+            const raw = localStorage.getItem(LS_DATA) || '';
+            if (!raw) return;
+            const obj = JSON.parse(raw);
+            if (obj && Array.isArray(obj.list)) {
+                obj.list.forEach(function (it) {
+                    if (it && it.i) data.set(String(it.i), String(it.d));
+                });
+                lastIssue = String(obj.last || '');
+            }
+        } catch (e) {}
+    }
+
+    function saveData() {
+        try {
+            const list = [];
+            // chỉ lưu 4000 kỳ mới nhất cho gọn
+            const keys = Array.from(data.keys()).sort(function (a, b) { return issueGreater(a, b) ? 1 : -1; });
+            const keep = keys.slice(-STORE_MAX);
+            keep.forEach(function (k) { list.push({ i: k, d: data.get(k) }); });
+            localStorage.setItem(LS_DATA, JSON.stringify({ last: lastIssue, list: list }));
+        } catch (e) {}
+    }
+
+    // HÀNG ĐẦU = KỲ MỚI NHẤT, đi lùi dần về trước (2000 kỳ gần nhất)
+    function latestIssues() {
+        const keys = Array.from(data.keys()).sort(function (a, b) { return issueGreater(a, b) ? -1 : 1; }); // mới → cũ
+        return keys.slice(0, TOTAL_CELLS);
+    }
+
+    // 1 = Lớn (≥5) hoặc Lẻ · 0 = Nhỏ hoặc Chẵn
+    function bitOf(digit) {
+        const n = Number(digit);
+        if (!isFinite(n)) return '';
+        if (bitMode === 'odd') return (n % 2 === 1) ? '1' : '0';
+        return n >= 5 ? '1' : '0';
+    }
+
+    // =====================================================================
+    //  VẼ BẢNG
+    // =====================================================================
+    function buildGrid() {
+        gridEl.textContent = '';
+        rows = Math.ceil(TOTAL_CELLS / perRow);
+        gridEl.style.setProperty('--cols', String(perRow));
+        rowEls = [];
+        cellEls = [];
+        const frag = document.createDocumentFragment();
+        for (let r = 0; r < rows; r++) {
+            const row = document.createElement('div');
+            row.className = 'row';
+            row.setAttribute('role', 'row');
+            row.setAttribute('data-hit', '0');
+            row.style.setProperty('--cols', String(perRow));
+            const rowCells = [];
+            for (let c = 0; c < perRow; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell empty';
+                cell.setAttribute('role', 'gridcell');
+                const stt = document.createElement('span');
+                stt.className = 'stt';
+                const v = document.createElement('span');
+                v.className = 'v';
+                cell.appendChild(stt);
+                cell.appendChild(v);
+                row.appendChild(cell);
+                rowCells.push({ box: cell, stt: stt, val: v });
+            }
+            frag.appendChild(row);
+            rowEls.push(row);
+            cellEls.push(rowCells);
+        }
+        gridEl.appendChild(frag);
+        boardKeys = [];
+        paint(true);
+    }
+
+    const oppPatternOf = function (p) {
+        return p ? p.split('').map(function (b) { return b === '1' ? '0' : '1'; }).join('') : '';
+    };
+    let oppPattern = '';
+
+    // ---- TRẠNG THÁI BẢNG ĐANG HIỂN THỊ (để cập nhật kiểu "dịch phải 1 ô") ----
+    //  ⚠ phải khai báo TRƯỚC buildGrid()/paint() nếu không sẽ dính temporal dead zone
+    let boardKeys = [];        // các kỳ đang hiện trên bảng, mới → cũ
+    let boardPerRow = 0;       // số ô mỗi hàng của bảng đang hiện
+    let shiftNote = '';        // ghi chú lần cập nhật gần nhất (chỉ để hiện ở nhật ký)
+
+    // bảng mới có phải chỉ là "thêm kỳ mới ở đầu + đẩy các kỳ cũ sang phải"?
+    //   trả về số ô cần dịch (0 = phải vẽ lại toàn bộ)
+    function shiftCount(oldK, newK) {
+        if (!oldK.length || !newK.length) return 0;
+        let k = newK.indexOf(oldK[0]);
+        if (k <= 0 || k > 8) return 0;
+        const n = Math.min(oldK.length, newK.length - k);
+        for (let i = 0; i < n; i++) if (newK[k + i] !== oldK[i]) return 0;
+        return k;
+    }
+
+    // chỉ ghi vào DOM khi nội dung thật sự khác → không tạo lại 2000 ô
+    function setCell(cell, sttTxt, valTxt, isNew) {
+        if (cell.stt.textContent !== sttTxt) cell.stt.textContent = sttTxt;
+        if (cell.val.textContent !== valTxt) cell.val.textContent = valTxt;
+        const cls = (sttTxt === '') ? 'cell empty' : 'cell';
+        if (cell.box.className !== cls) cell.box.className = cls;
+        const dn = isNew ? '1' : null;
+        if (dn === null) { if (cell.box.hasAttribute('data-new')) cell.box.removeAttribute('data-new'); }
+        else if (cell.box.getAttribute('data-new') !== '1') cell.box.setAttribute('data-new', '1');
+    }
+
+    // paint():
+    //   · Kỳ mới về → chỉ điền ô đầu + dịch nội dung các ô sang phải, ô cuối (2000) tự trôi ra khỏi bảng.
+    //   · Không xoá/thay DOM của bảng, không cuộn lại, không nháy màn hình.
+    //   · Chỉ vẽ lại toàn bộ khi: mới mở trang, đổi số ô/hàng, hoặc dữ liệu bị thay đổi không liên tục.
+    function paint(forceFull) {
+        rows = Math.ceil(TOTAL_CELLS / perRow);
+        oppPattern = oppPatternOf(pattern);
+        const keys = latestIssues();
+        const total = rows * perRow;
+
+        const full = !!forceFull || !cellEls.length || boardPerRow !== perRow || !boardKeys.length;
+        const k = full ? 0 : shiftCount(boardKeys, keys);
+
+        let hits = 0, opps = 0, lastFilledRow = 0;
+
+        for (let r = 0; r < rows; r++) {
+            let rowStr = '';
+            for (let c = 0; c < perRow; c++) {
+                const idx = r * perRow + c;
+                const cell = cellEls[r][c];
+                if (idx >= keys.length) {
+                    setCell(cell, '', '', false);
+                    rowStr += ' ';
+                    continue;
+                }
+                lastFilledRow = r + 1;
+                const issue = keys[idx];
+                const digit = data.get(issue) || '';
+                setCell(cell, pad3(issue), digit, issue === lastIssue);
+                rowStr += bitOf(digit) || ' ';
+            }
+            let hit = false, opp = false;
+            if (pattern && rowStr.indexOf(' ') < 0 && rowStr.length === pattern.length) {
+                hit = (rowStr === pattern);
+                opp = !hit && (rowStr === oppPattern);
+            }
+            if (hit) hits++;
+            if (opp) opps++;
+            if (rowEls[r].getAttribute('data-hit') !== (hit ? '1' : '0')) rowEls[r].setAttribute('data-hit', hit ? '1' : '0');
+            if (rowEls[r].getAttribute('data-opp') !== (opp ? '1' : '0')) rowEls[r].setAttribute('data-opp', opp ? '1' : '0');
+        }
+
+        boardKeys = keys.slice(0, total);
+        boardPerRow = perRow;
+        // chốt vé cược + tô hàng theo vé (phải chạy SAU khi boardKeys đã cập nhật)
+        try { betSettle(); paintBetRows(); betPaintTop(); } catch (e) {}
+        shiftNote = full ? 'vẽ lại toàn bộ' : (k ? ('dịch phải ' + k + ' ô · thêm kỳ ' + keys.slice(0, k).map(function (x) { return pad3(x); }).join(', ')) : 'không đổi');
+        if (!full) { try { diag('bảng: ' + shiftNote + ' (không vẽ lại)'); } catch (e) {} }
+
+        $('footHit').textContent = String(hits);
+        $('footOpp').textContent = String(opps);
+        try {
+            if (findState.seq || findState.stt) doFind();
+            else renderPositions();
+        } catch (e) {}
+        $('footLeft').innerHTML = keys.length
+            ? ('Có <b>' + keys.length + '</b> / ' + TOTAL_CELLS + ' ô · ' + rows + ' hàng × ' + perRow + ' ô · <b>kỳ mới nhất ở hàng 1</b>, cũ dần xuống dưới (đủ ' + lastFilledRow + ' hàng)')
+            : 'Chưa có dữ liệu — đang chờ kết quả trực tuyến…';
+    }
+
+    // =====================================================================
+    //  VỊ TRÍ KHỚP · VỊ TRÍ ĐỐI LẬP (so với dãy mẫu đã nhập)
+    //   · Quét mọi hàng đang có đủ số của bảng (hàng 1 = kỳ mới nhất).
+    //   · Khớp: các số của hàng trùng khít mẫu (giống kiểu tô màu).
+    //   · Đối lập: các số của hàng trùng khít dãy đảo bit (1↔0) của mẫu.
+    // =====================================================================
+    const posState = { hit: [], opp: [], hitIdx: 0, oppIdx: 0 };
+
+    function rowBitsOf(r) {
+        const bits = [];
+        for (let c = 0; c < perRow; c++) {
+            const val = cellEls[r][c].val.textContent;
+            if (val === '') return '';
+            bits.push(bitOf(val));
+        }
+        return bits.join('');
+    }
+
+    function scanPositions() {
+        posState.hit = [];
+        posState.opp = [];
+        if (!pattern) { posState.hitIdx = 0; posState.oppIdx = 0; return; }
+        const opp = pattern.split('').map(function (b) { return b === '1' ? '0' : '1'; }).join('');
+        for (let r = 0; r < rows; r++) {
+            const b = rowBitsOf(r);
+            if (!b || b.length !== pattern.length) continue;
+            if (b === pattern) posState.hit.push(r);
+            else if (b === opp) posState.opp.push(r);
+        }
+        if (posState.hitIdx >= posState.hit.length) posState.hitIdx = 0;
+        if (posState.oppIdx >= posState.opp.length) posState.oppIdx = 0;
+    }
+
+    // ================= TÌM THEO DÃY / THEO STT HÀNG =================
+    //   · Nhập dãy (độ dài bằng "số ô" đang chọn) → tìm mọi hàng có dãy giống hệt.
+    //   · Nhập STT hàng x   → lấy dãy của hàng x±1 rồi tìm các hàng khác có dãy giống hệt dãy đó.
+    const findState = { seq: '', stt: '', len: 0, src: '', refRow: -1, rows: [], oppRows: [], active: false, note: '', shown: '' };
+
+    function rowsCount() { return Math.max(1, Math.ceil(TOTAL_CELLS / perRow)); }
+
+    // dựng danh sách "số ô" cho dropdown: 2..40 + đúng giá trị đang dùng nếu lớn hơn
+    function fillFindLen() {
+        const sel = $('findLen');
+        if (!sel) return;
+        const maxLen = Math.max(2, Math.min(200, perRow));
+        const opts = [];
+        for (let i = 2; i <= Math.min(maxLen, 40); i++) opts.push(i);
+        if (maxLen > 40) opts.push(maxLen);
+        const keep = String(findState.len && findState.len <= maxLen ? findState.len : maxLen);
+        sel.textContent = '';
+        opts.forEach(function (n) {
+            const o = document.createElement('option');
+            o.value = String(n); o.textContent = n + ' ô';
+            sel.appendChild(o);
+        });
+        sel.value = opts.map(String).indexOf(keep) >= 0 ? keep : String(opts[opts.length - 1]);
+        findState.len = Number(sel.value) || maxLen;
+    }
+
+    function bitsOfRowIndex(r) {
+        if (!(r >= 0) || r >= rows || !cellEls[r]) return '';
+        return rowBitsOf(r);
+    }
+
+    // từ STT (001) → chỉ số hàng 0-based, khớp theo số cuối của kỳ (0832 → hàng của kỳ 832)
+    function rowFromStt(stt) {
+        const t = String(stt || '').replace(/[^0-9]/g, '');
+        if (!t) return -1;
+        const want = t.padStart(3, '0');
+        const keys = latestIssues();
+        for (let i = 0; i < keys.length && i < TOTAL_CELLS; i++) {
+            if (pad3(keys[i]) === want.slice(-3)) return Math.floor(i / perRow);
+        }
+        const n = Number(t);
+        if (isFinite(n) && n >= 1 && n <= rows) return n - 1;
+        return -1;
+    }
+
+    // so 1 hàng với dãy cần tìm: bằng độ dài thì so khít cả hàng, ngắn hơn thì tìm dãy nằm liền trong hàng
+    function matchBits(b, t) {
+        if (!b || !t) return false;
+        if (t.length > b.length) return false;
+        return t.length === b.length ? (b === t) : (b.indexOf(t) >= 0);
+    }
+
+    function windowsOf(bits, L) {
+        const out = [];
+        if (!bits || L <= 0 || L > bits.length) return out;
+        for (let i = 0; i + L <= bits.length; i++) {
+            const w = bits.substr(i, L);
+            if (out.indexOf(w) < 0) out.push(w);
+        }
+        return out;
+    }
+
+    function doFind() {
+        findState.seq = String(findState.seq || '').replace(/[^01]/g, '');
+        findState.rows = [];
+        findState.oppRows = [];
+        findState.note = '';
+        findState.active = !!(findState.seq || findState.stt);
+        findState.refRow = -1;
+        findState.src = '';
+        if (!findState.active) { paintFindRows(''); return; }
+        const L = Math.min(findState.len || perRow, perRow);
+        let targets = [];
+        let shown = '';
+
+        if (findState.stt) {
+            const r0 = rowFromStt(findState.stt);
+            if (r0 >= 0) {
+                // lấy dãy của hàng liền kề: ưu tiên x+1 (hàng dưới), rồi x-1 (hàng trên)
+                [r0 + 1, r0 - 1].forEach(function (rr) {
+                    const b = bitsOfRowIndex(rr);
+                    if (!b) return;
+                    const cand = (L === perRow) ? [b] : windowsOf(b, L);
+                    cand.forEach(function (t) { if (targets.indexOf(t) < 0) targets.push(t); });
+                });
+                if (targets.length) {
+                    findState.refRow = r0;
+                    findState.src = 'STT hàng ' + pad3(findState.stt) + ' → hàng ' + (r0 + 1) + ' ± 1';
+                }
+            }
+        }
+        if (!targets.length && findState.seq && findState.seq.length === L) targets = [findState.seq];
+
+        if (targets.length) {
+            const opps = targets.map(function (t) {
+                return t.split('').map(function (b) { return b === '1' ? '0' : '1'; }).join('');
+            });
+            for (let r = 0; r < rows; r++) {
+                const b = bitsOfRowIndex(r);
+                if (!b) continue;
+                let isHit = false;
+                for (let t = 0; t < targets.length; t++) {
+                    if (matchBits(b, targets[t])) { findState.rows.push(r); isHit = true; break; }
+                }
+                if (isHit) continue;
+                for (let t = 0; t < opps.length; t++) {
+                    if (matchBits(b, opps[t])) { findState.oppRows.push(r); break; }
+                }
+            }
+            shown = targets[0] + (targets.length > 1 ? ' (+' + (targets.length - 1) + ')' : '');
+            findState.note = findState.rows.length + ' hàng khớp · ' + findState.oppRows.length + ' đối lập'
+                + (findState.src ? ' · ' + findState.src : ' · dãy ' + shown);
+        } else if (!findState.note) {
+            findState.note = 'chưa đủ dữ liệu để tìm (cần ' + L + ' số)';
+        }
+        paintFindRows(shown);
+        findState.shown = shown;
+    }
+
+    // vẽ danh sách vị trí + tô màu hàng (dùng chung cho cả tìm kiếm và mẫu nhị phân)
+    function renderFindList() {
+        const all = [];
+        findState.rows.forEach(function (r) { all.push({ r: r, k: 'hit' }); });
+        findState.oppRows.forEach(function (r) { all.push({ r: r, k: 'opp' }); });
+        all.sort(function (a, b) { return a.r - b.r; });
+
+        // tô màu: khớp = vàng, đối lập = tím
+        const hitSet = {}, oppSet = {};
+        findState.rows.forEach(function (r) { hitSet[r] = 1; });
+        findState.oppRows.forEach(function (r) { oppSet[r] = 1; });
+        for (let r = 0; r < rowEls.length; r++) {
+            const h = hitSet[r] ? '1' : '0', o = oppSet[r] ? '1' : '0';
+            if (rowEls[r].getAttribute('data-hit') !== h) rowEls[r].setAttribute('data-hit', h);
+            if (rowEls[r].getAttribute('data-opp') !== o) rowEls[r].setAttribute('data-opp', o);
+        }
+
+        $('cntHit').textContent = String(findState.rows.length);
+        $('cntOpp').textContent = String(findState.oppRows.length);
+        if ($('footHit')) $('footHit').textContent = String(findState.rows.length);
+        if ($('footOpp')) $('footOpp').textContent = String(findState.oppRows.length);
+        $('resChip').textContent = all.length ? (all.length + ' vị trí · xếp theo hàng') : '0 vị trí';
+        $('resNote').textContent = findState.note || ('nhập dãy ' + (findState.len || perRow) + ' số hoặc STT hàng');
+
+        const box = $('posList');
+        if (!box) return;
+        const sig = all.map(function (o) { return o.r + o.k; }).join(',') + '|' + findState.note;
+        if (box.getAttribute('data-sig') === sig) return;
+        box.setAttribute('data-sig', sig);
+        box.textContent = '';
+        if (!all.length) {
+            const e = document.createElement('div');
+            e.className = 'res-empty';
+            e.textContent = findState.note || 'không hàng nào phù hợp';
+            box.appendChild(e);
+            return;
+        }
+        const frag = document.createDocumentFragment();
+        all.forEach(function (o) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'pos-row';
+            b.setAttribute('data-k', o.k);
+            b.setAttribute('data-row', String(o.r));
+            const h = document.createElement('span');
+            h.className = 'pos-h';
+            h.textContent = 'hàng ' + (o.r + 1);
+            const dr = document.createElement('span');
+            dr.className = 'pos-dr';
+            dr.textContent = (o.r === 0 ? 'ngay hàng 1' : '+' + o.r) + ' · ' + (bitsOfRowIndex(o.r) || '');
+            const tag = document.createElement('span');
+            tag.className = 'pos-tag';
+            tag.setAttribute('data-k', o.k);
+            tag.textContent = o.k === 'hit' ? 'KHỚP' : 'ĐỐI LẬP';
+            b.appendChild(h); b.appendChild(dr); b.appendChild(tag);
+            b.addEventListener('click', function (ev) { ev.stopPropagation(); scrollToRow(o.r); });
+            frag.appendChild(b);
+        });
+        box.appendChild(frag);
+    }
+
+    // sáng viền các hàng tìm được
+    function paintFindRows(target) {
+        if (!findState.active) {
+            for (let r = 0; r < rowEls.length; r++) {
+                if (rowEls[r].hasAttribute('data-find')) rowEls[r].removeAttribute('data-find');
+            }
+            try { renderPositions(); } catch (e) {}
+            return;
+        }
+        for (let r = 0; r < rowEls.length; r++) {
+            const el = rowEls[r];
+            const on = findState.rows.indexOf(r) >= 0 || findState.oppRows.indexOf(r) >= 0;
+            if (!on) { if (el.hasAttribute('data-find')) el.removeAttribute('data-find'); }
+            else if (el.getAttribute('data-find') !== '1') el.setAttribute('data-find', '1');
+        }
+        renderFindList();
+        return;
+        for (let r = 0; r < rows; r++) {
+            const el = rowEls[r];
+            if (!el) continue;
+            const on = target && findState.rows.indexOf(r) >= 0 ? '1' : null;
+            if (on === null) { if (el.hasAttribute('data-find')) el.removeAttribute('data-find'); }
+            else if (el.getAttribute('data-find') !== '1') el.setAttribute('data-find', '1');
+        }
+        const note = $('resNote');
+        if (note) {
+            if (!target) note.textContent = 'nhập dãy ' + (findState.len || perRow) + ' số, hoặc STT hàng';
+            else if (!findState.rows.length) note.textContent = 'không hàng nào có dãy ' + target;
+            else note.textContent = findState.rows.length + ' hàng có dãy ' + target
+                + (findState.src ? (' · dãy lấy từ ' + findState.src) : '');
+        }
+    }
+
+    function scrollToRow(r) {
+        if (!(r >= 0) || !rowEls[r]) return;
+        rowEls[r].scrollIntoView({ block: 'center', behavior: 'smooth' });
+        rowEls[r].setAttribute('data-flash', '1');
+        setTimeout(function () { if (rowEls[r]) rowEls[r].removeAttribute('data-flash'); }, 1400);
+    }
+
+    function renderPositions() {
+        scanPositions();
+        $('cntHit').textContent = String(posState.hit.length);
+        $('cntOpp').textContent = String(posState.opp.length);
+
+        // gộp 2 loại vị trí rồi xếp theo STT hàng TĂNG DẦN (bé nhất ở trên cùng)
+        const all = [];
+        posState.hit.forEach(function (r, i) { all.push({ r: r, k: 'hit', i: i }); });
+        posState.opp.forEach(function (r, i) { all.push({ r: r, k: 'opp', i: i }); });
+        all.sort(function (a, b) { return a.r - b.r; });
+
+        const curRow = posState.hit.length ? posState.hit[posState.hitIdx]
+            : (posState.opp.length ? posState.opp[posState.oppIdx] : -1);
+        $('resChip').textContent = (posState.hit.length + posState.opp.length)
+            ? (all.length + ' vị trí · xếp theo hàng')
+            : '0 vị trí';
+        $('resNote').textContent = pattern ? ('mẫu ' + pattern) : 'chưa nhập mẫu';
+
+        const box = $('posList');
+        if (!box) return;
+        const sig = all.map(function (o) { return o.r + o.k; }).join(',') + '|' + curRow;
+        if (box.getAttribute('data-sig') === sig) return;
+        box.textContent = '';
+        if (!all.length) {
+            const d = document.createElement('div');
+            d.className = 'res-empty';
+            d.textContent = pattern ? ('không hàng nào khớp hoặc đối lập mẫu ' + pattern) : 'nhập mẫu nhị phân để xem vị trí';
+            box.appendChild(d);
+            box.setAttribute('data-sig', sig);
+            return;
+        }
+        const frag = document.createDocumentFragment();
+        all.forEach(function (o) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'pos-row';
+            b.setAttribute('role', 'listitem');
+            b.setAttribute('data-k', o.k);
+            b.setAttribute('data-cur', o.r === curRow ? '1' : '0');
+            b.setAttribute('data-row', String(o.r));
+
+            const h = document.createElement('span');
+            h.className = 'pos-h';
+            h.textContent = 'hàng ' + (o.r + 1);
+
+            const dr = document.createElement('span');
+            dr.className = 'pos-dr';
+            dr.textContent = (o.r === 0 ? 'ngay hàng 1' : '+' + o.r);
+
+            const tag = document.createElement('span');
+            tag.className = 'pos-tag';
+            tag.setAttribute('data-k', o.k);
+            tag.textContent = o.k === 'hit' ? 'KHỚP' : 'ĐỐI LẬP';
+
+            b.appendChild(h); b.appendChild(dr); b.appendChild(tag);
+            b.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                if (o.k === 'hit') posState.hitIdx = o.i; else posState.oppIdx = o.i;
+                renderPositions();
+                scrollToRow(o.r);
+            });
+            frag.appendChild(b);
+        });
+        box.appendChild(frag);
+        box.setAttribute('data-sig', sig);
+        const on = box.querySelector('.pos-row[data-cur="1"]');
+        if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' });
+    }
+
+    // =====================================================================
+    //  SỐ DƯ ẢO · ĐẶT CƯỢC THỦ CÔNG · LỊCH SỬ CƯỢC
+    //   · Tiền ảo, chỉ để thử. Cược vào kỳ ĐANG MỞ (đồng hồ), chốt khi kỳ đó có kết quả.
+    //   · Chỉ đánh LỚN (≥5) / NHỎ (≤4), 1 ăn 1. Hai cửa loại trừ nhau (chọn cửa này thì bỏ cửa kia).
+    //   · Lưu localStorage, giữ qua các lần mở trang.
+    // =====================================================================
+    const LS_BET = 'vn168_bet_v1';
+    const BET_START = 1000000;
+    const LS_BET_LV = 'vn168_bet_levels_v1';
+    const BET_LV_DEFAULT = [1, 2, 5, 12, 25, 50];     // nghìn đồng → 1.000 … 50.000
+    const betState = { bal: BET_START, hist: [], levels: BET_LV_DEFAULT.slice(), levelIdx: 0 };
+    const pickOn = { big: false, small: false };
+
+    function betLoad() {
+        try {
+            const raw = localStorage.getItem(LS_BET) || '';
+            if (!raw) return;
+            const o = JSON.parse(raw);
+            if (o && typeof o.bal === 'number' && isFinite(o.bal)) betState.bal = o.bal;
+            if (o && Array.isArray(o.hist)) betState.hist = o.hist.slice(0, 500);
+        } catch (e) {}
+        try {
+            const raw2 = localStorage.getItem(LS_BET_LV) || '';
+            if (raw2) {
+                const arr = JSON.parse(raw2);
+                if (Array.isArray(arr) && arr.length) {
+                    const ok = arr.map(function (x) { return Number(x); })
+                        .filter(function (x) { return isFinite(x) && x > 0; })
+                        .map(function (x) { return Math.round(x); });
+                    if (ok.length) betState.levels = ok.slice(0, 12);
+                }
+            }
+        } catch (e) {}
+    }
+    function betSave() {
+        try { localStorage.setItem(LS_BET, JSON.stringify({ bal: betState.bal, hist: betState.hist.slice(0, 500) })); } catch (e) {}
+    }
+    function betLevelsSave() {
+        try { localStorage.setItem(LS_BET_LV, JSON.stringify(betState.levels)); } catch (e) {}
+    }
+
+    // dựng dropdown mức cược (đơn vị nghìn đồng → hiện đ = ×1000)
+    function betFillLevels(keepValue) {
+        const sel = $('betAmt');
+        if (!sel) return;
+        const prev = keepValue !== undefined ? keepValue : (Number(sel.value) || 0);
+        sel.textContent = '';
+        betState.levels.forEach(function (lv) {
+            const o = document.createElement('option');
+            o.value = String(lv * 1000);
+            o.textContent = money(lv * 1000);
+            sel.appendChild(o);
+        });
+        const vals = betState.levels.map(function (x) { return String(x * 1000); });
+        let pick = vals.indexOf(String(prev));
+        if (pick < 0) pick = Math.min(betState.levelIdx || 0, vals.length - 1);
+        if (pick < 0) pick = 0;
+        sel.value = vals[pick];
+    }
+    function betAmtNow() { return Number($('betAmt').value) || 0; }
+    function money(n) {
+        const v = Math.round(Number(n) || 0);
+        return v.toLocaleString('vi-VN');
+    }
+    function pickLabel(k) { return { big: 'LỚN', small: 'NHỎ' }[k] || k; }
+    function pickWin(k, digit) {
+        const n = Number(digit);
+        if (!isFinite(n)) return false;
+        if (k === 'big') return n >= 5;
+        if (k === 'small') return n <= 4;
+        return false;
+    }
+    function curBetIssue() { return String(clockIssue || lastIssue || ''); }
+
+    function betPaintTop() {
+        if (!clockIssue) { try { clockIssueFromBoard(); } catch (e) {} }
+        const bal = $('betBal');
+        if (bal) {
+            bal.textContent = money(betState.bal);
+            bal.setAttribute('data-neg', betState.bal < 0 ? '1' : '0');
+        }
+        const iss = $('betIssue');
+        if (iss) iss.textContent = clockIssue ? pad3(clockIssue) : '---';
+        const go = $('betPlace');
+        const any = Object.keys(pickOn).some(function (k) { return pickOn[k]; });
+        if (go) go.disabled = !any || !clockIssue;
+        const note = $('betNote');
+        if (note) {
+            const amt = betAmtNow();
+            const cnt = Object.keys(pickOn).filter(function (k) { return pickOn[k]; }).length;
+            note.textContent = !clockIssue
+                ? 'chờ biết kỳ đang mở…'
+                : (any ? ('cược ' + money(amt * cnt) + ' đ cho kỳ ' + pad3(clockIssue)) : 'chọn LỚN hoặc NHỎ');
+        }
+        // tổng kết lịch sử
+        let st = 0, win = 0, lose = 0;
+        betState.hist.forEach(function (h) {
+            if (h.st === 'win') { st += (h.payout - h.stake); win++; }
+            else if (h.st === 'lose') { st -= h.stake; lose++; }
+        });
+        const stat = $('betStat');
+        if (stat) {
+            stat.innerHTML = 'Đã cược <b>' + betState.hist.length + '</b> vé · thắng <b>' + win + '</b> · thua <b>' + lose
+                + '</b> · lãi/lỗ <b data-neg="' + (st < 0 ? '1' : '0') + '">' + (st >= 0 ? '+' : '−') + money(Math.abs(st)) + ' đ</b>';
+        }
+    }
+
+    function betPaintHist() {
+        const box = $('betHist');
+        if (!box) return;
+        box.textContent = '';
+        if (!betState.hist.length) {
+            const d = document.createElement('div');
+            d.className = 'bet-empty';
+            d.textContent = 'chưa có vé nào — chọn cửa rồi bấm «ĐẶT CƯỢC»';
+            box.appendChild(d);
+            return;
+        }
+        const frag = document.createDocumentFragment();
+        betState.hist.slice(0, 60).forEach(function (h) {
+            const row = document.createElement('div');
+            row.className = 'bh';
+            row.setAttribute('data-st', h.st || 'wait');
+
+            const i = document.createElement('span');
+            i.className = 'bh-i';
+            i.textContent = pad3(h.iss);
+
+            const p = document.createElement('span');
+            p.className = 'bh-p';
+            p.textContent = (h.ticket || []).map(function (t) { return pickLabel(t.pick); }).join(' + ');
+
+            const a = document.createElement('span');
+            a.className = 'bh-a';
+            a.textContent = money(h.stake);
+
+            const r = document.createElement('span');
+            r.className = 'bh-r';
+            if (h.st === 'win') r.innerHTML = '+<span class="bh-digit">' + h.digit + '</span> ' + money(h.payout - h.stake);
+            else if (h.st === 'lose') r.innerHTML = '−<span class="bh-digit">' + h.digit + '</span> ' + money(h.stake);
+            else if (h.st === 'void') r.textContent = 'hoàn ' + money(h.stake);
+            else r.textContent = 'chờ kỳ ' + pad3(h.iss);
+
+            row.appendChild(i); row.appendChild(p); row.appendChild(a); row.appendChild(r);
+            frag.appendChild(row);
+        });
+        box.appendChild(frag);
+    }
+
+    // chốt các vé của những kỳ đã có kết quả
+    function betSettle() {
+        let changed = false;
+        betState.hist.forEach(function (h) {
+            if (h.st !== 'wait') return;
+            const dig = data.get(String(h.iss));
+            if (dig === undefined || dig === '' || dig === null) return;
+            const n = Number(dig);
+            let back = 0, anyLose = false;
+            (h.ticket || []).forEach(function (t) {
+                if (pickWin(t.pick, n)) back += t.amt * 2;      // 1 ăn 1 → trả lại vốn + lãi
+                else anyLose = true;
+            });
+            h.digit = String(n);
+            h.payout = back;
+            h.st = back > 0 ? 'win' : (anyLose ? 'lose' : 'void');
+            if (!back && !anyLose) { h.st = 'void'; h.payout = h.stake; }
+            betState.bal += back;                                // hoàn tiền thắng (vốn đã trừ lúc đặt)
+            changed = true;
+        });
+        if (changed) {
+            betSave();
+            betPaintTop();
+            betPaintHist();
+            paintBetRows();
+        }
+        return changed;
+    }
+
+    // tô màu các hàng có vé cược (xanh lá = thắng, đỏ = thua, vàng = đang chờ)
+    function paintBetRows() {
+        const seen = {};
+        betState.hist.forEach(function (h) {
+            const idx = boardKeys.indexOf(String(h.iss));
+            if (idx < 0) return;
+            const r = Math.floor(idx / perRow);
+            const cur = seen[r];
+            const rank = { win: 3, lose: 2, wait: 1, void: 0 };
+            if (!cur || (rank[h.st] || 0) > (rank[cur] || 0)) seen[r] = h.st;
+        });
+        for (let r = 0; r < rows; r++) {
+            const el = rowEls[r];
+            if (!el) continue;
+            const st = seen[r];
+            if (!st) { if (el.hasAttribute('data-bet')) el.removeAttribute('data-bet'); }
+            else if (el.getAttribute('data-bet') !== st) el.setAttribute('data-bet', st);
+        }
+    }
+
+    function betPlace() {
+        if (!clockIssue) { setStatus('Chưa biết kỳ đang mở — chờ đồng hồ chạy đã.', 'warn'); return; }
+        const amt = betAmtNow();
+        const picks = Object.keys(pickOn).filter(function (k) { return pickOn[k]; });
+        if (!picks.length || !amt) return;
+        const stake = amt * picks.length;
+        if (betState.bal < stake) {
+            setStatus('Số dư ảo không đủ (' + money(betState.bal) + ' đ) để cược ' + money(stake) + ' đ.', 'warn');
+            return;
+        }
+        betState.bal -= stake;
+        betState.hist.unshift({
+            id: Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+            iss: String(clockIssue),
+            ticket: picks.map(function (k) { return { pick: k, amt: amt }; }),
+            stake: stake,
+            placedAt: Date.now(),
+            st: 'wait', digit: '', payout: 0
+        });
+        betSave();
+        betPaintTop(); betPaintHist(); paintBetRows();
+        setStatus('Đã đặt ' + money(stake) + ' đ cho kỳ ' + pad3(clockIssue) + ' · ' + picks.map(pickLabel).join(' + ') + ' · số dư ' + money(betState.bal) + ' đ.', 'ok');
+        betSettle();
+    }
+
+    function betInitUI() {
+        betLoad();
+        betPaintTop();
+        betPaintHist();
+        Array.prototype.forEach.call(document.querySelectorAll('.pick'), function (b) {
+            b.addEventListener('click', function () {
+                const k = b.getAttribute('data-pick');
+                const on = !pickOn[k];
+                // LỚN và NHỎ loại trừ nhau (chỉ đánh một cửa)
+                Object.keys(pickOn).forEach(function (x) { pickOn[x] = false; });
+                pickOn[k] = on;
+                Array.prototype.forEach.call(document.querySelectorAll('.pick'), function (x) {
+                    x.setAttribute('data-on', pickOn[x.getAttribute('data-pick')] ? '1' : '0');
+                });
+                betPaintTop();
+            });
+        });
+        betFillLevels();
+        $('betAmt').addEventListener('change', function () {
+            const vals = betState.levels.map(function (x) { return String(x * 1000); });
+            betState.levelIdx = Math.max(0, vals.indexOf(String(this.value)));
+            betPaintTop();
+        });
+        $('betLvEdit').addEventListener('click', function () {
+            const row = $('betLvRow');
+            if (row.hasAttribute('hidden')) {
+                $('betLvInp').value = betState.levels.join(' ');
+                row.removeAttribute('hidden');
+                $('betLvInp').focus();
+            } else row.setAttribute('hidden', '');
+        });
+        $('betLvCancel').addEventListener('click', function () { $('betLvRow').setAttribute('hidden', ''); });
+        $('betLvDef').addEventListener('click', function () {
+            betState.levels = BET_LV_DEFAULT.slice();
+            betLevelsSave();
+            betFillLevels(BET_LV_DEFAULT[0] * 1000);
+            $('betLvInp').value = BET_LV_DEFAULT.join(' ');
+            betPaintTop();
+        });
+        $('betLvSave').addEventListener('click', function () {
+            const raw = String($('betLvInp').value || '');
+            const arr = raw.split(/[^0-9.]+/).map(function (x) { return Number(x); })
+                .filter(function (x) { return isFinite(x) && x > 0; })
+                .map(function (x) { return Math.round(x); });
+            if (!arr.length) { $('betLvHint').textContent = 'chưa có mức nào hợp lệ — nhập số, cách nhau dấu cách'; return; }
+            betState.levels = arr.slice(0, 12);
+            betState.levelIdx = 0;
+            betLevelsSave();
+            betFillLevels(betState.levels[0] * 1000);
+            $('betLvRow').setAttribute('hidden', '');
+            $('betLvHint').textContent = 'cách nhau dấu cách hoặc dấu phẩy · đơn vị: nghìn đồng';
+            betPaintTop();
+            setStatus('Đã đổi mức cược: ' + betState.levels.map(function (x) { return money(x * 1000); }).join(' · ') + ' đ.', 'ok');
+        });
+        $('betPlace').addEventListener('click', betPlace);
+        $('betClear').addEventListener('click', function () {
+            Object.keys(pickOn).forEach(function (k) { pickOn[k] = false; });
+            Array.prototype.forEach.call(document.querySelectorAll('.pick'), function (b) { b.setAttribute('data-on', '0'); });
+            betPaintTop();
+        });
+        $('betReset').addEventListener('click', function () {
+            betState.bal = BET_START;
+            betSave(); betPaintTop();
+            setStatus('Đã đặt lại số dư ảo về ' + money(BET_START) + ' đ.', 'ok');
+        });
+        $('betHistClear').addEventListener('click', function () {
+            betState.hist = [];
+            betSave(); betPaintTop(); betPaintHist(); paintBetRows();
+            setStatus('Đã xoá lịch sử cược (số dư giữ nguyên).', 'ok');
+        });
+        // sơn lại các hàng có vé + chốt vé (bảng có thể đã vẽ trước khi nạp lịch sử)
+        try { betSettle(); } catch (e) {}
+        try { paintBetRows(); } catch (e) {}
+        betPaintTop();
+    }
+
+    // =====================================================================
+    //  NHẬP LIỆU
+    // =====================================================================
+    function applyCols(n) {
+        n = Math.max(2, Math.min(200, Math.floor(Number(n) || 5)));
+        perRow = n;
+        try { localStorage.setItem(LS_COLS, String(n)); } catch (e) {}
+        $('numCols').value = String(n);
+        $('selCols').value = String(n);
+        buildGrid();
+        if (pattern) applyPattern(pattern);
+        try { fillFindLen(); doFind(); } catch (e) {}
+    }
+
+    function applyPattern(raw) {
+        const clean = String(raw || '').replace(/[^01]/g, '').slice(0, 20);
+        pattern = clean;
+        $('binInput').value = clean;
+        try { localStorage.setItem(LS_PAT, clean); } catch (e) {}
+        if (!clean) {
+            setStatus('Chưa nhập mẫu — bảng chỉ hiện số.', '');
+            $('hint').innerHTML = 'Nhập 0/1 bất kỳ (5, 6, 7 số… tuỳ ý) · khớp thì <b>tô cả hàng</b> · chỉ xét trong 1 hàng.';
+        } else {
+            const rule = bitMode === 'odd' ? 'lẻ=1 / chẵn=0' : '≥5 = 1 / ≤4 = 0';
+            if (clean.length !== perRow) {
+                setStatus('Mẫu ' + clean.length + ' số nhưng mỗi hàng đang ' + perRow + ' ô → chưa thể khớp. Đổi «Số ô / hàng» = ' + clean.length
+                    + ' hoặc nhập mẫu đúng ' + perRow + ' số.', 'warn');
+            } else {
+                setStatus('Mẫu ' + clean.split('').join(' ') + ' (' + clean.length + ' số) · ' + rule + ' · tô cả hàng khi hàng khớp hoàn toàn.', 'ok');
+            }
+            $('hint').innerHTML = 'Hàng đang xét: <b>' + clean.length + ' ô</b> · ' + rule + ' · chỉ so trong 1 hàng, không ghép hàng trên/dưới.';
+        }
+        paint();
+    }
+
+    // =====================================================================
+    //  FIREBASE — nhận bảng có sẵn (KHÔNG cần token)
+    //   · Máy nào có token thì tự nạp kết quả rồi ghi bảng lên Firebase.
+    //   · Máy không có token vẫn thấy bảng: đọc thẳng document vn168/data.
+    // =====================================================================
+    function fbInit() {
+        try {
+            if (!window.firebase || !firebase.firestore) return;
+            const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
+            fbDB = firebase.firestore(app);
+            fbReady = true;
+        } catch (e) {
+            fbDB = null;
+            fbReady = false;
+        }
+    }
+
+    function applyRemoteBoard(board, stamp) {
+        if (!board || !Array.isArray(board.cells) || !board.cells.length) return 0;
+        let added = 0;
+        let newest = lastIssue;
+        board.cells.forEach(function (c) {
+            if (!c) return;
+            const iss = String(c.f || '').trim();
+            const dig = valueToDigit(c.v);
+            if (!iss || dig === null) return;
+            if (!data.has(iss)) added++;
+            data.set(iss, dig);
+            if (!newest || issueGreater(iss, newest)) newest = iss;
+        });
+        if (newest) lastIssue = newest;
+        if (added > 0) {
+            saveData();
+            paint();
+        }
+        return added;
+    }
+
+    // Đẩy 2000 ô mới nhất lên Firebase để máy không có token cũng thấy đủ bảng
+    async function fbPublishBoard() {
+        if (!fbDB) return false;
+        try {
+            const keys = Array.from(data.keys()).sort(function (a, b) { return issueGreater(a, b) ? 1 : -1; }).slice(-TOTAL_CELLS);
+            if (!keys.length) return false;
+            const cellsOut = keys.map(function (k) {
+                const iss = String(k);
+                return { v: data.get(k), s: iss.padStart(3, '0').slice(-3), f: iss };
+            });
+            await fbDB.collection(FB_COLLECTION).doc(FB_DOC).set({
+                lastUpdated: Date.now(),
+                board: { lastIssue: keys[keys.length - 1], clearedAt: 0, cells: cellsOut }
+            }, { merge: true });
+            return true;
+        } catch (e) { return false; }
+    }
+
+    function fbSubscribe() {
+        if (!fbDB || fbUnsub) return;
+        try {
+            fbUnsub = fbDB.collection(FB_COLLECTION).doc(FB_DOC).onSnapshot(function (snap) {
+                if (!snap || !snap.exists) return;
+                const d = snap.data() || {};
+                const added = applyRemoteBoard(d.board);
+                try { checkSync(); } catch (e) {}
+                if (added > 0) {
+                    setStatus('Đã đồng bộ bảng từ Firebase (+' + added + ' kỳ · tổng ' + data.size + ').', 'ok');
+                } else if (!getToken() && data.size) {
+                    setStatus('Bảng đã có ' + data.size + ' kỳ (đồng bộ Firebase · không cần token).', 'ok');
+                }
+            }, function () {});
+        } catch (e) {}
+    }
+
+    // =====================================================================
+    //  ĐỒNG HỒ ĐẾM NGƯỢC KỲ ĐANG CHẠY
+    //   · Hỏi máy chủ GetGameIssue (có token) 10 giây/lần để biết kỳ đang mở + giờ đóng kỳ.
+    //   · Không có token / lỗi mạng → vẫn chạy theo nhịp kỳ của game (30 giây/kỳ).
+    // =====================================================================
+    const ROUND_MS = 30000;              // typeId 30 → kỳ 30 giây
+    let clockDeadline = 0;               // mốc đóng kỳ (giờ máy này)
+    let clockIssue = '';                 // kỳ đang mở
+    let clockValid = false;
+    let clockPollBusy = false;
+    let clockTimer = null;
+
+    function pd(n) { return String(n).padStart(2, '0'); }
+
+    // kỳ liền trước (chỉ giảm 4 số cuối; nếu về 0 thì bỏ qua vì không biết số kỳ cuối ngày trước)
+    function prevIssueOf(iss) {
+        const t = String(iss || '');
+        if (!/^\d{9,}$/.test(t)) return '';
+        const head = t.slice(0, -4), tail = Number(t.slice(-4));
+        if (!tail) return '';
+        return head + String(tail - 1).padStart(4, '0');
+    }
+
+    function nextIssueOf(iss) {
+        const t = String(iss || '');
+        if (!/^\d{9,}$/.test(t)) return '';
+        const head = t.slice(0, -4);
+        return head + String(Number(t.slice(-4)) + 1).padStart(4, '0');
+    }
+
+    // đổi số kỳ (vd 202611220841) thành mốc thời gian tuyệt đối để đo khoảng cách thật
+    function issueMs(iss) {
+        const t = String(iss || '');
+        const m = t.match(/^(\d{8})\d{0,2}(\d{4})$/);   // 12 số (yyyymmdd+ssss) hay 14 số đều hiểu được
+        if (m) {
+            const y = +m[1].slice(0, 4), mo = +m[1].slice(4, 6) - 1, d = +m[1].slice(6, 8);
+            const hms = m[2].padStart(6, '0');            // "0841" = 00:08:41
+            const hh = +hms.slice(0, 2), mi = +hms.slice(2, 4), ss = +hms.slice(4, 6);
+            return Date.UTC(y, mo, d, hh, mi, ss);
+        }
+        return 0;
+    }
+
+    // Bảng trễ bao nhiêu KỲ thật so với kỳ game đang mở.
+    //   · Tính theo thời gian thực (kỳ 30 giây) → không phụ thuộc việc số kỳ có liền nhau hay không.
+    //   · Có kỳ đang mở rồi mà bảng vẫn chưa có kỳ đã đóng ngay trước nó → trễ ít nhất 1 kỳ ("đang chờ KQ").
+    function boardGap() {
+        const newest = String(lastIssue || ''), open = String(clockIssue || '');
+        if (!newest || !open) return 0;
+        // cùng ngày và đánh số tăng 1 mỗi kỳ → hiệu số thứ tự là chính xác
+        if (newest.slice(0, 8) === open.slice(0, 8) && newest.length >= 4 && open.length >= 4) {
+            const d = Number(open.slice(-4)) - Number(newest.slice(-4)) - 1;
+            if (isFinite(d)) return Math.max(0, d);
+        }
+        const need = prevIssueOf(open);
+        return (need && issueGreater(need, newest)) ? 1 : 0;
+    }
+
+    // Đồng hồ dự phòng: chỉ đặt MỘT LẦN rồi để nó tự chạy, tuyệt đối không đặt lại
+    // mỗi lần hỏi máy chủ (nếu đặt lại thì cứ 10 giây đếm lại từ 30 giây).
+    let clockLocked = false;             // đã chốt mốc theo giờ máy chủ → không cho dự phòng ghi đè
+    function clockFallback(force) {
+        if (clockLocked && !force) return;
+        if (clockDeadline && !force && Date.now() <= clockDeadline) return;
+        const now = Date.now();
+        const into = ((now % ROUND_MS) + ROUND_MS) % ROUND_MS;
+        clockDeadline = now + (ROUND_MS - into);
+        clockValid = false;
+        if (!clockIssue) clockIssue = latestGameIssue || lastIssue || '';
+    }
+
+    async function clockPoll() {
+        if (clockPollBusy) return;
+        // không token / token chết → vẫn hỏi (kiểu đọc công khai); lỗi thì chạy nhịp 30 giây
+        clockPollBusy = true;
+        try {
+            const t0 = Date.now();
+            const res = await apiPost(CFG.apiIssue, signedBody({ typeId: CFG.payload.typeId }));
+            const t1 = Date.now();
+            const data = (res && (res.data || (res.data === 0 ? res.data : null))) || {};
+            const d = (data && data.issueNumber !== undefined) ? data : (res && res.data) || {};
+            const iss = String(d.issueNumber || d.issue || d.gameNo || '').trim();
+            const tms = function (v) {
+                if (v === null || v === undefined || v === '') return NaN;
+                if (typeof v === 'number' || /^\d+(\.\d+)?$/.test(String(v).trim())) {
+                    const n = Number(v);
+                    if (!isFinite(n) || n <= 0) return NaN;
+                    // số nhỏ (giây kể từ 1970) → đổi sang mili giây; số lớn đã là mili giây
+                    return n < 1e11 ? n * 1000 : n;
+                }
+                const t = Date.parse(String(v).replace('T', ' ').replace(/-/g, '/'));
+                return isFinite(t) ? t : NaN;
+            };
+            const endMs = tms(d.endTime || d.stopTime || d.closeTime || d.endDateTime);
+            const startMs = tms(d.startTime || d.beginTime || d.openTime);
+            const srvMs = tms(d.serviceTime || d.currentTime || d.serverTime || d.nowTime) || tms(res && res.serviceNowTime);
+            let remain = NaN;
+            if (isFinite(endMs) && isFinite(srvMs)) remain = endMs - srvMs;
+            else if (isFinite(startMs) && isFinite(srvMs)) remain = ROUND_MS - (srvMs - startMs);
+            else if (isFinite(endMs)) remain = endMs - t1;
+            else if (isFinite(startMs)) remain = ROUND_MS - (t1 - startMs);
+            if (isFinite(remain) && remain > -2000 && remain <= ROUND_MS + 2000) {
+                clockIssue = iss || clockIssue;
+                clockDeadline = t1 + Math.max(0, Math.min(ROUND_MS, remain));
+                clockValid = true;
+                clockLocked = true;
+                clockSrcText('giờ máy chủ · kỳ mở ' + (iss ? pad3(iss) : '---'));
+                checkSync();
+                return;
+            }
+            // Máy chủ trả số kỳ nhưng KHÔNG có giờ đóng:
+            //   · kỳ giống kỳ đang hiển thị → giữ nguyên bộ đếm, không đặt lại
+            //   · kỳ khác → sang kỳ mới, đặt lại 30 giây đúng 1 lần
+            if (iss) {
+                if (String(iss) !== String(clockIssue)) {
+                    clockIssue = iss;
+                    clockDeadline = t1 + ROUND_MS;
+                    clockLocked = false;
+                } else if (!clockDeadline || Date.now() > clockDeadline + 1200) {
+                    clockDeadline = t1 + ROUND_MS;
+                }
+            } else {
+                clockFallback();
+            }
+            clockSrcText('máy chủ không trả giờ đóng · chạy theo nhịp 30 giây/kỳ');
+        } catch (e) {
+            clockFallback();
+            clockSrcText('không hỏi được máy chủ · chạy theo nhịp 30 giây/kỳ');
+        } finally {
+            clockPollBusy = false;
+        }
+    }
+
+    function checkSync() {
+        if (deadShown) { try { showTokenDead(); } catch (e) {} return; }
+        const newest = lastIssue || '';
+        const gap = boardGap();
+        const elSync = document.getElementById('clockSync');
+        if (elSync) {
+            if (!newest) elSync.textContent = 'bảng: chưa có dữ liệu';
+            else if (!gap) elSync.textContent = 'bảng: kỳ ' + pad3(newest) + ' · đã đồng bộ';
+            else if (gap === 1) elSync.textContent = 'bảng: kỳ ' + pad3(newest) + ' · chờ kết quả kỳ '
+                + pad3(nextIssueOf(newest)) + '…';
+            else elSync.textContent = 'bảng: kỳ ' + pad3(newest) + ' · thiếu ' + gap + ' kỳ (tới kỳ '
+                + pad3(prevIssueOf(clockIssue)) + ')';
+            const left = tokenLeftMs();
+            if (left > 0 && left < 300000) {
+                elSync.textContent += ' · token còn ' + Math.floor(left / 60000) + 'm'
+                    + String(Math.floor((left % 60000) / 1000)).padStart(2, '0') + 's';
+            }
+            elSync.setAttribute('data-ok', gap ? '0' : '1');
+        }
+        if (gap > 0) autoLoopSoon(2000);       // đang thiếu kỳ → hỏi lại ngay, không chờ nhịp
+    }
+
+    // hẹn vòng tự cập nhật chạy sớm (dùng khi vừa phát hiện bảng thiếu kỳ)
+    let soonAt = 0;
+    function autoLoopSoon(ms) {
+        if (!autoTimer) return;
+        const now = Date.now();
+        if (now - soonAt < 1500) return;        // chống gọi dồn dập
+        soonAt = now;
+        if (autoLoopTimer) clearTimeout(autoLoopTimer);
+        autoLoopTimer = setTimeout(function () { autoLoop(); }, ms || 2000);
+    }
+
+    function clockSrcText(t) {
+        const el = document.getElementById('clockSrc');
+        if (el && el.textContent !== t) el.textContent = t;
+    }
+
+    function clockTick() {
+        if (!clockIssue) { try { clockIssueFromBoard(); } catch (e) {} }
+        const now = Date.now();
+        if (!clockDeadline) { clockFallback(true); }
+        else if (now > clockDeadline + 1200) {
+            // hết kỳ → nối tiếp kỳ mới, hỏi lại máy chủ lấy kỳ/giờ chuẩn
+            clockDeadline = now + ROUND_MS;
+            clockLocked = false;
+            clockPoll();
+            // kỳ vừa đóng = có thể đã có kết quả → chỉ xin 1 trang mới nhất
+            try { tailRefresh(); } catch (e) {}
+        }
+        const left = Math.max(0, clockDeadline - now);
+        const secs = Math.ceil(left / 1000);
+        const elT = document.getElementById('clockTime');
+        const elB = document.getElementById('clockBar');
+        const elI = document.getElementById('clockIssue');
+        if (elT) {
+            elT.textContent = pd(Math.floor(secs / 60)) + ':' + pd(secs % 60);
+            elT.setAttribute('data-hot', (left <= 5000) ? '1' : '0');
+            elT.setAttribute('data-off', clockDeadline ? '0' : '1');
+        }
+        if (elB) {
+            const pct = Math.max(0, Math.min(100, (left / ROUND_MS) * 100));
+            elB.style.width = pct.toFixed(1) + '%';
+            elB.setAttribute('data-hot', (left <= 5000) ? '1' : '0');
+        }
+        if (elI) {
+            const txt = clockIssue ? ('kỳ ' + pad3(clockIssue)) : 'kỳ ---';
+            if (elI.textContent !== txt) elI.textContent = txt;
+        }
+    }
+
+    function betTick() {
+        if (!clockIssue) { try { clockIssueFromBoard(); } catch (e) {} }
+        const el = document.getElementById('betIssue');
+        if (!el) return;
+        const t = clockIssue ? pad3(clockIssue) : '---';
+        if (el.textContent !== t) el.textContent = t;
+        const go = document.getElementById('betPlace');
+        if (go) go.disabled = !clockIssue || !Object.keys(pickOn).some(function (k) { return pickOn[k]; });
+    }
+
+    // khi máy chủ không trả số kỳ: lấy kỳ kế tiếp của bảng làm "kỳ đang mở"
+    function clockIssueFromBoard() {
+        if (clockIssue) return clockIssue;
+        if (!lastIssue) return '';
+        const nx = nextIssueOf(lastIssue);
+        clockIssue = nx || lastIssue;
+        return clockIssue;
+    }
+
+    function clockStart() {
+        if (clockTimer) return;
+        clockPoll();
+        clockTick();
+        clockTimer = setInterval(clockTick, 200);
+        setInterval(function () { try { betTick(); } catch (e) {} }, 500);
+        setInterval(function () { if (!document.hidden) clockPoll(); }, 10000);
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) clockPoll(); });
+    }
+
+    // =====================================================================
+    //  TỰ CẬP NHẬT (không cần bấm lại)
+    //   · 30 giây/lần hỏi máy chủ 1 trang (100 kỳ mới nhất) nếu có token.
+    //   · Không có token → chỉ theo Firebase (onSnapshot tự đẩy kỳ mới về).
+    //   · Token hết hạn → báo rõ trên thanh trạng thái.
+    // =====================================================================
+    const AUTO_MS = 15000;              // nhịp tự cập nhật: chỉ 1 trang ~60 kỳ nên rất nhẹ
+    let autoTimer = null;
+    let autoBusy = false;
+
+    function tokenLeftMs() {
+        const tk = getToken();
+        if (!tk) return 0;
+        try {
+            const m = tk.split('.')[1];
+            if (!m) return 0;
+            const pay = JSON.parse(atob(m.replace(/-/g, '+').replace(/_/g, '/')));
+            const exp = Number(pay.exp) * 1000;
+            return exp ? (exp - Date.now()) : 0;
+        } catch (e) { return 0; }
+    }
+
+    function tokenExpired() {
+        const left = tokenLeftMs();
+        return !!getToken() && left !== 0 && left <= 0;
+    }
+
+    // token chết → nói rõ nguyên nhân, và KHÔNG báo "trễ N kỳ" gây hiểu nhầm
+    function showTokenDead() {
+        const elSync = document.getElementById('clockSync');
+        if (!getToken()) {
+            setStatus('Chưa có token — vẫn thử đọc kết quả công khai; nếu máy chủ đòi token thì bấm «Token».', 'warn');
+            if (elSync) { elSync.textContent = 'bảng: kỳ ' + pad3(lastIssue || '—') + ' · chưa có token (đang thử đọc công khai)'; elSync.setAttribute('data-ok', '0'); }
+            return;
+        }
+        setStatus('Token đã hết hạn — đang thử đọc công khai; muốn chắc có số mới thì bấm «Token» dán token mới.', 'warn');
+        if (elSync) {
+            elSync.textContent = 'bảng: kỳ ' + pad3(lastIssue || '—') + ' · TOKEN HẾT HẠN — bấm «Token» để chạy tiếp';
+            elSync.setAttribute('data-ok', '0');
+        }
+    }
+    let deadShown = false;
+
+    async function autoRefresh(force) {
+        if (autoBusy || busy) return;
+        if (document.hidden && !force) return;
+        // KHÔNG bắt buộc token: không token vẫn thử đọc công khai (anon);
+        // token hết hạn cũng vẫn thử — máy chủ từ chối thì mới báo.
+        if (tokenExpired()) deadShown = false;
+        autoBusy = true;
+        try {
+            const before = lastIssue;
+            // nhịp định kỳ chỉ xin 60 kỳ mới nhất (1 trang) để cực nhẹ
+            const got = await fetchLatest(force ? 120 : 60, 1);
+            if (!got || !got.size) return;       // không lấy được gì → giữ nguyên bảng, không coi là "trễ"
+            got.forEach(function (dig, iss) { data.set(iss, dig); });
+            const keys = Array.from(data.keys()).sort(function (a, b) { return issueGreater(a, b) ? 1 : -1; });
+            if (latestGameIssue) lastIssue = latestGameIssue;
+            else if (keys.length) lastIssue = keys[keys.length - 1];
+            saveData();
+            paint();
+            if (lastIssue !== before) {
+                fbPublishBoard();
+                setStatus('Tự cập nhật · kỳ mới nhất ' + pad3(lastIssue) + ' · tổng ' + data.size + ' kỳ.', 'ok');
+            }
+            try { checkSync(); } catch (e) {}
+        } catch (e) {
+            if (e && e.kind === 'auth') { deadShown = true; try { showTokenDead(); } catch (x) {} }
+        } finally {
+            autoBusy = false;
+        }
+    }
+
+
+    // Khi sang kỳ mới: chỉ xin ĐÚNG 1 TRANG (≈100 kỳ) để bắt kết quả vừa công bố.
+    //   · Không quét nhiều trang, không thử lại dồn dập → không tốn băng thông, không bị chặn.
+    let tailTimer = null, tailAt = 0, deepNext = false;
+    async function tailRefresh() {
+        if (busy || autoBusy || tailTimer) return;
+        if (Date.now() - tailAt < 3000) return;
+        tailAt = Date.now();
+        autoBusy = true;
+        try {
+            const pageSize = deepNext ? 200 : 120;      // máy chủ có lúc xếp trang cũ→mới → lấy sâu hơn
+            const got = await fetchLatest(pageSize, deepNext ? 2 : 1);
+            if (!got || !got.size) return;
+            const before = lastIssue;
+            got.forEach(function (dig, iss) { data.set(iss, dig); });
+            const keys = Array.from(data.keys()).sort(function (a, b) { return issueGreater(a, b) ? 1 : -1; });
+            if (keys.length) lastIssue = keys[keys.length - 1];
+            saveData();
+            paint();
+            if (lastIssue !== before) {
+                fbPublishBoard();
+                setStatus('Vừa có kết quả kỳ ' + pad3(lastIssue) + ' · bảng đã cập nhật.', 'ok');
+                deepNext = false;
+            } else {
+                deepNext = true;                        // không thấy kỳ mới → lần sau đọc sâu hơn
+            }
+            try { checkSync(); } catch (e) {}
+        } catch (e) {
+            if (e && e.kind === 'auth') { deadShown = true; try { showTokenDead(); } catch (x) {} }
+        } finally {
+            autoBusy = false;
+        }
+    }
+
+    // Nhịp thích ứng: bảng đã bắt kịp → 15 giây/lần; còn thiếu kết quả → 5 giây/lần
+    // cho tới khi bắt kịp (mỗi lần vẫn chỉ 1 trang ≈100 kỳ nên rất nhẹ).
+    let autoLoopTimer = null;
+    function autoLoop() {
+        if (autoLoopTimer) clearTimeout(autoLoopTimer);
+        const behind = boardGap() > 0;
+        // không token → vẫn thử đọc công khai nhưng giãn nhịp 20 giây cho nhẹ
+        const wait = !getToken() ? (behind ? 10000 : 20000) : (behind ? 5000 : AUTO_MS);
+        autoLoopTimer = setTimeout(async function () {
+            try { await autoRefresh(behind); } catch (e) {}
+            autoLoop();
+        }, wait);
+    }
+    function autoStart() {
+        if (autoTimer) return;
+        autoTimer = true;
+        autoLoopTimer = setTimeout(function () { autoLoop(); }, 2000);
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) { autoLoop(); setTimeout(tailRefresh, 1200); }
+        });
+    }
+
+    // =====================================================================
+    //  NẠP KẾT QUẢ
+    // =====================================================================
+    async function doFetch() {
+        if (busy) return;
+        busy = true;
+        setStatus('Đang nạp kết quả…', '');
+        try {
+            const got = await fetchLatest(TOTAL_CELLS, FETCH_MAX_PAGES);
+            let added = 0;
+            got.forEach(function (dig, iss) {
+                if (!data.has(iss)) { data.set(iss, dig); added++; }
+                else data.set(iss, dig);
+            });
+            const keys = Array.from(data.keys()).sort(function (a, b) { return issueGreater(a, b) ? 1 : -1; });
+            // mốc mới nhất: ưu tiên kỳ mới nhất của game vừa đọc được
+            if (latestGameIssue) lastIssue = latestGameIssue;
+            else lastIssue = keys.length ? keys[keys.length - 1] : '';
+            // chỉ giữ đúng 2000 kỳ gần nhất tính từ mốc đó
+            const cut = keys.slice(-TOTAL_CELLS);
+            saveData();
+            paint();
+            fbPublishBoard();
+            try { checkSync(); } catch (e) {}
+            const left = Math.max(0, TOTAL_CELLS - Math.min(TOTAL_CELLS, cut.length));
+            const leftTk = tokenLeftMs();
+            const tkNote = leftTk > 0 ? (' · token còn ' + Math.floor(leftTk / 3600000) + 'h' + Math.floor((leftTk % 3600000) / 60000) + 'm') : '';
+            setStatus('Đã nạp ' + got.size + ' kỳ (mới thêm ' + added + ') · tổng ' + data.size + ' kỳ đã lưu'
+                + (left ? ' · còn thiếu ' + left + ' ô (máy chủ trả ~100 kỳ/lần, sẽ tự nạp tiếp).' : ' · bảng đã đầy 2000 ô.')
+                + tkNote, 'ok');
+        } catch (e) {
+            setStatus('Lỗi nạp: ' + (e && e.message ? e.message : e) + (e && e.kind === 'auth' ? ' → dán token mới.' : ''), 'err');
+        } finally {
+            busy = false;
+        }
+    }
+
+    // =====================================================================
+    //  KHỞI ĐỘNG
+    // =====================================================================
+    function init() {
+        try { perRow = Math.max(2, Math.min(200, Number(localStorage.getItem(LS_COLS)) || 5)); } catch (e) {}
+        try { bitMode = localStorage.getItem(LS_BIT) === 'odd' ? 'odd' : 'big'; } catch (e) {}
+        try { pattern = String(localStorage.getItem(LS_PAT) || '').replace(/[^01]/g, ''); } catch (e) {}
+
+        loadData();
+
+        $('selCols').value = String(perRow);
+        $('numCols').value = String(perRow);
+        Array.prototype.forEach.call($('segBit').children, function (b) {
+            b.setAttribute('data-on', b.getAttribute('data-mode') === bitMode ? '1' : '0');
+        });
+        $('binInput').value = pattern;
+
+        buildGrid();
+        applyPattern(pattern);
+
+        $('selCols').addEventListener('change', function () { applyCols(this.value); });
+        $('numCols').addEventListener('change', function () { applyCols(this.value); });
+        // ---- khung tìm theo dãy / theo STT hàng ----
+        fillFindLen();
+        $('findLen').addEventListener('change', function () {
+            findState.len = Number(this.value) || perRow;
+            const seq = $('findSeq');
+            seq.value = String(findState.seq).slice(0, findState.len);
+            findState.seq = seq.value;
+            doFind();
+        });
+        $('findSeq').addEventListener('input', function () {
+            const clean = this.value.replace(/[^01]/g, '').slice(0, findState.len || perRow);
+            if (this.value !== clean) this.value = clean;
+            findState.seq = clean;
+            if (clean) { findState.stt = ''; $('findStt').value = ''; }
+            doFind();
+        });
+        $('findStt').addEventListener('input', function () {
+            const clean = this.value.replace(/[^0-9]/g, '').slice(0, 4);
+            if (this.value !== clean) this.value = clean;
+            findState.stt = clean;
+            if (clean) { findState.seq = ''; $('findSeq').value = ''; }
+            doFind();
+        });
+        $('findClear').addEventListener('click', function () {
+            findState.seq = ''; findState.stt = ''; findState.rows = []; findState.refRow = -1;
+            $('findSeq').value = ''; $('findStt').value = '';
+            doFind();
+        });
+        ['findSeq', 'findStt'].forEach(function (id) {
+            $(id).addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (findState.rows.length) { scrollToRow(findState.rows[0]); }
+                }
+            });
+        });
+
+        $('binInput').addEventListener('input', function () {
+            const pos = this.selectionStart;
+            const clean = this.value.replace(/[^01]/g, '').slice(0, 20);
+            if (clean !== this.value) { this.value = clean; try { this.setSelectionRange(pos, pos); } catch (e) {} }
+            applyPattern(clean);
+        });
+        $('btnClear').addEventListener('click', function () { applyPattern(''); });
+        Array.prototype.forEach.call($('segBit').children, function (b) {
+            b.addEventListener('click', function () {
+                bitMode = b.getAttribute('data-mode');
+                try { localStorage.setItem(LS_BIT, bitMode); } catch (e) {}
+                Array.prototype.forEach.call($('segBit').children, function (x) {
+                    x.setAttribute('data-on', x.getAttribute('data-mode') === bitMode ? '1' : '0');
+                });
+                applyPattern(pattern);
+            });
+        });
+
+        // (danh sách vị trí đã gộp — bấm từng dòng để nhảy tới hàng đó)
+
+        $('btnJump').addEventListener('click', function () {
+            const rowEl = rowEls[0];
+            if (rowEl && rowEl.scrollIntoView) rowEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+            else window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        try { betInitUI(); } catch (e) {}
+
+        // Firebase trước (không cần token) → có bảng là hiện ngay
+        fbInit();
+        fbSubscribe();
+
+        clockStart();
+        autoStart();
+
+        // có sẵn bảng (máy/Firebase) thì chỉ xin trang mới nhất; bảng trống mới nạp đủ 2000 kỳ
+        if (data.size) tailRefresh();           // có bảng sẵn → chỉ xin trang mới nhất (không cần token)
+        else setTimeout(doFetch, 600);          // bảng trống → nạp ngay (kể cả không có token)
+        if (data.size) {
+            setStatus('Đã nạp ' + data.size + ' kỳ đã lưu trên máy · đang chờ đồng bộ Firebase…', 'ok');
+        } else if (fbReady) {
+            setStatus('Đang chờ bảng từ Firebase (không cần token)…', '');
+        } else {
+            setStatus('Không kết nối được Firebase — bấm «Token» để tự nạp kết quả.', 'warn');
+        }
+    }
+
+    init();
+})();
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a606a9b599b80435',t:'MTc5NTY3MjcyMg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a606a9b599b80435',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
