@@ -394,6 +394,18 @@
 
         .foot b { color: #fde047; }
 
+        /* ================= NÚT TOKEN + HẠN TOKEN (thanh trên) ================= */
+        .tok-wrap { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+        .tok-left {
+            padding: 5px 8px; border-radius: 8px; font-size: 10px; font-weight: 800; letter-spacing: .02em;
+            background: rgba(16, 185, 129, .14); color: #6ee7b7; box-shadow: inset 0 0 0 1px rgba(16, 185, 129, .45);
+            font-variant-numeric: tabular-nums; white-space: nowrap;
+        }
+        .tok-left[data-kind="warn"] { background: rgba(250, 204, 21, .13); color: #fde68a; box-shadow: inset 0 0 0 1px rgba(250, 204, 21, .42); animation: tokPulse 1.1s ease-in-out infinite; }
+        .tok-left[data-kind="err"] { background: rgba(239, 68, 68, .16); color: #fca5a5; box-shadow: inset 0 0 0 1px rgba(239, 68, 68, .5); animation: tokPulse .8s ease-in-out infinite; }
+        .tok-left[data-kind="off"] { background: #1b2a45; color: #8b9cb6; box-shadow: inset 0 0 0 1px #33456a; }
+        @keyframes tokPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+
         /* ================= POPUP TOKEN ================= */
         .backdrop {
             position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
@@ -434,8 +446,89 @@
             text-shadow: 0 0 14px rgba(250,204,21,.55), 0 2px 0 rgba(0,0,0,.5);
         }
         .ebv-num[data-low="1"] { color: #fda4af; text-shadow: 0 0 14px rgba(244,63,94,.6); }
+        .ebv-num[data-kind="wait"] { color: #cbd5e1; text-shadow: 0 0 12px rgba(148,163,184,.45); font-size: 22px; }
+        .ebv-num[data-kind="err"] { color: #fda4af; text-shadow: 0 0 14px rgba(244,63,94,.6); font-size: 20px; }
+        .ebv-lab[data-kind="err"] { color: #fca5a5; }
 
-        /* ================= ĐẶT CƯỢC THỦ CÔNG (vốn ảo) ================= */
+        /* ================= DẢI SỐ DƯ RIÊNG TRONG TỪNG KHUNG ================= */
+        .eb-bal {
+            display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 7px 9px;
+            border-radius: 10px; background: rgba(2,6,23,.78); box-shadow: inset 0 0 0 1px #33456a;
+        }
+        .eb-bal-lab {
+            flex: 0 0 auto; font-size: 9.5px; font-weight: 900; letter-spacing: .14em; color: #7dd3fc;
+        }
+        .eb-bal-num {
+            flex: 1 1 auto; text-align: right; font-size: 19px; font-weight: 900; line-height: 1.1;
+            color: #fde047; font-variant-numeric: tabular-nums; text-shadow: 0 0 10px rgba(250,204,21,.45);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .eb-bal-num[data-kind="wait"] { color: #cbd5e1; font-size: 13px; text-shadow: none; }
+        .eb-bal-num[data-kind="err"] { color: #fda4af; font-size: 12px; text-shadow: none; }
+        .eb-bal-num[data-low="1"] { color: #fda4af; text-shadow: 0 0 10px rgba(244,63,94,.5); }
+        .eb-bal-sync {
+            flex: 0 0 auto; cursor: pointer; border: 0; font-family: inherit; font-size: 12px; font-weight: 900;
+            padding: 4px 8px; border-radius: 8px; color: #e0f2fe;
+            background: rgba(2,6,23,.9); box-shadow: inset 0 0 0 1px #0ea5e9;
+        }
+        .eb-bal-sync:active { transform: scale(.94); }
+        .rb-mirror .eb-bal { box-shadow: inset 0 0 0 1px #7f1d1d; }
+        .rb-mirror .eb-bal-lab { color: #fca5a5; }
+        .rb-mirror .eb-bal-num { color: #fecaca; text-shadow: 0 0 10px rgba(239,68,68,.45); }
+        .rb-mirror .eb-bal-sync { box-shadow: inset 0 0 0 1px #b91c1c; color: #fecaca; }
+
+        /* ================= CƯỢC THẬT — khung y hệt khung cược ảo, chỉ đổi màu sang đỏ ================= */
+        .eb.rb-mirror {
+            background: linear-gradient(180deg, rgba(127,29,29,.34), rgba(15,23,42,.92));
+            box-shadow: inset 0 0 0 1px #b91c1c, 0 0 18px rgba(185,28,28,.22);
+        }
+        .rb-mirror .eb-title { color: #fecaca; }
+        .rb-mirror .eb-sub { color: #f87171; }
+        .rb-mirror .auto-lab { color: #fca5a5; }
+        .rb-mirror .auto-lab b { color: #fde047; }
+        .rb-mirror .auto-clock .ac-time { color: #fecaca; }
+        .rb-mirror .auto-clock .clock-bar { box-shadow: inset 0 0 0 1px #7f1d1d; }
+        .rb-mirror .auto-clock .clock-bar i { background: linear-gradient(90deg,#ef4444,#f97316); }
+        .rb-mirror .eb-status { color: #fee2e2; box-shadow: inset 0 0 0 1px #7f1d1d; background: rgba(2,6,23,.72); }
+        .rb-mirror .eb-status[data-kind="ok"] { color: #86efac; }
+        .rb-mirror .eb-status[data-kind="err"] { color: #fda4af; }
+        .rb-mirror .eb-status[data-kind="warn"] { color: #fcd34d; }
+        .rb-mirror .eb-hchip { box-shadow: inset 0 0 0 1px #b91c1c; color: #fecaca; }
+        .rb-mirror .eb-hist-head { color: #fca5a5; }
+        .rb-mirror .eb-step, .rb-mirror .eb-cfgmini { box-shadow: inset 0 0 0 1px #b91c1c; color: #fecaca; }
+        .rb-mirror .eb-auto-on[data-on="1"] {
+            color: #fff; background: linear-gradient(180deg,#ef4444,#b91c1c);
+            box-shadow: 0 0 16px rgba(239,68,68,.8), inset 0 0 0 1px #fecaca;
+        }
+        .rb-mirror .eb-chip-lv[data-on="1"] {
+            color: #450a0a; background: linear-gradient(180deg,#fca5a5,#ef4444);
+            box-shadow: 0 0 12px rgba(239,68,68,.7), inset 0 0 0 1px #fecaca;
+        }
+        .rb-mirror .eb-cfg input { box-shadow: inset 0 0 0 1px #b91c1c; }
+        .rb-mirror .eb-save { background: #b91c1c; box-shadow: inset 0 0 0 1px #ef4444; }
+
+        /* ================= THU GỌN 1 KHUNG khi khung kia đang BẬT ================= */
+        .eb.is-mini { display: none !important; height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+        .eb-tab {
+            display: none; align-items: center; gap: 8px; width: 100%;
+            margin-top: 10px; padding: 9px 11px; border-radius: 12px; cursor: pointer;
+            font-family: inherit; font-size: 11px; font-weight: 900; letter-spacing: .06em; text-align: left;
+            color: #e2e8f0; background: rgba(2,6,23,.82); box-shadow: inset 0 0 0 1px #33456a;
+            appearance: none;
+        }
+        .eb-tab[data-show="1"] { display: flex; }
+        .eb-tab .eb-tab-dot {
+            flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: #64748b;
+        }
+        .eb-tab[data-live="1"] .eb-tab-dot { background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: tokPulse 1.2s ease-in-out infinite; }
+        .eb-tab[data-kind="real"] { box-shadow: inset 0 0 0 1px #b91c1c; color: #fecaca; }
+        .eb-tab[data-kind="real"][data-live="1"] { background: linear-gradient(90deg, rgba(185,28,28,.35), rgba(2,6,23,.85)); }
+        .eb-tab[data-kind="sim"] { box-shadow: inset 0 0 0 1px #6d28d9; color: #e9d5ff; }
+        .eb-tab[data-kind="sim"][data-live="1"] { background: linear-gradient(90deg, rgba(109,40,217,.35), rgba(2,6,23,.85)); }
+        .eb-tab b { color: #fde047; }
+        .eb-tab .eb-tab-tail { margin-left: auto; font-size: 10px; font-weight: 800; opacity: .8; }
+
+        /* ================= ĐẶT CƯỢC THỦ CÔNG (theo số dư thật) ================= */
         .eb {
             margin-top: 10px; margin-bottom: 8px; padding: 8px; border-radius: 12px;
             background: linear-gradient(180deg, rgba(76,29,149,.34), rgba(15,23,42,.92));
@@ -652,6 +745,10 @@
 
     <div class="topbar">
         <div class="brand">BẢNG SỐ · TÔ MÀU NHỊ PHÂN</div>
+        <span class="tok-wrap">
+            <span class="tok-left" id="tokLeft" data-kind="off" role="timer" aria-live="off" title="Thời hạn còn lại của token">chưa có token</span>
+            <button class="btn" id="btnToken" type="button" title="Dán token game">🔑 Token</button>
+        </span>
     </div>
 
         <!-- vùng ẩn: giữ cho logic cũ không lỗi -->
@@ -671,17 +768,81 @@
         </div>
 
     <!-- ================= ĐẶT CƯỢC TỰ ĐỘNG THEO LOGIC ================= -->
-    <section class="ebv" id="ebv">
-        <span class="ebv-mid">
-            <span class="ebv-lab">VỐN</span>
-            <span class="ebv-num" id="ebBal">1.000.000</span>
-        </span>
-        <button class="ebv-reset" id="ebReset" type="button" title="đặt lại vốn 1.000.000" aria-label="đặt lại vốn 1.000.000">↺</button>
+    <!-- tab hiện lại khung CƯỢC THẬT khi nó bị thu gọn -->
+    <button class="eb-tab" id="rbTab" type="button" data-kind="real">
+        <span class="eb-tab-dot"></span>
+        <span>CƯỢC THẬT <b id="rbTabTxt">đang tắt</b></span>
+        <span class="eb-tab-tail">bấm để mở ▸</span>
+    </button>
+
+    <!-- ================= CƯỢC THẬT (GameBetting) — khung y hệt khung cược ảo ================= -->
+    <section class="eb rb-mirror" id="rbReal">
+        <div class="eb-head">
+            <span class="eb-title">CƯỢC THẬT <i class="eb-sub" id="rbHeadSub">· tiền thật trong tài khoản</i></span>
+        </div>
+
+        <div class="eb-bal">
+            <span class="eb-bal-lab">SỐ DƯ</span>
+            <span class="eb-bal-num" id="rbBal">--</span>
+            <button class="eb-bal-sync" id="rbBalSync" type="button" title="cập nhật số dư từ game">↻</button>
+        </div>
+
+        <!-- kỳ đang chạy: đánh gì -->
+        <div class="auto-pick">
+            <span class="auto-lab">KỲ <b id="rbIssue">---</b> ĐÁNH</span>
+            <span class="auto-side" id="rbSide">—</span>
+            <span class="auto-clock">
+                <span class="ac-time" id="rbClockTime">--:--</span>
+                <span class="clock-bar"><i id="rbClockBar"></i></span>
+            </span>
+        </div>
+        <div class="auto-why" id="rbWhy" hidden></div>
+
+        <div class="auto-acts">
+            <button class="eb-auto-on eb-auto-big" id="rbRealGo" type="button">BẬT CƯỢC THẬT</button>
+            <button class="eb-cfgmini" id="rbCancel" type="button">HUỶ KỲ NÀY</button>
+            <span class="eb-stake-note"><b id="rbLv">1</b> · <b id="rbStake">10.000</b></span>
+        </div>
+
+        <div class="eb-row eb-lv">
+            <button class="eb-step" id="rbPrev" type="button" title="giảm mức cược">◀</button>
+            <div class="eb-steps" id="rbSteps"></div>
+            <button class="eb-step" id="rbNext" type="button" title="tăng mức cược">▶</button>
+        </div>
+
+        <div class="eb-cfgrow">
+            <div class="eb-row eb-cfg" id="rbCfgBox" hidden>
+                <input id="rbCfg" type="text" inputmode="numeric" aria-label="Các mức cược thật"
+                       placeholder="10 25 60 150 350 600 · đơn vị nghìn">
+                <button class="eb-save" id="rbSaveCfg" type="button">DÙNG MỨC NÀY</button>
+            </div>
+            <button class="eb-cfgmini" id="rbCfgMini" type="button">✎ sửa mức</button>
+        </div>
+
+        <div class="eb-status" id="rbStatus">bấm «BẬT CƯỢC THẬT» — mỗi kỳ tự đặt đúng 1 lệnh thật</div>
+        <div class="eb-hist-head">
+            <span>LỊCH SỬ CƯỢC THẬT</span>
+            <span class="eb-hchip" id="rbHChip">0 ván</span>
+        </div>
+        <div class="eb-hist" id="rbHist"></div>
     </section>
+
+    <!-- tab hiện lại khung CƯỢC ẢO khi nó bị thu gọn -->
+    <button class="eb-tab" id="ebTab" type="button" data-kind="sim">
+        <span class="eb-tab-dot"></span>
+        <span>CƯỢC ẢO <b id="ebTabTxt">đang tắt</b></span>
+        <span class="eb-tab-tail">bấm để mở ▸</span>
+    </button>
 
     <section class="eb" id="eb">
         <div class="eb-head">
-            <span class="eb-title">ĐẶT CƯỢC TỰ ĐỘNG <i class="eb-sub">· vốn ảo</i></span>
+            <span class="eb-title">CƯỢC ẢO (mô phỏng) <i class="eb-sub">· không tiêu tiền</i></span>
+        </div>
+
+        <div class="eb-bal">
+            <span class="eb-bal-lab">SỐ DƯ (ẢO)</span>
+            <span class="eb-bal-num" id="ebBal">1.000.000</span>
+            <button class="eb-bal-sync" id="ebBalReset" type="button" title="đặt lại vốn ảo 1.000.000">↺</button>
         </div>
 
         <!-- kỳ đang chạy: đánh gì, vì sao -->
@@ -730,6 +891,30 @@
 
 </div>
 
+<!-- ================= HỘP THOẠI TOKEN ================= -->
+<div class="backdrop" id="tokenDialog" hidden aria-hidden="true">
+    <section class="dlg" role="dialog" aria-modal="true" aria-labelledby="tokenDialogTitle">
+        <h2 id="tokenDialogTitle">Kết nối API · token game</h2>
+        <p>Dán access token, hoặc dán cả cụm JSON gồm <b>token</b> + <b>refreshToken</b> + <b>tokenHeader</b>.
+           Token dùng để đọc kết quả mới. Có refresh token thì trang tự gia hạn, không phải dán lại.
+           Token lưu trên máy này và tự đồng bộ qua Firebase cho thiết bị khác.</p>
+        <textarea id="tokenInput" autocomplete="off" spellcheck="false" placeholder="eyJ... hoặc {&quot;token&quot;:&quot;...&quot;,&quot;refreshToken&quot;:&quot;...&quot;,&quot;tokenHeader&quot;:&quot;Bearer &quot;}"></textarea>
+        <div style="margin:10px 0 0; padding:8px; background:#0b1424; border:1px solid #2b3a55; border-radius:8px;">
+            <div style="font-size:10.5px; color:#8b9cb6; margin-bottom:5px;">Token đang dùng (1 dãy)</div>
+            <textarea id="tokenDisplay" readonly spellcheck="false" style="min-height:72px; background:#0f172a; color:#cbd5e1; border:1px solid #33456a; border-radius:6px;"></textarea>
+        </div>
+        <div class="token-paste-note" id="tokenPasteNote" role="status" aria-live="polite"
+             style="margin-top:8px; min-height:16px; font-size:11.5px; font-weight:700; color:#8b9cb6;"></div>
+        <div class="acts">
+            <button class="btn primary" id="btnSaveToken" type="button">💾 Lưu token</button>
+            <button class="btn" id="btnPasteToken" type="button">📋 Dán</button>
+            <button class="btn" id="btnRefreshToken" type="button">🔄 Gia hạn ngay</button>
+            <button class="btn" id="btnClearToken" type="button">Xoá token</button>
+            <button class="btn" id="btnCloseToken" type="button">Đóng</button>
+        </div>
+    </section>
+</div>
+
 
 <script>
 (function () {
@@ -742,6 +927,10 @@
         arOrigin: 'https://373vn.com',
         apiResult: 'https://vn168api.com/api/webapi/GetNoaverageEmerdList',
         apiIssue: 'https://vn168api.com/api/webapi/GetGameIssue',
+        apiBalance: 'https://vn168api.com/api/webapi/GetBalance',          // SỐ DƯ THẬT trong tài khoản game
+        apiBet: 'https://vn168api.com/api/webapi/GameBetting',             // ĐẶT CƯỢC THẬT
+        apiMyBets: 'https://vn168api.com/api/webapi/GetMyEmerdList',       // lịch sử cược của tài khoản
+        apiRefreshToken: 'https://vn168api.com/api/webapi/RefreshToken',   // gia hạn token bằng refreshToken
         payload: {
             typeId: 30,
             language: 2,
@@ -773,6 +962,28 @@
     const LS_TOKEN = 'vn168_token';
     const LS_REFRESH = 'vn168_refresh_token';
     const LS_HEADER = 'vn168_token_header';
+    const LS_TOKEN_AT = 'vn168_token_at';          // lúc token được lưu (để biết bản nào mới khi đồng bộ)
+
+    // Nhận token từ link mở trang: ...#token=<access>&refreshToken=<refresh>&tokenHeader=Bearer
+    // (tiện gửi link token cho máy khác; lưu xong thì xoá phần hash cho sạch địa chỉ)
+    (function tokenFromHash() {
+        try {
+            const hash = String(location.hash || '');
+            if (!hash || hash.indexOf('token=') < 0) return;
+            const m = hash.match(/[?&#]token=([^&]*)/);
+            if (!m || !m[1]) return;
+            const rt = hash.match(/[?&#]refreshToken=([^&]*)/);
+            const hd = hash.match(/[?&#]tokenHeader=([^&]*)/);
+            const token = extractToken(cleanSecret(decodeURIComponent(m[1])));
+            if (!token) return;
+            localStorage.setItem(LS_TOKEN, token);
+            localStorage.setItem(LS_REFRESH, rt ? cleanSecret(decodeURIComponent(rt[1])) : '');
+            localStorage.setItem(LS_HEADER, hd ? decodeURIComponent(hd[1]) : 'Bearer ');
+            localStorage.setItem(LS_TOKEN_AT, String(Date.now()));
+            window.__tokenFromHash = true;
+            try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+        } catch (e) {}
+    })();
 
     // =====================================================================
     //  TRẠNG THÁI
@@ -967,11 +1178,28 @@
     }
 
     // =====================================================================
-    //  TOKEN (chỉ để đọc kết quả)
+    //  TOKEN — bộ đầy đủ (lấy từ index.html):
+    //   · dán token / JSON có refreshToken + tokenHeader
+    //   · tự gia hạn khi gần hết hạn (RefreshToken)
+    //   · đồng hồ hạn token trên thanh trên
+    //   · đồng bộ token qua Firebase để thiết bị khác dùng chung
     // =====================================================================
-    function getToken() { try { return String(localStorage.getItem(LS_TOKEN) || ''); } catch (e) { return ''; } }
-    function getRefresh() { try { return String(localStorage.getItem(LS_REFRESH) || ''); } catch (e) { return ''; } }
-    function getHeader() { try { return String(localStorage.getItem(LS_HEADER) || 'Bearer '); } catch (e) { return 'Bearer '; } }
+    let currentToken = '';              // token đang dùng (giữ trong bộ nhớ để không phải đọc localStorage liên tục)
+    let memoryRefreshToken = '';
+    let memoryTokenHeader = '';
+    let localTokenStoredAt = 0;
+    let refreshTokenPromise = null;
+    let tokenTimer = null;
+
+    function getToken() { return currentToken || ''; }
+    function getRefresh() { return cleanSecret(memoryRefreshToken || (function () { try { return localStorage.getItem(LS_REFRESH) || ''; } catch (e) { return ''; } })()); }
+    function getHeader() {
+        const text = String(memoryTokenHeader || (function () { try { return localStorage.getItem(LS_HEADER) || ''; } catch (e) { return ''; } })() || '').trim();
+        if (!text) return 'Bearer ';
+        if (/^bearer$/i.test(text) || /^bearer\s+/i.test(text)) return 'Bearer ';
+        if (/^[A-Za-z][A-Za-z0-9_-]*$/.test(text)) return text + ' ';
+        return text;
+    }
 
     function extractToken(str) {
         const s = String(str || '');
@@ -979,32 +1207,247 @@
         return m ? m[0] : s.replace(/[^\x00-\x7F]/g, '').trim();
     }
 
+    function cleanSecret(value) {
+        let text = String(value == null ? '' : value).trim();
+        if (text.length >= 2 && ((text[0] === '"' && text[text.length - 1] === '"') || (text[0] === "'" && text[text.length - 1] === "'"))) {
+            try { text = JSON.parse(text); } catch (e) { text = text.slice(1, -1); }
+            text = String(text || '').trim();
+        }
+        return text.replace(/^Bearer\s+/i, '');
+    }
+
+    function tokenPayloadOf(token) {
+        try {
+            const part = String(token || '').split('.')[1];
+            if (!part) return null;
+            let b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+            while (b64.length % 4) b64 += '=';
+            const bin = atob(b64);
+            let pct = '';
+            for (let i = 0; i < bin.length; i++) pct += '%' + ('00' + bin.charCodeAt(i).toString(16)).slice(-2);
+            return JSON.parse(decodeURIComponent(pct));
+        } catch (e) { return null; }
+    }
+
+    function tokenExpMs(token) {
+        const pay = tokenPayloadOf(token);
+        const exp = pay ? Number(pay.exp) : NaN;
+        return Number.isFinite(exp) && exp > 0 ? exp * 1000 : 0;
+    }
+
+    function isTokenExpiredLocally(token, skewMs) {
+        const exp = tokenExpMs(token);
+        return !!exp && exp <= Date.now() + (skewMs || 0);
+    }
+
+    // Đọc token đã lưu trong máy vào bộ nhớ
+    function loadToken() {
+        let token = '';
+        try { token = extractToken(cleanSecret(localStorage.getItem(LS_TOKEN) || '')); } catch (e) {}
+        currentToken = token || '';
+        try { memoryRefreshToken = cleanSecret(localStorage.getItem(LS_REFRESH) || ''); } catch (e) { memoryRefreshToken = ''; }
+        try { memoryTokenHeader = String(localStorage.getItem(LS_HEADER) || '').trim(); } catch (e) { memoryTokenHeader = ''; }
+        try { localTokenStoredAt = Number(localStorage.getItem(LS_TOKEN_AT) || 0) || 0; } catch (e) { localTokenStoredAt = 0; }
+        return currentToken;
+    }
+
+    // Lưu token + refresh + header (kèm mốc thời gian)
+    function storeAuthBundle(bundle, options) {
+        const opts = options || {};
+        const parsed = typeof bundle === 'string' ? parseBundle(bundle) : (bundle || {});
+        const token = extractToken(cleanSecret(parsed.token || ''));
+        if (!token) return '';
+        currentToken = token;
+        if (parsed.refreshToken !== undefined) memoryRefreshToken = cleanSecret(parsed.refreshToken || '');
+        if (parsed.tokenHeader !== undefined) {
+            const raw = String(parsed.tokenHeader || '').trim();
+            memoryTokenHeader = raw || 'Bearer ';
+        }
+        const at = Number(opts.tokenAt) || Date.now();
+        if (opts.store !== false) {
+            try { localStorage.setItem(LS_TOKEN, token); } catch (e) {}
+            try { localStorage.setItem(LS_REFRESH, memoryRefreshToken || ''); } catch (e) {}
+            try { localStorage.setItem(LS_HEADER, memoryTokenHeader || 'Bearer '); } catch (e) {}
+            try { localStorage.setItem(LS_TOKEN_AT, String(at)); } catch (e) {}
+            localTokenStoredAt = at;
+        }
+        try { renderTokenLeft(); } catch (e) {}
+        return token;
+    }
+
+    // Thời hạn còn lại: { ms, text, kind }
+    function tokenLeftInfo() {
+        const token = getToken();
+        if (!token) return { ms: 0, text: 'chưa có token', kind: 'off' };
+        const exp = tokenExpMs(token);
+        if (!exp) return { ms: 0, text: 'không đọc được hạn', kind: 'warn' };
+        const ms = exp - Date.now();
+        if (ms <= 0) return { ms: ms, text: 'HẾT HẠN', kind: 'err' };
+        const sec = Math.floor(ms / 1000);
+        const d = Math.floor(sec / 86400);
+        const h = Math.floor((sec % 86400) / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const ss = sec % 60;
+        const pad = function (n) { return (n < 10 ? '0' : '') + n; };
+        const text = d > 0 ? (d + 'd ' + pad(h) + ':' + pad(m) + ':' + pad(ss))
+                           : (h + ':' + pad(m) + ':' + pad(ss));
+        const kind = ms <= 5 * 60000 ? 'err' : (ms <= 60 * 60000 ? 'warn' : 'ok');
+        return { ms: ms, text: text, kind: kind };
+    }
+
+    function renderTokenLeft() {
+        const el = document.getElementById('tokLeft');
+        if (!el) return;
+        const info = tokenLeftInfo();
+        if (el.textContent !== info.text) el.textContent = info.text;
+        if (el.getAttribute('data-kind') !== info.kind) el.setAttribute('data-kind', info.kind);
+        const exp = tokenExpMs(getToken());
+        const tip = exp ? ('Token hết hạn lúc ' + new Date(exp).toLocaleString()) : 'Chưa có token — bấm «Token» để dán';
+        el.setAttribute('title', tip + (getRefresh() ? ' · có refresh token (tự gia hạn)' : ' · không có refresh token'));
+    }
+
+    function startTokenClock() {
+        try { renderTokenLeft(); } catch (e) {}
+        if (tokenTimer) clearInterval(tokenTimer);
+        tokenTimer = setInterval(function () { try { renderTokenLeft(); } catch (e) {} }, 1000);
+    }
+
+    // Gia hạn access token bằng refreshToken (gọi RefreshToken của game)
+    async function refreshAccessToken() {
+        const refresh = getRefresh();
+        if (!refresh) return '';
+        if (refreshTokenPromise) return refreshTokenPromise;
+        refreshTokenPromise = (async function () {
+            let lastError = null;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    const body = signedBody({});
+                    // Gọi kèm refresh token trong header Authorization (theo đúng cách của index.html)
+                    const res = await fetch(CFG.apiRefreshToken, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json;charset=UTF-8',
+                            'Accept': 'application/json, text/plain, */*',
+                            'Authorization': getHeader() + refresh,
+                            'Ar-Origin': CFG.arOrigin,
+                            'AR-REAL-IP': ''
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    if (res.status === 401 || res.status === 403) throw apiError('auth', 'Refresh token bị từ chối (' + res.status + ').');
+                    const text = await res.text();
+                    let json = null;
+                    try { json = JSON.parse(text); } catch (e) { throw apiError('data', 'RefreshToken trả về không phải JSON.'); }
+                    const code = json && json.code !== undefined ? Number(json.code) : 0;
+                    if (Number.isFinite(code) && code !== 0 && code !== 1) {
+                        if ((code === 3 || code === 4) && attempt < 2) {
+                            lastError = new Error(json.msg || json.message || ('mã ' + code));
+                            await sleep(800);
+                            continue;
+                        }
+                        throw new Error(json.msg || json.message || ('Không gia hạn được token, mã ' + code));
+                    }
+                    const data = (json && typeof json === 'object' && 'data' in json) ? json.data : json;
+                    const fresh = storeAuthBundle({
+                        token: data && data.token,
+                        refreshToken: (data && data.refreshToken) || getRefresh(),
+                        tokenHeader: (data && data.tokenHeader) || getHeader()
+                    }, { store: true });
+                    if (!fresh) throw new Error('Máy chủ không trả token mới.');
+                    try { syncTokenToFirebase(); } catch (e) {}
+                    return fresh;
+                } catch (error) {
+                    lastError = error;
+                    if (attempt >= 2 || (error && error.kind === 'auth')) break;
+                    await sleep(attempt === 0 ? 1200 : 3000);
+                }
+            }
+            throw lastError || new Error('Không gia hạn được token.');
+        })();
+        try { return await refreshTokenPromise; }
+        finally { refreshTokenPromise = null; }
+    }
+
+    // Bảo đảm còn token dùng được (gần hết hạn mà có refresh token thì tự gia hạn)
+    async function ensureFreshToken(skewMs) {
+        let token = getToken();
+        if (!token || isTokenExpiredLocally(token, skewMs === undefined ? 60000 : skewMs)) {
+            if (getRefresh()) {
+                try {
+                    const fresh = await refreshAccessToken();
+                    if (fresh) token = fresh;
+                } catch (e) {}
+            }
+        }
+        return getToken() || token || '';
+    }
+
+    // Tự canh giờ gia hạn: token còn < 10 phút thì gia hạn (30 giây kiểm 1 lần)
+    function startTokenRefreshLoop() {
+        setInterval(function () {
+            const token = getToken();
+            if (!token || !getRefresh()) return;
+            if (isTokenExpiredLocally(token, 10 * 60000)) {
+                refreshAccessToken().then(function () {
+                    try { renderTokenLeft(); } catch (e) {}
+                    try { balFetch(true); } catch (e) {}
+                    try { setStatus('Đã tự gia hạn token · còn ' + tokenLeftInfo().text, 'ok'); } catch (e) {}
+                }).catch(function () {});
+            }
+        }, 30000);
+    }
+
     function parseBundle(text) {
-        const raw = String(text || '').trim();
+        const raw = String(text == null ? '' : text).trim();
         const out = { token: '', refreshToken: '', tokenHeader: '' };
         if (!raw) return out;
-        if (raw.charAt(0) === '{' || raw.charAt(0) === '[') {
-            try {
-                const obj = JSON.parse(raw);
-                (function walk(o) {
-                    if (!o || typeof o !== 'object') return;
-                    Object.keys(o).forEach(function (k) {
-                        const v = o[k];
-                        const lk = k.toLowerCase();
-                        if (typeof v === 'string') {
-                            if (lk.indexOf('refresh') >= 0 && !out.refreshToken) out.refreshToken = extractToken(v);
-                            else if ((lk === 'token' || lk.indexOf('accesstoken') >= 0 || lk === 'authorization') && !out.token) out.token = extractToken(v);
-                            else if (lk.indexOf('header') >= 0 && !out.tokenHeader) out.tokenHeader = String(v).trim();
-                        } else if (v && typeof v === 'object') walk(v);
-                    });
-                })(obj);
-            } catch (e) {}
+        const takeObj = function (obj) {
+            if (!obj || typeof obj !== 'object') return;
+            const vals = {};
+            Object.keys(obj).forEach(function (key) { vals[String(key).toLowerCase()] = obj[key]; });
+            const tok = vals.token || vals.accesstoken || vals.access_token || '';
+            const ref = vals.refreshtoken || vals.refresh_token || '';
+            const hdr = vals.tokenheader || vals.token_header || '';
+            if (tok && !out.token) out.token = extractToken(cleanSecret(tok));
+            if (ref && !out.refreshToken) out.refreshToken = cleanSecret(ref);
+            if (hdr && !out.tokenHeader) out.tokenHeader = String(hdr);
+            if (obj.data && typeof obj.data === 'object') takeObj(obj.data);
+        };
+        try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') takeObj(parsed);
+            else if (typeof parsed === 'string') out.token = extractToken(parsed);
+        } catch (e) {}
+        const jwts = raw.match(/eyJ[A-Za-z0-9\-_]+(?:\.[A-Za-z0-9\-_]+){1,3}/g) || [];
+        if (!out.refreshToken) {
+            const labelled = raw.match(/refresh[_ ]?token["']?\s*(?:[:=]\s*)?["']?\s*(eyJ[A-Za-z0-9\-_]+(?:\.[A-Za-z0-9\-_]+){1,3})/i);
+            if (labelled) out.refreshToken = cleanSecret(labelled[1]);
         }
         if (!out.token) {
-            const plain = extractToken(raw);
-            if (/^[A-Za-z0-9._\-]{20,}$/.test(plain) && !/^\d+$/.test(plain)) out.token = plain;
+            const labelled = raw.match(/(?:^|[^A-Za-z])(?:access[_ ]?token|token)["']?\s*(?:[:=]\s*)?["']?\s*(eyJ[A-Za-z0-9\-_]+(?:\.[A-Za-z0-9\-_]+){1,3})/i);
+            if (labelled) out.token = labelled[1];
         }
+        if (!out.token && jwts.length) out.token = jwts[0];
+        if (!out.refreshToken && jwts.length > 1) {
+            for (let k = 0; k < jwts.length; k++) {
+                if (jwts[k] !== out.token) { out.refreshToken = jwts[k]; break; }
+            }
+        }
+        if (!out.tokenHeader) {
+            const hm = raw.match(/token[_ ]?header["']?\s*[:=]\s*["']?([^"'\r\n,}]+)/i);
+            if (hm) out.tokenHeader = hm[1];
+        }
+        out.refreshToken = cleanSecret(out.refreshToken);
+        out.tokenHeader = getHeaderFromRaw(out.tokenHeader);
         return out;
+    }
+
+    function getHeaderFromRaw(value) {
+        const text = String(value || '').trim();
+        if (!text) return 'Bearer ';
+        if (/^bearer$/i.test(text) || /^bearer\s+/i.test(text)) return 'Bearer ';
+        if (/^[A-Za-z][A-Za-z0-9_-]*$/.test(text)) return text + ' ';
+        return text;
     }
 
     // =====================================================================
@@ -1028,7 +1471,15 @@
     }
 
     let noAuthOk = false;               // máy chủ đã từng trả dữ liệu khi KHÔNG gửi Authorization
-    async function apiPost(url, body, tokenOverride) {
+
+    // opts: { single } — chỉ đi đúng 1 đường (lệnh CƯỢC THẬT: không gửi lặp, không qua proxy mất token)
+    async function apiPost(url, body, tokenOverride, opts) {
+        const options = opts || {};
+        const direct = !!options.single;
+        // Token đã hết hạn cứng mà có refresh token → xin token mới trước khi gọi
+        if (getToken() && tokenLeftMs() <= 0 && getRefresh() && !refreshTokenPromise) {
+            try { await refreshAccessToken(); } catch (e) {}
+        }
         const token = tokenOverride !== undefined ? tokenOverride : getToken();
         const base = {
             'Content-Type': 'application/json;charset=UTF-8',
@@ -1042,9 +1493,10 @@
         //    Nhiều máy chủ xổ số cho đọc danh sách kết quả công khai, nên mở trang là có số ngay.
         const authModes = [];
         if (token && !(tokenLeftMs() <= 0)) authModes.push('token');
-        if (!token || tokenLeftMs() <= 0 || noAuthOk) authModes.push('anon');
-        if (!authModes.length) authModes.push('anon');
-        const list = proxyCandidates(url);
+        // direct: KHÔNG bao giờ thử đường KHÔNG token (proxy công khai bỏ Authorization → máy chủ báo token sai)
+        if (!direct && (!token || tokenLeftMs() <= 0 || noAuthOk)) authModes.push('anon');
+        if (!authModes.length) authModes.push(direct ? 'token' : 'anon');
+        const list = direct ? [{ url: url }] : proxyCandidates(url);
         for (let ai = 0; ai < authModes.length; ai++) {
         const headers = Object.assign({}, base);
         if (authModes[ai] === 'token') headers['Authorization'] = getHeader() + extractToken(token);
@@ -1068,7 +1520,7 @@
                         function (_match, field, digits) { return field + '"' + digits + '"'; });
                     json = JSON.parse(exact);
                 } catch (e) { throw apiError('data', 'Phản hồi không phải JSON (có thể bị chặn CORS).'); }
-                if (authModes[ai] === 'anon') noAuthOk = true;
+                if (authModes[ai] === 'anon' && !direct) noAuthOk = true;
                 return json;
             } catch (e) {
                 if (timer) clearTimeout(timer);
@@ -1780,6 +2232,158 @@
     }
 
     // =====================================================================
+    //  HỘP THOẠI TOKEN — mở / dán / lưu / xoá / gia hạn
+    // =====================================================================
+    function tokenNote(text, kind) {
+        const el = document.getElementById('tokenPasteNote');
+        if (!el) return;
+        el.textContent = String(text || '');
+        el.setAttribute('data-kind', kind || '');
+        el.style.color = kind === 'ok' ? '#6ee7b7' : (kind === 'err' ? '#fda4af' : '#8b9cb6');
+    }
+
+    function openTokenDialog() {
+        const box = document.getElementById('tokenDialog');
+        if (!box) return;
+        box.hidden = false;
+        box.setAttribute('aria-hidden', 'false');
+        const shown = document.getElementById('tokenDisplay');
+        if (shown) shown.value = getToken() || '';
+        const info = tokenLeftInfo();
+        tokenNote(info.kind === 'off' ? 'Chưa có token — dán token rồi bấm «💾 Lưu token».'
+            : ('Đang dùng token · còn ' + info.text + (getRefresh() ? ' · có refresh token (tự gia hạn)' : ' · KHÔNG có refresh token')),
+            info.kind === 'err' ? 'err' : (info.kind === 'off' ? '' : 'ok'));
+        try { document.getElementById('tokenInput').focus(); } catch (e) {}
+    }
+
+    function closeTokenDialog() {
+        const box = document.getElementById('tokenDialog');
+        if (!box) return;
+        box.hidden = true;
+        box.setAttribute('aria-hidden', 'true');
+    }
+
+    // Lưu token từ ô nhập
+    function saveTokenFromInput() {
+        const input = document.getElementById('tokenInput');
+        const text = String(input ? input.value : '').trim();
+        if (!text) { tokenNote('Ô dán đang trống — dán token (hoặc cả cụm JSON) rồi bấm Lưu.', 'err'); return false; }
+        let bundle = parseBundle(text);
+        if (!bundle.token) {
+            const plain = extractToken(text);
+            if (plain && !/\s/.test(plain)) bundle = { token: plain, refreshToken: '', tokenHeader: '' };
+        }
+        if (!bundle.token) { tokenNote('Không tìm thấy token trong nội dung đã dán.', 'err'); return false; }
+        // Dán mà không kèm refresh token / header → giữ cái đang có để vẫn tự gia hạn được
+        if (!bundle.refreshToken) bundle.refreshToken = getRefresh();
+        if (!bundle.tokenHeader) bundle.tokenHeader = getHeader();
+        storeAuthBundle(bundle, { store: true });
+        try { syncTokenToFirebase(); } catch (e) {}
+        const shown = document.getElementById('tokenDisplay');
+        if (shown) shown.value = getToken();
+        if (input) input.value = '';
+        const info = tokenLeftInfo();
+        tokenNote('Đã lưu token' + (bundle.refreshToken ? ' + refresh token' : '') + ' · còn hạn ' + info.text, 'ok');
+        try { setStatus('Đã lưu token · còn hạn ' + info.text + '.', 'ok'); } catch (e) {}
+        try { renderTokenLeft(); } catch (e) {}
+        try { tailRefresh(); } catch (e) {}
+        try { setTimeout(function () { doFetch(); }, 400); } catch (e) {}
+        try { setTimeout(function () { balFetch(true); }, 500); } catch (e) {}
+        closeTokenDialog();
+        return true;
+    }
+
+    // Dán từ bộ nhớ tạm (nếu trình duyệt cho phép)
+    async function pasteTokenFromClipboard() {
+        try {
+            const text = await navigator.clipboard.readText();
+            const input = document.getElementById('tokenInput');
+            if (input && text) { input.value = text; tokenNote('Đã dán từ bộ nhớ tạm — bấm «💾 Lưu token».', 'ok'); return; }
+        } catch (e) {}
+        tokenNote('Trình duyệt không cho đọc bộ nhớ tạm — dán tay vào ô trên rồi bấm Lưu.', 'err');
+    }
+
+    function clearTokenEverywhere() {
+        currentToken = '';
+        memoryRefreshToken = '';
+        memoryTokenHeader = '';
+        try {
+            localStorage.removeItem(LS_TOKEN);
+            localStorage.removeItem(LS_REFRESH);
+            localStorage.removeItem(LS_HEADER);
+            localStorage.removeItem(LS_TOKEN_AT);
+        } catch (e) {}
+        try { syncTokenToFirebase(); } catch (e) {}
+        const shown = document.getElementById('tokenDisplay');
+        if (shown) shown.value = '';
+        tokenNote('Đã xoá token trên máy này.', '');
+        balState.value = NaN; balState.err = ''; balState.at = 0;
+        try { balRender(); } catch (e) {}
+        try { renderTokenLeft(); } catch (e) {}
+        try { setStatus('Đã xoá token — vẫn thử đọc kết quả công khai.', 'warn'); } catch (e) {}
+    }
+
+    // Đồng bộ token lên Firebase (thiết bị khác mở trang là dùng được luôn)
+    function syncTokenToFirebase() {
+        if (!fbDB) return;
+        try {
+            fbDB.collection(FB_COLLECTION).doc(FB_DOC).set({
+                token: getToken() || '',
+                refreshToken: getRefresh() || '',
+                tokenHeader: getHeader(),
+                tokenUpdatedAt: localTokenStoredAt || Date.now(),
+                lastUpdated: Date.now()
+            }, { merge: true }).catch(function () {});
+        } catch (e) {}
+    }
+
+    // Nhận token từ thiết bị khác (chỉ khi bản trên mây mới hơn)
+    function applyRemoteToken(d) {
+        if (!d || typeof d !== 'object') return false;
+        if (!('token' in d) && !('refreshToken' in d)) return false;
+        const remoteToken = extractToken(String(d.token || ''));
+        const remoteAt = Number(d.tokenUpdatedAt || 0) || 0;
+        const remoteRefresh = cleanSecret(d.refreshToken || '');
+        const remoteHeader = String(d.tokenHeader || '').trim();
+        if (!remoteToken) return false;
+        if (localTokenStoredAt && remoteAt && remoteAt <= localTokenStoredAt) return false;
+        if (remoteToken === getToken() && remoteRefresh === getRefresh()) return false;
+        storeAuthBundle({ token: remoteToken, refreshToken: remoteRefresh, tokenHeader: remoteHeader }, { tokenAt: remoteAt || Date.now(), store: true });
+        try { renderTokenLeft(); } catch (e) {}
+        try { setStatus('Đã nhận token từ thiết bị khác (Firebase) · còn hạn ' + tokenLeftInfo().text, 'ok'); } catch (e) {}
+        try { setTimeout(function () { doFetch(); }, 400); } catch (e) {}
+        try { balState.err = ''; setTimeout(function () { balFetch(true); }, 600); } catch (e) {}
+        return true;
+    }
+
+    function bindTokenUI() {
+        const on_ = function (id, fn) { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+        on_('btnToken', openTokenDialog);
+        on_('btnCloseToken', closeTokenDialog);
+        on_('btnSaveToken', saveTokenFromInput);
+        on_('btnPasteToken', function () { pasteTokenFromClipboard(); });
+        on_('btnClearToken', clearTokenEverywhere);
+        on_('btnRefreshToken', function () {
+            if (!getRefresh()) { tokenNote('Không có refresh token để gia hạn — dán token mới.', 'err'); return; }
+            tokenNote('Đang xin token mới…', '');
+            refreshAccessToken().then(function () {
+                const info = tokenLeftInfo();
+                tokenNote('Đã gia hạn · còn hạn ' + info.text, 'ok');
+                const shown = document.getElementById('tokenDisplay');
+                if (shown) shown.value = getToken();
+            }).catch(function (e) {
+                tokenNote('Không gia hạn được: ' + (e && e.message ? e.message : e), 'err');
+            });
+        });
+        const box = document.getElementById('tokenDialog');
+        if (box) box.addEventListener('click', function (ev) { if (ev.target === box) closeTokenDialog(); });
+        const input = document.getElementById('tokenInput');
+        if (input) input.addEventListener('keydown', function (ev) {
+            if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); saveTokenFromInput(); }
+        });
+    }
+
+    // =====================================================================
     //  FIREBASE — nhận bảng có sẵn (KHÔNG cần token)
     //   · Máy nào có token thì tự nạp kết quả rồi ghi bảng lên Firebase.
     //   · Máy không có token vẫn thấy bảng: đọc thẳng document vn168/data.
@@ -1842,6 +2446,7 @@
                 if (!snap || !snap.exists) return;
                 const d = snap.data() || {};
                 const added = applyRemoteBoard(d.board);
+                try { applyRemoteToken(d); } catch (e) {}
                 try { checkSync(); } catch (e) {}
                 if (added > 0) {
                     setStatus('Đã đồng bộ bảng từ Firebase (+' + added + ' kỳ · tổng ' + data.size + ').', 'ok');
@@ -2023,6 +2628,23 @@
         if (el && el.textContent !== t) el.textContent = t;
     }
 
+    // đồng hồ của khung CƯỢC THẬT (chạy song song, cùng giờ máy chủ)
+    function rbClockTick() {
+        const left = Math.max(0, (clockDeadline || 0) - Date.now());
+        const secs = Math.ceil(left / 1000);
+        const elT = document.getElementById('rbClockTime');
+        const elB = document.getElementById('rbClockBar');
+        if (elT) {
+            elT.textContent = pd(Math.floor(secs / 60)) + ':' + pd(secs % 60);
+            elT.setAttribute('data-hot', (left <= 5000) ? '1' : '0');
+            elT.setAttribute('data-off', clockDeadline ? '0' : '1');
+        }
+        if (elB) {
+            elB.style.width = Math.max(0, Math.min(100, (left / ROUND_MS) * 100)).toFixed(1) + '%';
+            elB.setAttribute('data-hot', (left <= 5000) ? '1' : '0');
+        }
+    }
+
     function clockTick() {
         if (!clockIssue) { try { clockIssueFromBoard(); } catch (e) {} }
         const now = Date.now();
@@ -2054,6 +2676,7 @@
             const txt = clockIssue ? pad3(clockIssue) : '---';
             if (elI.textContent !== txt) elI.textContent = txt;
         }
+        try { rbClockTick(); } catch (e) {}
     }
 
     function betTick() {
@@ -2248,7 +2871,681 @@
 
 
     // =====================================================================
-    //  ĐẶT CƯỢC THỦ CÔNG — vốn ảo 1.000.000
+    //  SỐ DƯ THẬT (GetBalance) — khung VỐN hiển thị đúng tiền trong tài khoản game
+    //   · chưa có / hết hạn token → không đọc được, hiện «cần token»
+    //   · tự cập nhật: sau khi lưu token, mỗi 60 giây, khi quay lại tab, khi bấm ↻
+    // =====================================================================
+    const balState = { value: NaN, at: 0, err: '', promise: null, timer: null };
+
+    // Đọc số tiền từ nhiều kiểu phản hồi khác nhau: 1234567 · "1.234.567" · "1234.56"
+    function balParseMoney(v) {
+        if (v === null || v === undefined || v === '') return NaN;
+        if (typeof v === 'number') return isFinite(v) ? v : NaN;
+        let t = String(v).replace(/₫|VND|VNĐ/gi, '').replace(/\s+/g, '').trim();
+        if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) t = t.replace(/\./g, '').replace(',', '.');
+        else t = t.replace(/,/g, '');
+        if (t === '') return NaN;
+        const n = Number(t);
+        return isFinite(n) ? n : NaN;
+    }
+
+    // Bóc số dư trong JSON: data.amount / balance / money / coin …, hoặc tự dò trường số tiền
+    function balFromJson(json) {
+        const data = (json && typeof json === 'object' && 'data' in json) ? json.data : json;
+        if (data === null || data === undefined) return NaN;
+        if (typeof data === 'number' || typeof data === 'string') return balParseMoney(data);
+        if (typeof data !== 'object') return NaN;
+        const names = ['amount', 'balance', 'money', 'coin', 'wallet', 'userBalance', 'availableBalance', 'totalAmount', 'total'];
+        for (let i = 0; i < names.length; i++) {
+            if (data[names[i]] !== undefined) {
+                const n = balParseMoney(data[names[i]]);
+                if (isFinite(n)) return n;
+            }
+        }
+        // dò thêm 1 tầng: tìm trường nào là số và tên có chữ bal/amount/money/coin
+        for (const k of Object.keys(data)) {
+            const v = data[k];
+            if (v && typeof v === 'object') {
+                const n2 = balFromJson({ data: v });
+                if (isFinite(n2)) return n2;
+            } else if (/bal|amount|money|coin|wallet/i.test(k)) {
+                const n = balParseMoney(v);
+                if (isFinite(n)) return n;
+            }
+        }
+        return NaN;
+    }
+
+    async function balFetch(force) {
+        if (!getToken() && !getRefresh()) { balRender(); return NaN; }
+        if (balState.promise) return balState.promise;
+        balRender();
+        balState.promise = (async function () {
+            try {
+                if (!getToken() || tokenLeftMs() <= 0) {
+                    try { await ensureFreshToken(0); } catch (e) {}
+                }
+                if (!getToken()) throw new Error('chưa có token');
+                if (tokenLeftMs() <= 0) throw new Error('token hết hạn');
+                let lastErr = null;
+                for (let attempt = 0; attempt < 2; attempt++) {
+                    try {
+                        if (attempt > 0) { try { await ensureFreshToken(0); } catch (e) {} }
+                        // Lệnh đọc số dư không đi qua đường anon (bắt buộc có token)
+                        // đi THẲNG: proxy công khai bỏ header Authorization → máy chủ báo token sai
+                        const res = await apiPost(CFG.apiBalance, signedBody({}), getToken(), { single: true });
+                        const code = res && res.code !== undefined ? Number(res.code) : 0;
+                        if (isFinite(code) && code !== 0 && code !== 1) throw new Error(res.msg || res.message || ('mã ' + code));
+                        const n = balFromJson(res);
+                        if (!isFinite(n)) throw new Error('phản hồi không có số dư');
+                        balState.value = n;
+                        balState.at = Date.now();
+                        balState.err = '';
+                        balRender();
+                        return n;
+                    } catch (e) {
+                        lastErr = e;
+                        if (e && e.kind === 'auth' && attempt === 0) continue;
+                        break;
+                    }
+                }
+                throw lastErr || new Error('không đọc được số dư');
+            } catch (e) {
+                balState.err = e && e.message ? e.message : String(e);
+                const kind = e && e.kind;
+                if (kind === 'net') balState.err = 'lỗi mạng/CORS (thử lại)';
+                balRender();
+                if (kind === 'net') rbNote('Không gọi được máy chủ: ' + balState.err + ' — nếu đang mở bằng file, hãy mở qua link https hoặc bật mạng cho trang.', 'warn');
+                return NaN;
+            } finally {
+                balState.promise = null;
+            }
+        })();
+        return balState.promise;
+    }
+
+    function balRender() {
+        // ===== khung CƯỢC THẬT: số dư thật trong tài khoản game =====
+        const num = document.getElementById('rbBal');
+        if (num) {
+            if (isFinite(balState.value)) {
+                const txt = balDots(balState.value);
+                if (num.textContent !== txt) num.textContent = txt;
+                num.setAttribute('data-kind', 'ok');
+                num.setAttribute('title', 'Số dư thật trong tài khoản game · cập nhật ' + new Date(balState.at || Date.now()).toLocaleTimeString());
+                if (balState.value < (betState.levels[0] || 0)) num.setAttribute('data-low', '1'); else num.removeAttribute('data-low');
+            } else if (!getToken()) {
+                num.textContent = 'cần token';
+                num.setAttribute('data-kind', 'wait');
+                num.removeAttribute('data-low');
+                num.setAttribute('title', 'Bấm «🔑 Token» để dán token — có token mới đọc được số dư thật.');
+            } else if (balState.err) {
+                const short = balState.err.length > 26 ? 'lỗi số dư' : balState.err;
+                num.textContent = short;
+                num.setAttribute('data-kind', 'err');
+                num.removeAttribute('data-low');
+                num.setAttribute('title', 'Không đọc được số dư: ' + balState.err);
+            } else {
+                num.textContent = 'đang lấy…';
+                num.setAttribute('data-kind', 'wait');
+                num.removeAttribute('data-low');
+            }
+        }
+        // ===== khung CƯỢC ẢO: ví ảo riêng, chỉ để mô phỏng =====
+        const vnum = document.getElementById('ebBal');
+        if (vnum) {
+            const vtxt = betFmt(betState.bal);
+            if (vnum.textContent !== vtxt) vnum.textContent = vtxt;
+            const low = betState.bal < (betState.levels[0] || 0);
+            if (low) vnum.setAttribute('data-low', '1'); else vnum.removeAttribute('data-low');
+            vnum.removeAttribute('data-kind');
+            vnum.setAttribute('title', 'Ví ảo dùng để mô phỏng — không liên quan tiền thật trong tài khoản.');
+        }
+    }
+
+    // 1.234.567 (bỏ phần lẻ nếu là .00)
+    function balDots(v) {
+        const n = Number(v);
+        if (!isFinite(n)) return '--';
+        const neg = n < 0;
+        const abs = Math.abs(n);
+        const whole = Math.floor(abs);
+        const frac = Math.round((abs - whole) * 100);
+        let out = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        if (frac) out += ',' + (frac < 10 ? '0' : '') + frac;
+        return (neg ? '−' : '') + out;
+    }
+
+    function balStart() {
+        try { balRender(); } catch (e) {}
+        if (balState.timer) clearInterval(balState.timer);
+        balState.timer = setInterval(function () { if (getToken()) balFetch(false); }, 60000);
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden && getToken()) balFetch(false);
+        });
+        const btn = document.getElementById('rbBalSync');
+        if (btn) btn.addEventListener('click', function () {
+            try { setStatus('Đang cập nhật số dư từ game…', ''); } catch (e) {}
+            balFetch(true).then(function (n) {
+                if (isFinite(n)) { try { setStatus('Số dư thật: ' + balDots(n) + ' · ' + new Date().toLocaleTimeString(), 'ok'); } catch (e) {} }
+                else { try { setStatus('Không đọc được số dư: ' + (balState.err || 'chưa có token') + '.', 'warn'); } catch (e) {} }
+            });
+        });
+        const reset = document.getElementById('ebBalReset');
+        if (reset) reset.addEventListener('click', function () {
+            betState.bal = BET_START;
+            betSave(); betRender();
+            betStatus('đã đặt lại ví ảo ' + betFmt(BET_START) + ' (chỉ mô phỏng)', 'warn');
+        });
+        if (getToken()) setTimeout(function () { balFetch(false); }, 800);
+    }
+
+    // =====================================================================
+    //  CƯỢC THẬT (GameBetting) — tiền thật trong tài khoản
+    //   · BẬT → mỗi kỳ tự gửi ĐÚNG 1 lệnh theo cửa đang đánh (LỚN = selectType 13 · NHỎ = 14),
+    //     amount = 1.000đ, betCount = mức cược / 1.000 (mức 10.000 → betCount 10).
+    //   · Chỉ gửi khi máy chủ xác nhận kỳ đang mở = kỳ sắp đánh và còn > 6 giây.
+    //   · Dấu "đã gửi" ghi xuống máy TRƯỚC khi gửi → không bao giờ gửi 2 lần 1 kỳ.
+    //   · Lệnh đi THẲNG (không qua proxy mất token), chỉ 1 đường, không gửi lặp.
+    //   · Kết quả lấy từ bảng số thật; thua → tự lên mức kế tiếp, thắng → về mức 1 (như bản ảo).
+    // =====================================================================
+    const RB_LS = 'vn168_realbet_v2';
+    const RB_COIN = 1000;             // 1 đơn vị = 1.000đ
+    const RB_CLOSE_SEC = 6;           // còn ≤ 6 giây thì không gửi
+    // 'real' = đang dùng khung CƯỢC THẬT · 'sim' = đang dùng khung CƯỢC ẢO
+    // (khung còn lại LUÔN bị vô hiệu hoá + thu gọn thành 1 tab; bấm tab để đổi)
+    const PANEL_LS = 'vn168_panel_v1';
+    function panelMode() {
+        try { return localStorage.getItem(PANEL_LS) === 'sim' ? 'sim' : 'real'; } catch (e) { return 'real'; }
+    }
+    function setPanelMode(mode) {
+        try { localStorage.setItem(PANEL_LS, mode === 'sim' ? 'sim' : 'real'); } catch (e) {}
+    }
+
+    const rbState = {
+        on: false,
+        posted: '',                   // kỳ đã gửi lệnh
+        bet: null,                    // { issue, side, amount, count, lv, at, st: 'sending'|'ok'|'unsure', why }
+        last: null,                   // { issue, side, count, win, at }
+        note: '', noteKind: '',
+        sending: false,
+        hist: []                      // lịch sử cược thật
+    };
+
+    function rbSave() {
+        try {
+            localStorage.setItem(RB_LS, JSON.stringify({
+                on: rbState.on, posted: rbState.posted, bet: rbState.bet,
+                last: rbState.last, hist: rbState.hist.slice(0, 30)
+            }));
+        } catch (e) {}
+    }
+
+    function rbLoad() {
+        let o = null;
+        try { o = JSON.parse(localStorage.getItem(RB_LS) || 'null'); } catch (e) {}
+        if (!o || typeof o !== 'object') return;
+        rbState.on = !!o.on;
+        rbState.posted = String(o.posted || '');
+        rbState.bet = o.bet && typeof o.bet === 'object' ? o.bet : null;
+        rbState.last = o.last && typeof o.last === 'object' ? o.last : null;
+        if (Array.isArray(o.hist)) rbState.hist = o.hist.slice(0, 30);
+    }
+
+    function rbNote(text, kind) {
+        rbState.note = String(text || '');
+        rbState.noteKind = kind || '';
+        rbRender();
+        // giữ cả trong betStatus để lịch sử trạng thái không mất khi tắt/mở khung
+        try { if (betState.noteLog) betState.noteLog.push(text); } catch (e) {}
+    }
+
+    // Trạng thái ngắn để hiện trên tab khi khung bị thu gọn
+    function rbMiniText() {
+        if (rbState.sending) return 'đang gửi lệnh…';
+        if (rbState.on) {
+            const b = rbState.bet;
+            if (b && b.st === 'sending') return 'kỳ ' + pad3(b.issue) + ' · đang gửi';
+            if (b && b.st === 'unsure') return 'kỳ ' + pad3(b.issue) + ' · chưa rõ';
+            if (b) return 'kỳ ' + pad3(b.issue) + ' · ' + (b.side === 'big' ? 'LỚN' : 'NHỎ') + ' ' + betFmt(b.amount);
+            return 'đang BẬT · chờ kỳ mới';
+        }
+        const l = rbState.last;
+        if (l) return 'đã tắt · kỳ ' + pad3(l.issue) + (l.win ? ' thắng' : ' thua');
+        return 'đang tắt';
+    }
+
+    // Vẽ khung CƯỢC THẬT — y hệt khung cược ảo
+    function rbRender() {
+        const lv = $('rbLv'), st = $('rbStake');
+        const lvTxt = String(betState.lv + 1), stTxt = betFmt(betState.levels[betState.lv] || 0);
+        if (lv && lv.textContent !== lvTxt) lv.textContent = lvTxt;
+        if (st && st.textContent !== stTxt) st.textContent = stTxt;
+        // nước đi + kỳ đang đánh
+        let pick = null;
+        try { pick = betNextPick(); } catch (e) {}
+        const b = rbState.bet;
+        const issEl = $('rbIssue'), sideEl = $('rbSide'), whyEl = $('rbWhy');
+        const issue = b ? String(b.issue) : (betNextOpenIssue() || betNewestIssue() || '');
+        const issTxt = pad3(issue);
+        if (issEl && issEl.textContent !== issTxt) issEl.textContent = issTxt;
+        if (sideEl) {
+            const side = b ? b.side : (pick && pick.side ? (pick.side === '1' ? 'big' : 'small') : '');
+            const sideTxt = side ? (side === 'big' ? 'LỚN' : 'NHỎ') : '—';
+            if (sideEl.textContent !== sideTxt) sideEl.textContent = sideTxt;
+            if (side) { if (sideEl.getAttribute('data-side') !== side) sideEl.setAttribute('data-side', side); }
+            else sideEl.removeAttribute('data-side');
+        }
+        if (whyEl) {
+            if (!b && pick && (betState.mode === 'rule' || betState.mode === 'rule3') && pick.why) { whyEl.innerHTML = pick.why; whyEl.hidden = false; }
+            else { whyEl.hidden = true; whyEl.innerHTML = ''; }
+        }
+        // nút BẬT/TẮT
+        const btn = $('rbRealGo');
+        if (btn) {
+            const label = rbState.on ? 'TẮT CƯỢC THẬT · đang chạy' : 'BẬT CƯỢC THẬT';
+            if (btn.textContent !== label) btn.textContent = label;
+            if (rbState.on) { if (btn.getAttribute('data-on') !== '1') btn.setAttribute('data-on', '1'); }
+            else btn.removeAttribute('data-on');
+            const dis = !!rbState.sending;
+            if (btn.disabled !== dis) btn.disabled = dis;
+        }
+        // dải mức cược (dùng chung thang với khung ảo)
+        rbRenderLevels();
+        // trạng thái
+        const status = $('rbStatus');
+        if (status) {
+            const w = rbState.hist.filter(function (h) { return h.win; }).length;
+            let text = rbState.note;
+            if (!text) {
+                text = rbState.on
+                    ? 'Đang BẬT: mỗi kỳ tự đặt đúng 1 lệnh thật theo cửa đang đánh · ' + rbState.hist.length + ' ván · thắng ' + w + '/' + rbState.hist.length
+                    : 'bấm «BẬT CƯỢC THẬT» — mỗi kỳ tự đặt đúng 1 lệnh thật';
+            }
+            if (status.textContent !== text) status.textContent = text;
+            if (rbState.noteKind) { if (status.getAttribute('data-kind') !== rbState.noteKind) status.setAttribute('data-kind', rbState.noteKind); }
+            else status.removeAttribute('data-kind');
+        }
+        // lịch sử cược thật
+        const box = $('rbHist'), chip = $('rbHChip');
+        if (chip) {
+            const w = rbState.hist.filter(function (h) { return h.win; }).length;
+            const chipTxt = rbState.hist.length + ' ván · thắng ' + w + '/' + rbState.hist.length;
+            if (chip.textContent !== chipTxt) chip.textContent = chipTxt;
+        }
+        if (box) {
+            const sig = rbState.hist.map(function (h) { return h.issue + (h.win ? 'W' : 'L'); }).join(',');
+            if (box.getAttribute('data-sig') !== sig) {
+                box.setAttribute('data-sig', sig);
+                box.textContent = '';
+                if (!rbState.hist.length) {
+                    const d = document.createElement('div');
+                    d.className = 'eb-empty';
+                    d.textContent = 'chưa có ván nào';
+                    box.appendChild(d);
+                } else {
+                    const frag = document.createDocumentFragment();
+                    rbState.hist.forEach(function (h) {
+                        const row = document.createElement('div');
+                        row.className = 'eb-hrow';
+                        row.setAttribute('data-win', h.win ? '1' : '0');
+                        const sd = document.createElement('span');
+                        sd.className = 'eb-hside';
+                        sd.textContent = h.side === 'big' ? 'LỚN' : 'NHỎ';
+                        const mid = document.createElement('span');
+                        mid.className = 'eb-hmid';
+                        mid.textContent = 'kỳ ' + pad3(h.issue) + ' · ra ' + h.digit + ' · mức ' + (h.lv || 1);
+                        const res = document.createElement('span');
+                        res.className = 'eb-hres';
+                        res.textContent = (h.win ? '+' : '−') + betFmt(h.amount);
+                        row.appendChild(sd); row.appendChild(mid); row.appendChild(res);
+                        frag.appendChild(row);
+                    });
+                    box.appendChild(frag);
+                }
+            }
+        }
+        // tab thu gọn + khoá mở khung kia
+        const tabTxt = $('rbTabTxt');
+        const miniTxt = rbMiniText();
+        if (tabTxt && tabTxt.textContent !== miniTxt) tabTxt.textContent = miniTxt;
+        const tab = $('rbTab');
+        if (tab) {
+            const live = rbState.on ? '1' : '0';
+            if (tab.getAttribute('data-live') !== live) tab.setAttribute('data-live', live);
+        }
+        applyPanels();
+    }
+
+    // Dải mức cược của khung thật (bấm được, dùng chung thang với khung ảo)
+    function rbRenderLevels() {
+        const box = $('rbSteps');
+        if (!box) return;
+        const sig = betState.levels.join(',') + '|' + betState.lv;
+        if (box.getAttribute('data-sig') === sig) return;
+        box.setAttribute('data-sig', sig);
+        box.textContent = '';
+        const frag = document.createDocumentFragment();
+        betState.levels.forEach(function (v, i) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'eb-chip-lv';
+            btn.textContent = betFmt(v);
+            btn.title = 'mức ' + (i + 1);
+            if (i === betState.lv) btn.setAttribute('data-on', '1');
+            btn.addEventListener('click', function () {
+                if (rbState.bet) { rbNote('đang chờ kết quả — chưa đổi mức được', 'warn'); return; }
+                betState.lv = i; betSave(); betRender(); rbRender();
+            });
+            frag.appendChild(btn);
+        });
+        box.appendChild(frag);
+    }
+
+    // ================= THU GỌN: khung đang BẬT thì khung kia thu lại thành 1 tab =================
+    function applyPanels() {
+        const mode = panelMode();
+        const realOn = !!rbState.on;
+        const simOn = !!betState.auto;
+        const realBox = $('rbReal'), ebBox = $('eb');
+        const realTab = $('rbTab'), ebTab = $('ebTab');
+        // LUÔN chỉ 1 khung mở: khung đang chọn mở, khung kia vô hiệu hoá + thu gọn thành 1 tab
+        const ebMini = (mode !== 'sim');       // đang dùng CƯỢC THẬT → khung ẢO thu gọn
+        const realMini = (mode === 'sim');     // đang dùng CƯỢC ẢO → khung THẬT thu gọn
+        if (ebBox) ebBox.classList.toggle('is-mini', ebMini);
+        if (ebTab) { const show = ebMini ? '1' : '0'; if (ebTab.getAttribute('data-show') !== show) ebTab.setAttribute('data-show', show); }
+        if (ebTab) { const live = simOn ? '1' : '0'; if (ebTab.getAttribute('data-live') !== live) ebTab.setAttribute('data-live', live); }
+        const ebTxt = $('ebTabTxt');
+        const ebTxtVal = betState.auto
+            ? ('đang BẬT · mức ' + (betState.lv + 1) + ' · ' + betFmt(betState.levels[betState.lv] || 0))
+            : ('đang tắt · ' + betState.hist.length + ' ván');
+        if (ebTxt && ebTxt.textContent !== ebTxtVal) ebTxt.textContent = ebTxtVal;
+        if (realBox) realBox.classList.toggle('is-mini', realMini);
+        if (realTab) { const show = realMini ? '1' : '0'; if (realTab.getAttribute('data-show') !== show) realTab.setAttribute('data-show', show); }
+        if (realTab) { const live = realOn ? '1' : '0'; if (realTab.getAttribute('data-live') !== live) realTab.setAttribute('data-live', live); }
+    }
+
+    // Đổi khung đang dùng: tắt khung cũ (không để chạy ngầm) rồi mở khung mới
+    function switchPanel(mode) {
+        const next = (mode === 'sim') ? 'sim' : 'real';
+        if (next !== 'real' && rbState.on) {
+            rbState.on = false;
+            rbSave();
+            try { rbNote('Đã tắt cược thật (chuyển sang khung CƯỢC ẢO).', 'warn'); } catch (e) {}
+        }
+        if (next !== 'sim' && betState.auto) {
+            betState.auto = false;
+            betSave();
+            try { betAutoLabel(); } catch (e) {}
+            try { betStatus('đã tắt cược ảo (chuyển sang khung CƯỢC THẬT)', 'warn'); } catch (e) {}
+        }
+        setPanelMode(next);
+        try { betRender(); } catch (e) {}
+        try { rbRender(); } catch (e) {}
+        applyPanels();
+        try {
+            setStatus(next === 'real'
+                ? 'Đang dùng khung CƯỢC THẬT · khung CƯỢC ẢO đã thu gọn (bấm vào để đổi).'
+                : 'Đang dùng khung CƯỢC ẢO · khung CƯỢC THẬT đã thu gọn (bấm vào để đổi).', 'ok');
+        } catch (e) {}
+    }
+
+    function rbSetSim(on) { if (!!betState.auto !== on) { betState.auto = on; betSave(); } }
+
+    // Còn bao nhiêu mili giây tới lúc đóng kỳ đang mở (theo đồng hồ đã khớp máy chủ)
+    function rbRemainMs() {
+        if (!clockValid || !clockDeadline) return NaN;
+        return clockDeadline - Date.now();
+    }
+
+    function rbGateWhy(issue, side, stake) {
+        if (!rbState.on) return 'đang tắt';
+        if (rbState.sending) return 'đang gửi lệnh khác';
+        if (!getToken()) return 'chưa có token';
+        if (tokenLeftMs() <= 0) return 'token đã hết hạn';
+        if (rbState.posted === String(issue)) return 'kỳ này đã gửi lệnh';
+        if (rbState.bet && rbState.bet.st === 'unsure') return 'lệnh kỳ ' + pad3(rbState.bet.issue) + ' chưa rõ đã vào hay chưa';
+        if (rbState.bet && rbState.bet.issue === String(issue)) return 'kỳ này đã có lệnh';
+        if (!isFinite(stake) || stake <= 0) return 'chưa có mức cược';
+        if (isFinite(balState.value) && stake > balState.value) return 'số dư không đủ (' + balDots(balState.value) + ')';
+        const remain = rbRemainMs();
+        if (!isFinite(remain)) return 'chưa khớp giờ máy chủ';
+        if (remain <= RB_CLOSE_SEC * 1000) return 'kỳ sắp đóng';
+        if (remain > ROUND_MS + 2000) return 'đồng hồ kỳ chưa đúng';
+        return '';
+    }
+
+    // Gửi 1 lệnh thật. Trả về true nếu đã gửi (dù chưa rõ kết quả).
+    async function rbSend(issue, side, stake) {
+        const why = rbGateWhy(issue, side, stake);
+        if (why) { if (why !== 'đang tắt') rbNote('chưa đặt: ' + why + '.', 'warn'); return false; }
+        rbState.sending = true;
+        rbState.posted = String(issue);          // ghi dấu TRƯỚC khi gửi
+        rbState.bet = {
+            issue: String(issue), side: side, amount: stake,
+            count: Math.max(1, Math.round(stake / RB_COIN)),
+            lv: betState.lv, mode: betState.mode, at: Date.now(), st: 'sending', why: ''
+        };
+        rbRender(); rbSave();
+        const body = signedBody({
+            typeId: CFG.payload.typeId,
+            issuenumber: String(issue),
+            amount: RB_COIN,
+            betCount: rbState.bet.count,
+            gameType: 2,
+            selectType: side === 'big' ? 13 : 14
+        });
+        let res = null, err = null;
+        try {
+            res = await apiPost(CFG.apiBet, body, undefined, { single: true });
+        } catch (e) { err = e || new Error('lỗi không rõ'); }
+        rbState.sending = false;
+        if (err) {
+            const auth = err.kind === 'auth';
+            rbState.bet = null;
+            rbNote('KHÔNG đặt được kỳ ' + pad3(issue) + ': ' + (err.message || err)
+                + (auth ? ' — token bị từ chối, dán token mới.' : (err.kind === 'net' ? ' (mạng/CORS — bấm thử lại).' : '')),
+                'err');
+            // lỗi token → tự tắt cho an toàn; lỗi mạng → giữ BẬT để kỳ sau thử lại
+            if (auth) { rbState.on = false; rbSave(); }
+            rbRender();
+            return false;
+        }
+        const code = res && res.code !== undefined ? Number(res.code) : 0;
+        const txt = String((res && (res.msg || res.message)) || '').slice(0, 140);
+        if (isFinite(code) && code !== 0 && code !== 1) {
+            const auth = (code === 10 || code === 22);
+            rbState.bet = null;
+            rbNote('Máy chủ TỪ CHỐI lệnh kỳ ' + pad3(issue) + ': mã ' + code + (txt ? ' · ' + txt : '')
+                + (auth ? ' — token hỏng, đã tự tắt cược thật.' : ' — đã tự tắt cược thật.'), 'err');
+            rbState.on = false;
+            rbSave(); rbRender();
+            return false;
+        }
+        rbState.bet.st = 'ok';
+        rbNote('ĐÃ ĐẶT THẬT kỳ ' + pad3(issue) + ': ' + (side === 'big' ? 'LỚN' : 'NHỎ') + ' '
+            + betFmt(rbState.bet.amount) + ' (' + rbState.bet.count + ' đơn vị × 1.000đ) · chờ kết quả…', 'ok');
+        rbSave(); rbRender();
+        try { setTimeout(function () { balFetch(true); }, 1500); } catch (e) {}
+        return true;
+    }
+
+    // Chốt cược thật khi kỳ đã có kết quả thật
+    function rbSettle() {
+        const b = rbState.bet;
+        if (!b || b.st === 'sending') return;
+        const d = data.get(String(b.issue));
+        if (d === undefined || d === '' || d === null) return;
+        const digit = Number(d);
+        const win = (b.side === 'big') ? (digit >= 5) : (digit < 5);
+        rbState.last = { issue: String(b.issue), side: b.side, count: b.count, win: win, at: Date.now() };
+        rbState.hist.unshift({ issue: String(b.issue), side: b.side, amount: b.amount, count: b.count, lv: (b.lv || 0) + 1, win: win, digit: digit, at: Date.now() });
+        if (rbState.hist.length > 30) rbState.hist.length = 30;
+        rbState.bet = null;
+        // MỨC: thắng → 1 · thua → mức kế · MỨC CUỐI (thắng hay thua) → về mức 1
+        const atLast = (b.lv >= betState.levels.length - 1);
+        if (win || atLast) betState.lv = 0;
+        else betState.lv = b.lv + 1;
+        // NHÁNH (giống hệt cược ảo): L/N → x-4 → x-3 → về L/N
+        const wasMode = (b.mode === 'rule' || b.mode === 'rule3') ? b.mode : 'normal';
+        if (win) {
+            betState.mode = 'normal';
+            betState.ruleLoss = 0;
+        } else if (wasMode === 'normal') {
+            betState.mode = 'rule';
+            betState.ruleLoss = 1;
+        } else if (wasMode === 'rule') {
+            betState.mode = 'rule3';
+            betState.ruleLoss = 2;
+        } else {
+            betState.mode = 'normal';
+            betState.ruleLoss = 0;
+        }
+        betSave();
+        const branch = betState.mode === 'rule' ? ' · giờ đánh gỡ x-4'
+            : (betState.mode === 'rule3' ? ' · giờ đánh gỡ x-3' : ' · giờ về L/N');
+        rbNote('CƯỢC THẬT kỳ ' + pad3(b.issue) + ' ra ' + digit + ' → ' + (win ? 'THẮNG' : 'THUA')
+            + ' · ' + ((win || atLast) ? 'về mức 1' : 'lên mức ' + (betState.lv + 1)) + branch + ' · ' + rbState.hist.length + ' ván thật.', win ? 'ok' : 'err');
+        rbRender(); rbSave();
+        try { applyPanels(); } catch (e) {}
+        try { betRender(); } catch (e) {}
+        try { setTimeout(function () { balFetch(true); }, 1500); } catch (e) {}
+    }
+
+    // Nhịp tự đặt: gọi sau mỗi lần bảng/đồng hồ đổi
+    function rbAutoTick() {
+        if (!rbState.on) return;
+        if (rbState.sending) return;
+        if (rbState.bet && rbState.bet.st === 'unsure') return;
+        if (rbState.bet) return;                       // đang chờ kết quả
+        if (betState.pending) return;                  // đang có phiếu mô phỏng → không đặt thật
+        const issue = betNextOpenIssue();
+        if (!issue) { rbNote('chưa xác định được kỳ sắp mở.', 'warn'); return; }
+        if (data.has(String(issue))) return;           // kỳ đã có kết quả
+        let pick = null;
+        try { pick = betNextPick(); } catch (e) {}
+        const side = pick && pick.side ? (pick.side === '1' ? 'big' : 'small') : (betState.mode === 'rule' ? 'big' : 'small');
+        if (pick && pick.locked) { rbNote('chưa đặt: ' + (pick.why || 'cửa này đang khoá') + '.', 'warn'); return; }
+        const stake = betState.levels[betState.lv] || 0;
+        const why = rbGateWhy(issue, side, stake);
+        if (why) {
+            if (why !== 'kỳ này đã gửi lệnh' && why !== 'kỳ này đã có lệnh') rbNote('chưa đặt: ' + why + '.', 'warn');
+            return;
+        }
+        rbSend(String(issue), side, stake);
+    }
+
+    // Một lần đặt tay (nút trên khung CƯỢC THẬT vẫn là BẬT/TẮT; đây dùng cho lệnh ngay)
+    async function rbSendNow() {
+        const issue = betNextOpenIssue();
+        if (!issue) { rbNote('chưa xác định được kỳ sắp mở.', 'warn'); return; }
+        let pick = null;
+        try { pick = betNextPick(); } catch (e) {}
+        const side = pick && pick.side ? (pick.side === '1' ? 'big' : 'small') : 'big';
+        const stake = betState.levels[betState.lv] || 0;
+        await rbSend(String(issue), side, stake);
+    }
+
+    function rbBind() {
+        rbLoad();
+        if ($('rbRealGo')) $('rbRealGo').addEventListener('click', function () {
+            rbState.on = !rbState.on;
+            rbState.note = ''; rbState.noteKind = '';
+            if (rbState.on) {
+                if (!getToken()) {
+                    rbState.on = false;
+                    rbNote('Chưa có token — bấm «🔑 Token» dán token trước khi bật cược thật.', 'err');
+                    return;
+                }
+                // TẮT + THU GỌN cược ảo: chỉ còn 1 khung đang chạy
+                if (betState.auto || betState.pending) {
+                    betState.auto = false;
+                    betState.pending = null;
+                    betSave();
+                    try { betAutoLabel(); betRender(); } catch (e) {}
+                    try { betStatus('đã TẮT cược ảo — đang chạy CƯỢC THẬT', 'warn'); } catch (e) {}
+                }
+                setPanelMode('real');
+                try { applyPanels(); } catch (e) {}
+                rbNote('Đã BẬT cược thật · mức ' + (betState.lv + 1) + ' · ' + betFmt(betState.levels[betState.lv] || 0) + '.', 'ok');
+                recheckRb();
+                setTimeout(function () { try { rbAutoTick(); } catch (e) {} }, 300);
+            } else {
+                rbNote('Đã TẮT cược thật.', 'warn');
+            }
+            rbSave(); rbRender();
+        });
+        if ($('rbPrev')) $('rbPrev').addEventListener('click', function () {
+            if (rbState.bet) { rbNote('đang chờ kết quả — chưa đổi mức được', 'warn'); return; }
+            betState.lv = Math.max(0, betState.lv - 1); betSave(); betRender(); rbRender();
+        });
+        if ($('rbNext')) $('rbNext').addEventListener('click', function () {
+            if (rbState.bet) { rbNote('đang chờ kết quả — chưa đổi mức được', 'warn'); return; }
+            betState.lv = Math.min(betState.levels.length - 1, betState.lv + 1); betSave(); betRender(); rbRender();
+        });
+        if ($('rbCfgMini')) $('rbCfgMini').addEventListener('click', function () {
+            const box = $('rbCfgBox');
+            if (!box) return;
+            box.hidden = !box.hidden;
+            if (!box.hidden) { const inp = $('rbCfg'); if (inp) { inp.focus(); inp.select(); } }
+        });
+        if ($('rbSaveCfg')) $('rbSaveCfg').addEventListener('click', function () {
+            rbApplyLevels($('rbCfg') ? $('rbCfg').value : '');
+        });
+        if ($('rbCfg')) $('rbCfg').addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter') { ev.preventDefault(); rbApplyLevels(this.value); }
+        });
+        if ($('rbCancel')) $('rbCancel').addEventListener('click', function () {
+            const b = rbState.bet;
+            if (!b) { rbNote('không có lệnh nào đang chờ để huỷ', 'warn'); return; }
+            rbState.bet = null;
+            rbState.posted = '';
+            rbNote('đã bỏ theo dõi lệnh kỳ ' + pad3(b.issue) + ' (lệnh đã gửi lên game thì không huỷ được) · số dư sẽ đọc lại.', 'warn');
+            rbSave(); rbRender();
+            try { setTimeout(function () { balFetch(true); }, 800); } catch (e) {}
+        });
+        if ($('rbTab')) $('rbTab').addEventListener('pointerdown', function () {
+            switchPanel('real');
+        });
+        if ($('ebTab')) $('ebTab').addEventListener('pointerdown', function () {
+            switchPanel('sim');
+        });
+        try { if (!localStorage.getItem(PANEL_LS)) setPanelMode('real'); } catch (e) {}
+        rbRender();
+        setInterval(function () { try { rbSettle(); rbAutoTick(); rbRender(); } catch (e) {} }, 1000);
+    }
+
+    // Dùng thang mức của khung ảo cho khung thật (một thang chung, tránh 2 nơi lệch nhau)
+    function rbApplyLevels(text) {
+        const list = String(text || '').split(/[,;\/\s]+/).map(function (t) {
+            const raw = String(t || '').trim();
+            const digits = raw.replace(/[^\d]/g, '');
+            if (!digits) return 0;
+            const n = Number(digits);
+            if (raw.indexOf('.') >= 0 || raw.indexOf(',') >= 0) return n;
+            return digits.length >= 7 ? n : n * 1000;
+        }).filter(function (v) { return v > 0; });
+        if (!list.length) { rbNote('mức cược không hợp lệ — nhập theo nghìn, ví dụ: 10 25 60 600', 'warn'); return; }
+        betState.levels = list.slice(0, 12);
+        if (betState.lv >= betState.levels.length) betState.lv = 0;
+        betSave(); betRender(); rbRender();
+        rbNote('đã dùng ' + betState.levels.length + ' mức cược · mức 1 = ' + betFmt(betState.levels[0]), 'ok');
+        const box = $('rbCfgBox'); if (box) box.hidden = true;
+    }
+
+    // Kiểm tra nhanh: token có dùng được cho lệnh thật không (gọi GetBalance)
+    async function recheckRb() {
+        const n = await balFetch(true);
+        if (isFinite(n)) {
+            rbNote('Sẵn sàng: số dư ' + balDots(n) + ' · mức cược ' + betFmt(betState.levels[betState.lv] || 0) + '.', 'ok');
+        } else {
+            rbState.on = false; rbSave(); rbRender();
+            rbNote('Không bật được: ' + (balState.err || 'không đọc được số dư') + ' — kiểm tra token.', 'err');
+        }
+    }
+
+    // =====================================================================
+    //  ĐẶT CƯỢC — dùng SỐ DƯ THẬT của tài khoản game (GetBalance)
     //   · LỚN = số ≥ 5 · NHỎ = số ≤ 4
     //   · thua → gấp thếp lên mức cược kế tiếp
     //   · thắng → quay về mức 1
@@ -2312,21 +3609,11 @@
             if (lv.length) betState.levels = lv;
         }
         if (isFinite(o.lv)) betState.lv = Math.max(0, Math.min(betState.levels.length - 1, Number(o.lv)));
-        if (o.mode === 'rule' || o.mode === 'normal') betState.mode = o.mode;
+        if (o.mode === 'rule' || o.mode === 'rule3' || o.mode === 'normal') betState.mode = o.mode;
         if (isFinite(o.ruleLoss)) betState.ruleLoss = Number(o.ruleLoss);
         betState.auto = !!o.auto;
-        // CHỈ 1 LẦN: dọn vé đang chờ của phiên bản cũ (logic sai) rồi thôi
-        // (nếu chạy mỗi lần mở trang thì vé mới cũng bị xoá → không bao giờ chốt được)
-        let migrated = false;
-        try { migrated = localStorage.getItem('vn168_bet_v3') === '1'; } catch (e) {}
-        if (o.pending && o.pending.issue) {
-            if (migrated) {
-                betState.pending = o.pending;
-            } else if (Number(o.pending.stake) > 0) {
-                betState.bal += Number(o.pending.stake);
-            }
-        }
-        try { localStorage.setItem('vn168_bet_v3', '1'); } catch (e) {}
+        // luôn khôi phục phiếu đang chờ (để chốt được kết quả kỳ đã đặt)
+        if (o.pending && o.pending.issue) betState.pending = o.pending;
         if (Array.isArray(o.hist)) betState.hist = o.hist.slice(0, 30);
     }
 
@@ -2381,12 +3668,12 @@
         keys.sort(function (a, bb) { return issueGreater(a, bb) ? 1 : -1; });   // cũ → mới
         if (keys.length < 5) return null;
         const n = keys.length;
-        const x = keys[n - 1], x1 = keys[n - 2], x3 = keys[n - 4], x4 = keys[n - 5];
+        const x = keys[n - 1], x1 = keys[n - 2], x2 = keys[n - 3], x3 = keys[n - 4], x4 = keys[n - 5];
         return {
-            x: x, x1: x1, x3: x3, x4: x4,
-            bx: bitOf(data.get(x)), bx1: bitOf(data.get(x1)),
+            x: x, x1: x1, x2: x2, x3: x3, x4: x4,
+            bx: bitOf(data.get(x)), bx1: bitOf(data.get(x1)), bx2: bitOf(data.get(x2)),
             bx3: bitOf(data.get(x3)), bx4: bitOf(data.get(x4)),
-            dx: Number(data.get(x)), dx1: Number(data.get(x1)),
+            dx: Number(data.get(x)), dx1: Number(data.get(x1)), dx2: Number(data.get(x2)),
             dx3: Number(data.get(x3)), dx4: Number(data.get(x4))
         };
     }
@@ -2399,26 +3686,55 @@
     //      - NGƯỢC nhau  → đánh NGƯỢC với x-3
     //      - TRÙNG nhau  → đánh THEO (trùng) với x-3
     //      - thắng ở nhánh này → quay lại đánh cùng L/N kỳ trước
+    // ============ TÍNH NƯỚC ĐI THEO LOGIC ============
+    //  · L/N (bình thường): đánh cùng L/N với kỳ x vừa ra
+    //  · vừa THUA ở L/N  → nhánh x-4: so kỳ x với kỳ x-4
+    //        TRÙNG → đánh TRÙNG với x-3 · NGƯỢC → đánh NGƯỢC với x-3
+    //  · vừa THUA ở x-4  → nhánh x-3: dịch 1 bước (x-4→x-3, x-3→x-2), so kỳ x với kỳ x-3
+    //        TRÙNG → đánh TRÙNG với x-2 · NGƯỢC → đánh NGƯỢC với x-2
+    //  · x-3 xong (THẮNG hay THUA) → LUÔN quay về L/N
+    function betPickRule(r, mode) {
+        // mode 'rule' = x-4 · mode 'rule3' = x-3
+        //  · x-4: so x với x-4 → TRÙNG thì đánh trùng, NGƯỢC thì đánh ngược, theo kỳ x-3
+        //  · x-3: so x với x-3 → TRÙNG thì đánh trùng với x-2 · NGƯỢC thì đánh L (LỚN)
+        //  · xong bước x-3 (thắng hay thua) → về L/N
+        if (mode === 'rule3') {
+            const same3 = (r.bx === r.bx3);
+            if (same3) {
+                return {
+                    side: r.bx2, locked: false, r: r, rule: 'rule3',
+                    why: 'gỡ bước 2 (đã thua ở x-4) · so kỳ <b>' + pad3(r.x) + '</b> (' + r.dx + ' ' + sideName(r.bx)
+                        + ') với kỳ <b>' + pad3(r.x3) + '</b> (' + r.dx3 + ' ' + sideName(r.bx3) + ') → <b>TRÙNG</b>'
+                        + ' ⇒ đánh TRÙNG với kỳ <b>' + pad3(r.x2) + '</b> (' + r.dx2 + ' ' + sideName(r.bx2) + ') ⇒ <b>'
+                        + sideName(r.bx2) + '</b> · xong bước này về L/N'
+                };
+            }
+            return {
+                side: '1', locked: false, r: r, rule: 'rule3',
+                why: 'gỡ bước 2 (đã thua ở x-4) · so kỳ <b>' + pad3(r.x) + '</b> (' + r.dx + ' ' + sideName(r.bx)
+                    + ') với kỳ <b>' + pad3(r.x3) + '</b> (' + r.dx3 + ' ' + sideName(r.bx3) + ') → <b>NGƯỢC</b>'
+                    + ' ⇒ đánh <b>L (LỚN)</b> · xong bước này về L/N'
+            };
+        }
+        const same = (r.bx === r.bx4);
+        const side = same ? r.bx3 : (r.bx3 === '1' ? '0' : '1');
+        return {
+            side: side, locked: false, r: r, rule: 'rule',
+            why: 'gỡ bước 1 (mới thua ở L/N) · so kỳ <b>' + pad3(r.x) + '</b> (' + r.dx + ' ' + sideName(r.bx)
+                + ') với kỳ <b>' + pad3(r.x4) + '</b> (' + r.dx4 + ' ' + sideName(r.bx4) + ') → <b>' + (same ? 'TRÙNG' : 'NGƯỢC')
+                + '</b> ⇒ đánh ' + (same ? 'TRÙNG' : 'NGƯỢC') + ' với kỳ <b>' + pad3(r.x3) + '</b> ('
+                + r.dx3 + ' ' + sideName(r.bx3) + ') ⇒ <b>' + sideName(side) + '</b>'
+        };
+    }
+
     function betNextPick() {
         const r = betRecent4();
         if (!r || !r.bx || !r.bx1) return null;
         if (betState.pending) return { side: betState.pending.side, why: 'đang chờ kết quả kỳ ' + pad3(betState.pending.issue), locked: true, r: r };
-        if (betState.mode !== 'rule') {
-            return {
-                side: r.bx, locked: false, r: r,
-                why: 'kỳ <b>' + pad3(r.x) + '</b> ra <b>' + r.dx + '</b> (' + sideName(r.bx) + ') → đánh theo: <b>' + sideName(r.bx) + '</b>'
-            };
-        }
-        const sx = r.bx, sx4 = r.bx4, sx3 = r.bx3;
-        const same = (sx === sx4);                   // x và x-4 trùng hay ngược
-        // GỐC để đánh là vị trí x-3: trùng → đánh TRÙNG với x-3 · ngược → đánh NGƯỢC với x-3
-        const side = same ? sx3 : (sx3 === '1' ? '0' : '1');
+        if (betState.mode === 'rule' || betState.mode === 'rule3') return betPickRule(r, betState.mode);
         return {
-            side: side, locked: false, r: r,
-            why: 'đang gỡ (thua ' + betState.ruleLoss + ' lần) · so kỳ <b>' + pad3(r.x) + '</b> (' + r.dx + ' ' + sideName(sx)
-                + ') với kỳ <b>' + pad3(r.x4) + '</b> (' + r.dx4 + ' ' + sideName(sx4) + ') → <b>' + (same ? 'TRÙNG' : 'NGƯỢC')
-                + '</b> ⇒ đánh ' + (same ? 'TRÙNG' : 'NGƯỢC') + ' với kỳ <b>' + pad3(r.x3) + '</b> ('
-                + r.dx3 + ' ' + sideName(sx3) + ') ⇒ <b>' + sideName(side) + '</b>'
+            side: r.bx, locked: false, r: r, rule: 'normal',
+            why: 'kỳ <b>' + pad3(r.x) + '</b> ra <b>' + r.dx + '</b> (' + sideName(r.bx) + ') → đánh theo: <b>' + sideName(r.bx) + '</b>'
         };
     }
 
@@ -2511,12 +3827,8 @@
     }
 
     function betRender() {
-        const bal = $('ebBal');
-        if (bal) {
-            bal.textContent = betFmt(betState.bal);
-            if (betState.bal < betState.levels[0]) bal.setAttribute('data-low', '1');
-            else bal.removeAttribute('data-low');
-        }
+        // khung VỐN do balRender() vẽ SỐ DƯ THẬT của game (không dùng vốn ảo nữa)
+        try { balRender(); } catch (e) {}
         const lv = $('ebLv'), lv2 = $('ebLv2'), lvN = $('ebLvN'), st = $('ebStake');
         if (lv) lv.textContent = String(betState.lv + 1);
         if (lv2) lv2.textContent = String(betState.lv + 1);
@@ -2543,7 +3855,7 @@
         }
         if (whyEl) {
             // gọn: chỉ hiện lý do khi đang ở nhánh gỡ (x-4), còn lại ẩn
-            if (!betState.pending && pick && betState.mode === 'rule' && pick.why) {
+            if (!betState.pending && pick && (betState.mode === 'rule' || betState.mode === 'rule3') && pick.why) {
                 whyEl.innerHTML = pick.why;
                 whyEl.hidden = false;
             } else {
@@ -2556,11 +3868,12 @@
         if (cfg && document.activeElement !== cfg) cfg.value = betState.levels.map(betShort).join(' ');
         const pend = betState.pending;
         const autoBtn = $('ebAuto');
-        if (autoBtn) autoBtn.disabled = !!pend || !pick || stake > betState.bal || pick.locked;
+        if (autoBtn) autoBtn.disabled = !!pend || !pick || pick.locked;
         try { betAutoLabel(); } catch (e) {}
         betRenderLevels();
         betRenderHist();
         betMarkCells();
+        try { rbRender(); } catch (e) {}
     }
 
     // chốt ván khi kỳ đã có kết quả
@@ -2571,51 +3884,61 @@
         if (d === undefined || d === '' || d === null) return;
         const digit = Number(d);
         const win = (p.side === 'big') ? (digit >= 5) : (digit < 5);
-        betState.bal += win ? p.stake * 2 : 0;
+        // ví ẢO: thắng → nhận gấp đôi tiền đã trừ (mô phỏng); số dư THẬT thì đọc lại từ game
+        if (win) betState.bal += p.stake * 2;
+        try { setTimeout(function () { balFetch(true); }, 1200); } catch (e) {}
 
         let note = '';
         const last = betState.levels.length - 1;
+        const wasLast = (p.lv >= last);           // phiếu vừa rồi ở mức CUỐI
         if (win) {
             // THẮNG: về mức 1 + quay lại đánh theo L/N kỳ trước
+            const wasRule = (p.mode === 'rule' || p.mode === 'rule3');
             betState.lv = 0;
             betState.mode = 'normal';
             betState.ruleLoss = 0;
-            note = ' · thắng → về mức 1, đánh theo L/N';
+            note = wasLast
+                ? ' · thắng ở MỨC CUỐI → về mức 1'
+                : (wasRule
+                    ? ' · thắng ở nhánh ' + (p.mode === 'rule3' ? 'x-3' : 'x-4') + ' → về mức 1 VÀ quay về L/N'
+                    : ' · thắng → về mức 1, đánh theo L/N');
         } else {
             // THUA: luôn GẤP THẾP lên mức kế tiếp (không reset theo nhánh)
             if (p.lv >= last) {
                 betState.lv = 0;
-                note = ' · thua ở mức cao nhất (' + (last + 1) + '/' + betState.levels.length + ') → dừng, về mức 1';
+                note = ' · thua ở MỨC CUỐI (' + (last + 1) + '/' + betState.levels.length + ') → về mức 1';
             } else {
                 betState.lv = p.lv + 1;
                 note = ' · thua → lên mức ' + (betState.lv + 1) + '/' + betState.levels.length;
             }
-            if (betState.mode !== 'rule') {
+            // THUA: L/N → x-4 → x-3 → (xong x-3, thắng hay thua đều) về L/N
+            // dùng nhánh LÚC ĐẶT phiếu này (p.mode), không phụ thuộc biến trạng thái
+            const branch = (p.mode === 'rule' || p.mode === 'rule3') ? p.mode : 'normal';
+            if (branch === 'normal') {
                 betState.mode = 'rule';
                 betState.ruleLoss = 1;
-                note += ' · chuyển sang so x với x-4 (lần 1)';
+                note += ' · chuyển sang gỡ bước 1: so x với x-4';
+            } else if (branch === 'rule') {
+                betState.mode = 'rule3';
+                betState.ruleLoss = 2;
+                note += ' · thua ở x-4 → gỡ bước 2: dịch 1 bước (x-4→x-3, x-3→x-2)';
             } else {
-                betState.ruleLoss += 1;
-                if (betState.ruleLoss >= 2) {
-                    // thua 2 lần ở nhánh x-4 → bỏ nhánh, quay về đánh theo L/N (MỨC VẪN TĂNG)
-                    betState.mode = 'normal';
-                    betState.ruleLoss = 0;
-                    note += ' · thua 2 lần ở nhánh x-4 → quay về L/N (giữ mức ' + (betState.lv + 1) + ')';
-                } else {
-                    note += ' · thua tiếp ở nhánh x-4 (lần ' + betState.ruleLoss + ')';
-                }
+                // đang ở x-3 mà vẫn thua → hết nhánh, về L/N
+                betState.mode = 'normal';
+                betState.ruleLoss = 0;
+                note += ' · thua ở x-3 → hết nhánh, quay về L/N (mức ' + (betState.lv + 1) + ')';
             }
         }
         betState.hist.unshift({
             issue: String(p.issue), side: p.side, lv: p.lv + 1,
-            stake: p.stake, digit: digit, win: win, mode: p.mode, bal: betState.bal
+            stake: p.stake, digit: digit, win: win, mode: p.mode, bal: isFinite(balState.value) ? balState.value : null
         });
         if (betState.hist.length > 30) betState.hist.length = 30;
         betState.pending = null;
         betSave();
         betStatus('kỳ ' + pad3(p.issue) + ' ra ' + digit + ' → '
             + (win ? 'THẮNG +' + betFmt(p.stake) : 'THUA −' + betFmt(p.stake)) + note
-            + ' · vốn ' + betFmt(betState.bal), win ? 'win' : 'lose');
+            + ' · số dư ' + (isFinite(balState.value) ? balDots(balState.value) : 'đang cập nhật'), win ? 'win' : 'lose');
         try { betRender(); } catch (e) {}
     }
 
@@ -2642,7 +3965,9 @@
             betSettle();
             betRender();
             paintLastLabel();
+            try { rbSettle(); } catch (e) {}
             betAutoTry();
+            try { rbAutoTick(); } catch (e) {}
         } catch (e) {}
     }
 
@@ -2653,13 +3978,14 @@
             betStatus('đang chờ kết quả kỳ ' + pad3(betState.pending.issue) + ' — chờ ra số rồi đặt tiếp', 'warn');
             return;
         }
-        if (stake > betState.bal) {
-            betStatus('vốn không đủ cho mức ' + betFmt(stake) + ' (còn ' + betFmt(betState.bal) + ')', 'warn');
+        if (isFinite(balState.value) && stake > balState.value) {
+            betStatus('số dư không đủ cho mức ' + betFmt(stake) + ' (còn ' + balDots(balState.value) + ')', 'warn');
             return;
         }
         const issue = betNextOpenIssue() || betNewestIssue();
         if (!issue) { betStatus('chưa có kỳ nào để đặt cược', 'warn'); return; }
         if (data.has(String(issue))) { betStatus('kỳ ' + pad3(issue) + ' đã có kết quả — chờ kỳ mới', 'warn'); return; }
+        // ví ẢO: trừ tiền khi đặt (mô phỏng)
         betState.bal -= stake;
         betState.pending = {
             issue: String(issue), side: side, lv: betState.lv, stake: stake,
@@ -2707,8 +4033,9 @@
         try { pick = betNextPick(); } catch (e) {}
         if (!pick || !pick.side || pick.locked) return;
         const stake = betState.levels[betState.lv] || 0;
-        if (!stake || stake > betState.bal) {
-            betStatus('TỰ ĐỘNG đang bật nhưng vốn không đủ mức ' + betFmt(stake) + ' (còn ' + betFmt(betState.bal) + ')', 'warn');
+        if (!stake || (isFinite(balState.value) && stake > balState.value)) {
+            betStatus('TỰ ĐỘNG đang bật nhưng số dư không đủ mức ' + betFmt(stake) + ' (còn '
+                + (isFinite(balState.value) ? balDots(balState.value) : 'chưa đọc được') + ')', 'warn');
             return;
         }
         betPlace(pick.side === '1' ? 'big' : 'small', betState.mode);
@@ -2734,6 +4061,14 @@
             betSave();
             betAutoLabel();
             if (betState.auto) {
+                // bật mô phỏng thì TẮT + THU GỌN cược thật (không đặt 2 nơi)
+                if (rbState.on) {
+                    rbState.on = false;
+                    rbSave();
+                    try { rbNote('Đã tắt cược thật vì bật cược ảo.', 'warn'); } catch (e) {}
+                }
+                setPanelMode('sim');
+                try { applyPanels(); } catch (e) {}
                 betStatus('đã BẬT tự động cược — mỗi kỳ sẽ tự đặt theo logic', 'win');
                 try { betAutoTry(); } catch (e) {}
             } else {
@@ -2750,10 +4085,11 @@
         if ($('ebUndo')) $('ebUndo').addEventListener('click', function () {
             const p = betState.pending;
             if (!p) { betStatus('không có kỳ nào đang chờ để huỷ', 'warn'); return; }
-            betState.bal += p.stake;
+            betState.bal += p.stake;              // ví ảo: hoàn tiền
             betState.pending = null;
             betSave(); betRender();
             betStatus('đã huỷ cược kỳ ' + pad3(p.issue) + ' · hoàn ' + betFmt(p.stake), 'warn');
+            try { balFetch(true); } catch (e) {}
         });
         if ($('ebPrev')) $('ebPrev').addEventListener('click', function () {
             if (betState.pending) { betStatus('đang chờ kết quả — chưa đổi mức được', 'warn'); return; }
@@ -2771,16 +4107,16 @@
         });
         if ($('ebCfgMini')) $('ebCfgMini').addEventListener('click', function () { betCfgOpen(true); });
         if ($('ebReset')) $('ebReset').addEventListener('click', function () {
-            betState.bal = BET_START; betState.lv = 0; betState.pending = null; betState.hist = [];
-            betState.mode = 'normal'; betState.ruleLoss = 0; betState.auto = false;
+            betState.lv = 0; betState.pending = null; betState.hist = [];
+            betState.mode = 'normal'; betState.ruleLoss = 0;
             betSave(); betRender();
-            betStatus('đã đặt lại vốn ' + betFmt(BET_START), 'win');
+            betStatus('đã đặt lại mức cược + lịch sử (số dư lấy theo tài khoản game)', 'win');
         });
-        // một lần duy nhất: bật sẵn chế độ tự động cho bản này
+        // KHÔNG bật sẵn chế độ nào: mở trang thấy cả 2 khung (CƯỢC THẬT · CƯỢC ẢO), người dùng tự chọn
         try {
-            if (!localStorage.getItem('vn168_auto_v3')) {
-                localStorage.setItem('vn168_auto_v3', '1');
-                betState.auto = true;
+            if (!localStorage.getItem('vn168_auto_v4')) {
+                localStorage.setItem('vn168_auto_v4', '1');
+                betState.auto = false;
                 betSave();
             }
         } catch (e) {}
@@ -2833,15 +4169,24 @@
             setStatus('Đã lưu mẫu ' + (pattern || '(trống)') + ' · khung kết quả thu gọn thành 1 nút.', 'ok');
         });
         try { betInit(); } catch (e) {}
+        try { rbBind(); } catch (e) {}
         // khôi phục trạng thái thu gọn đã lưu
         try { if (localStorage.getItem(LS_RES_MINI) === '1') setResOpen(false); else setResOpen(true); } catch (e) {}
 
         // (danh sách vị trí đã gộp — bấm từng dòng để nhảy tới hàng đó)
 
 
+        // ---- TOKEN: đọc token đã lưu, nối nút, chạy đồng hồ hạn token + tự gia hạn ----
+        loadToken();
+        bindTokenUI();
+        startTokenClock();
+        startTokenRefreshLoop();
+
         // Firebase trước (không cần token) → có bảng là hiện ngay
         fbInit();
         fbSubscribe();
+        if (getToken()) setTimeout(syncTokenToFirebase, 1200);   // đẩy token của máy này lên Firebase (nếu chưa có)
+        try { balStart(); } catch (e) {}
 
         clockStart();
         autoStart();
@@ -2856,10 +4201,19 @@
         } else {
             setStatus('Không kết nối được Firebase — bấm «Token» để tự nạp kết quả.', 'warn');
         }
+
+        // token vừa nhận từ link: báo rõ sau khi các thông báo nạp bảng đã hiện
+        if (window.__tokenFromHash) {
+            const sayHashToken = function () {
+                try { setStatus('Đã nhận token từ link (Firebase/link chia sẻ) · còn hạn ' + tokenLeftInfo().text + '.', 'ok'); } catch (e) {}
+            };
+            sayHashToken();
+            setTimeout(sayHashToken, 2500);
+        }
     }
 
     init();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a619d1d399082637',t:'MTc5NTg3MzU5NQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a619d1d399082637',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a619d1d399082637',t:'MTc5NTg3MzU5NQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a619d1d399082637',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a61a47b4ba70110f',t:'MTc5NTg3ODQyMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a61a47b4ba70110f',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
