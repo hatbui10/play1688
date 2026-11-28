@@ -2316,11 +2316,18 @@
         if (o.mode === 'rule' || o.mode === 'normal') betState.mode = o.mode;
         if (isFinite(o.ruleLoss)) betState.ruleLoss = Number(o.ruleLoss);
         betState.auto = !!o.auto;
-        // vé đang chờ của phiên bản cũ (logic gốc x-4) → hoàn tiền và bỏ để tính lại đúng
+        // CHỈ 1 LẦN: dọn vé đang chờ của phiên bản cũ (logic sai) rồi thôi
+        // (nếu chạy mỗi lần mở trang thì vé mới cũng bị xoá → không bao giờ chốt được)
+        let migrated = false;
+        try { migrated = localStorage.getItem('vn168_bet_v3') === '1'; } catch (e) {}
         if (o.pending && o.pending.issue) {
-            if (Number(o.pending.stake) > 0) betState.bal += Number(o.pending.stake);
-            betState.pending = null;
+            if (migrated) {
+                betState.pending = o.pending;
+            } else if (Number(o.pending.stake) > 0) {
+                betState.bal += Number(o.pending.stake);
+            }
         }
+        try { localStorage.setItem('vn168_bet_v3', '1'); } catch (e) {}
         if (Array.isArray(o.hist)) betState.hist = o.hist.slice(0, 30);
     }
 
@@ -2575,31 +2582,35 @@
         betState.bal += win ? p.stake * 2 : 0;
 
         let note = '';
+        const last = betState.levels.length - 1;
         if (win) {
+            // THẮNG: về mức 1 + quay lại đánh theo L/N kỳ trước
             betState.lv = 0;
-            betState.mode = 'normal';                 // thắng → quay về đánh theo L/N kỳ trước
+            betState.mode = 'normal';
             betState.ruleLoss = 0;
-            note = ' · thắng → về đánh theo L/N';
+            note = ' · thắng → về mức 1, đánh theo L/N';
         } else {
-            const last = betState.levels.length - 1;
+            // THUA: luôn GẤP THẾP lên mức kế tiếp (không reset theo nhánh)
+            if (p.lv >= last) {
+                betState.lv = 0;
+                note = ' · thua ở mức cao nhất (' + (last + 1) + '/' + betState.levels.length + ') → dừng, về mức 1';
+            } else {
+                betState.lv = p.lv + 1;
+                note = ' · thua → lên mức ' + (betState.lv + 1) + '/' + betState.levels.length;
+            }
             if (betState.mode !== 'rule') {
                 betState.mode = 'rule';
                 betState.ruleLoss = 1;
-                note = ' · thua → chuyển sang so x với x-4 (lần 1)';
-                betState.lv = (p.lv >= last) ? 0 : (p.lv + 1);
-                if (p.lv >= last) note += ' · thua ở mức cao nhất → về mức 1';
+                note += ' · chuyển sang so x với x-4 (lần 1)';
             } else {
                 betState.ruleLoss += 1;
                 if (betState.ruleLoss >= 2) {
-                    // thua 2 lần ở nhánh x-4 → bỏ nhánh gỡ, quay về đánh theo L/N, về mức 1
+                    // thua 2 lần ở nhánh x-4 → bỏ nhánh, quay về đánh theo L/N (MỨC VẪN TĂNG)
                     betState.mode = 'normal';
                     betState.ruleLoss = 0;
-                    betState.lv = 0;
-                    note = ' · thua 2 lần ở nhánh x-4 → quay về đánh theo L/N, mức 1';
+                    note += ' · thua 2 lần ở nhánh x-4 → quay về L/N (giữ mức ' + (betState.lv + 1) + ')';
                 } else {
-                    note = ' · thua tiếp ở nhánh x-4 (lần ' + betState.ruleLoss + ')';
-                    betState.lv = (p.lv >= last) ? 0 : (p.lv + 1);
-                    if (p.lv >= last) note += ' · thua ở mức cao nhất → về mức 1';
+                    note += ' · thua tiếp ở nhánh x-4 (lần ' + betState.ruleLoss + ')';
                 }
             }
         }
@@ -2740,7 +2751,7 @@
                 betStatus('đã BẬT tự động cược — mỗi kỳ sẽ tự đặt theo logic', 'win');
                 try { betAutoTry(); } catch (e) {}
             } else {
-                betStatus('đã TẮT tự động — tự bấm LỚN / NHỎ hoặc «ĐẶT THEO LOGIC»', 'warn');
+                betStatus('đã TẮT tự động — app sẽ không tự đặt nữa', 'warn');
             }
         });
         if ($('ebAuto')) $('ebAuto').addEventListener('click', function () {
@@ -2864,5 +2875,5 @@
     init();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a619b01bca1b4f91',t:'MTc5NTg3MjIxNA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a619b01bca1b4f91',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a619bc728fcf09ec',t:'MTc5NTg3MjcxOQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a619bc728fcf09ec',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
